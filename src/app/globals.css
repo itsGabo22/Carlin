@@ -155,4 +155,14 @@
   html {
     @apply font-sans;
   }
+
+  /* WhatsApp button pulse — respects prefers-reduced-motion via motion-safe: class */
+  @keyframes whatsapp-pulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.5);
+    }
+    50% {
+      box-shadow: 0 0 0 10px rgba(37, 211, 102, 0);
+    }
+  }
 }
