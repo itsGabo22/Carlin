@@ -142,10 +142,10 @@ export function MobileNav({ isOpen, onClose, categories, cartItemCount }: Mobile
             >
               <div className="flex flex-col leading-none">
                 <span className="font-serif text-base font-bold tracking-widest text-brand-neutral-900">
-                  BRISAL
+                  Carlin
                 </span>
                 <span className="font-sans text-[8px] font-semibold tracking-[0.35em] text-brand-neutral-800 uppercase">
-                  BY SALVADOR
+                  BY Carlin
                 </span>
               </div>
               <button

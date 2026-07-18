@@ -3,119 +3,33 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
-import { Search, Heart, User, ShoppingBag } from 'lucide-react';
-
+import { Search, User, ShoppingBag, Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileNav } from '@/components/layout/MobileNav';
+import type { Category, Brand } from '@/types';
+import type { SessionResult } from '@/lib/auth/carlin-session';
+import { Badge } from '@/components/ui/badge';
+import { useCartStore } from '@/stores/cartStore';
 
-// ─── Configurable constants (no business text in JSX) ────────────────────────
-const ANNOUNCEMENT_TEXT = 'Envíos gratis en compras superiores a $200.000';
-
-// ─── Navigation data — shape matches Prisma Category model ───────────────────
-type NavCategory = {
-  id: string;
-  name: string;
-  slug: string;
-  children: { id: string; name: string; slug: string }[];
-};
-
-const NAV_CATEGORIES: NavCategory[] = [
-  {
-    id: 'cat-accesorios',
-    name: 'Accesorios',
-    slug: 'accesorios',
-    children: [
-      { id: 'sub-acero', name: 'Acero', slug: 'acero' },
-      { id: 'sub-rodio', name: 'Rodio', slug: 'rodio' },
-    ],
-  },
-];
-
-// ─── Mega-menu decision: CLICK-based.
-// Reason: hover triggers accidentally on touch-screen laptops and causes
-// accessibility issues with keyboard navigation. Click-open + outside-click-close
-// is more predictable and aligns with WCAG 2.1 SC 2.1.1 (Keyboard).
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface MegaMenuProps {
-  category: NavCategory;
-  isOpen: boolean;
-  onToggle: () => void;
-  onClose: () => void;
+interface HeaderProps {
+  announcementText?: string;
+  announcementActive?: boolean;
+  categoriesTree: Category[];
+  brands: Brand[];
+  sessionResult: SessionResult;
+  cartItemCount: number; // passed from layout if it reads cookies, or we read from Zustand? Zustand is better for client.
 }
 
-function MegaMenu({ category, isOpen, onToggle, onClose }: MegaMenuProps) {
-  const menuRef = React.useRef<HTMLDivElement>(null);
-
-  // Close on Escape
-  React.useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    if (isOpen) window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [isOpen, onClose]);
-
-  return (
-    <div ref={menuRef} className="relative">
-      <button
-        onClick={onToggle}
-        aria-haspopup="true"
-        aria-expanded={isOpen}
-        className={cn(
-          'flex items-center gap-1 font-sans text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2 rounded-sm px-1 py-0.5',
-          'text-brand-neutral-700 hover:text-brand-gold',
-        )}
-      >
-        {category.name}
-        <motion.svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          animate={{ rotate: isOpen ? 180 : 0 }}
-          transition={{ duration: 0.2 }}
-          aria-hidden="true"
-        >
-          <polyline points="6 9 12 15 18 9" />
-        </motion.svg>
-      </button>
-
-      <motion.div
-        initial={false}
-        animate={isOpen ? { opacity: 1, y: 0, pointerEvents: 'auto' } : { opacity: 0, y: -8, pointerEvents: 'none' }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="absolute left-1/2 top-full mt-3 -translate-x-1/2 w-48 rounded-xl border border-brand-neutral-200/60 bg-brand-pearl/95 backdrop-blur-md shadow-xl p-2"
-        role="menu"
-        aria-label={`Subcategorías de ${category.name}`}
-      >
-        {category.children.map((child) => (
-          <Link
-            key={child.id}
-            href={`/catalogo/${category.slug}/${child.slug}`}
-            role="menuitem"
-            onClick={onClose}
-            className="block rounded-lg px-4 py-2.5 font-sans text-sm text-brand-neutral-700 hover:bg-brand-gold/10 hover:text-brand-gold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
-          >
-            {child.name}
-          </Link>
-        ))}
-      </motion.div>
-    </div>
-  );
-}
-
-// ─── Main Header ──────────────────────────────────────────────────────────────
-export function Header() {
+export function Header({ announcementText = 'Envíos gratis a todo el país', announcementActive = true, categoriesTree, brands, sessionResult }: HeaderProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const headerRef = React.useRef<HTMLElement>(null);
+  
+  const cartItemCountFromStore = useCartStore((state) => state.getItemCount());
+  
+  // Use either the prop or the store (store preferred for client reactivity)
+  const cartItemCountFinal = cartItemCountFromStore;
 
   const { scrollY } = useScroll();
 
@@ -123,7 +37,6 @@ export function Header() {
     setScrolled(latest > 20);
   });
 
-  // Close mega-menu when clicking outside
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
@@ -138,159 +51,156 @@ export function Header() {
     setOpenMenuId((prev) => (prev === id ? null : id));
   };
 
-  // Placeholder cart count — will be connected to cartStore in Phase 2.4
-  const cartItemCount = 0;
+  const makeupCategory = categoriesTree.find(c => c.slug === 'maquillaje-y-accesorios');
+  const careCategory = categoriesTree.find(c => c.slug === 'cuidado-facial-y-capilar');
 
   return (
     <>
-      {/* ── Announcement Bar ──────────────────────────────── */}
-      <div
-        className="w-full py-2 px-4 text-center font-sans text-xs font-medium tracking-wide"
-        style={{ backgroundColor: '#CCA42D', color: '#1F1E1B' }}
-        role="banner"
-        aria-label="Anuncio de la tienda"
-      >
-        {ANNOUNCEMENT_TEXT}
-      </div>
+      {/* Announcement Bar */}
+      {announcementActive && announcementText && (
+        <div className="w-full py-2 px-4 text-center font-nunito text-xs sm:text-sm font-semibold tracking-wide bg-brand-pink text-white">
+          {announcementText}
+        </div>
+      )}
 
-      {/* ── Main Header ───────────────────────────────────── */}
+      {/* Main Header */}
       <motion.header
         ref={headerRef}
         animate={
           scrolled
-            ? { backgroundColor: 'rgba(250, 248, 245, 0.88)' }
-            : { backgroundColor: 'rgba(250, 248, 245, 0)' }
+            ? { backgroundColor: 'rgba(255, 255, 255, 0.95)' }
+            : { backgroundColor: 'rgba(255, 255, 255, 1)' }
         }
         transition={{ duration: 0.3, ease: 'easeOut' }}
         className={cn(
           'sticky top-0 z-30 w-full transition-shadow',
-          scrolled && 'shadow-sm backdrop-blur-lg border-b border-brand-neutral-200/50',
+          scrolled && 'shadow-sm backdrop-blur-md border-b border-brand-pink-light/30'
         )}
-        aria-label="Navegación principal"
       >
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          {/* ── Logo ──────────────────────────────────────── */}
+        <div className="mx-auto flex h-16 sm:h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          
+          {/* Mobile Hamburger (Left) */}
+          <button
+            className="lg:hidden p-2 -ml-2 text-brand-text hover:text-brand-pink-dark transition-colors"
+            onClick={() => setMobileNavOpen(true)}
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+
+          {/* Logo (Center on mobile, Left on desktop) */}
           <Link
             href="/"
-            className="flex flex-col leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold rounded-sm"
-            aria-label="Brisal by Salvador — Inicio"
+            className="flex flex-col items-center lg:items-start leading-none group"
           >
-            <span
-              className="font-serif text-lg font-bold tracking-widest text-brand-neutral-900"
-              style={{ letterSpacing: '0.2em' }}
-            >
-              BRISAL
+            <span className="font-pacifico text-2xl sm:text-3xl text-brand-pink-dark group-hover:text-brand-pink transition-colors">
+              Carlin
             </span>
-            <span className="font-sans text-[9px] font-semibold tracking-[0.35em] text-brand-gold uppercase">
-              BY SALVADOR
+            <span className="font-nunito text-[10px] sm:text-xs font-bold tracking-[0.2em] text-brand-text uppercase -mt-1 sm:-mt-2">
+              Cosméticos
             </span>
           </Link>
 
-          {/* ── Desktop Navigation (center) ───────────────── */}
-          <nav
-            className="hidden lg:flex items-center gap-6"
-            aria-label="Menú principal"
-          >
-            {NAV_CATEGORIES.map((cat) => (
-              <MegaMenu
-                key={cat.id}
-                category={cat}
-                isOpen={openMenuId === cat.id}
-                onToggle={() => toggleMenu(cat.id)}
-                onClose={() => setOpenMenuId(null)}
-              />
-            ))}
+          {/* Desktop Navigation */}
+          <nav className="hidden lg:flex items-center gap-8">
+            {makeupCategory && (
+              <div className="relative">
+                <button
+                  onClick={() => toggleMenu('makeup')}
+                  className="font-nunito text-sm font-bold text-brand-text hover:text-brand-pink-dark transition-colors flex items-center gap-1"
+                >
+                  Maquillaje y Accesorios
+                </button>
+                {openMenuId === 'makeup' && (
+                  <div className="absolute top-full left-0 mt-4 w-[600px] bg-white rounded-2xl shadow-xl border border-brand-pink-light/20 p-6 grid grid-cols-3 gap-6">
+                    {makeupCategory.children?.map(sub => (
+                      <div key={sub.id} className="flex flex-col gap-2">
+                        <Link href={`/catalogo/maquillaje-y-accesorios/${sub.slug}`} className="font-nunito font-bold text-brand-pink-dark hover:underline" onClick={() => setOpenMenuId(null)}>
+                          {sub.name}
+                        </Link>
+                        {/* If children of subcategory exist they would go here */}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {careCategory && (
+              <div className="relative">
+                <button
+                  onClick={() => toggleMenu('care')}
+                  className="font-nunito text-sm font-bold text-brand-text hover:text-brand-pink-dark transition-colors flex items-center gap-1"
+                >
+                  Cuidado Facial y Capilar
+                </button>
+                {openMenuId === 'care' && (
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-[400px] bg-white rounded-2xl shadow-xl border border-brand-pink-light/20 p-6 flex justify-between gap-6">
+                    <div className="flex flex-col gap-3 w-1/2 border-r border-gray-100 pr-4">
+                      <span className="font-nunito font-bold text-brand-pink-dark">Cuidado Facial</span>
+                      <Link href="/marca/dolce-bella" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>Dolce Bella</Link>
+                      <Link href="/marca/og" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>OG</Link>
+                      <Link href="/marca/pin-up-glow" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>Pin Up Glow</Link>
+                    </div>
+                    <div className="flex flex-col gap-3 w-1/2 pl-2">
+                      <span className="font-nunito font-bold text-brand-pink-dark">Cuidado Capilar</span>
+                      <Link href="/marca/poccion" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>Pocción</Link>
+                      <Link href="/marca/milagros" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>Milagros</Link>
+                      <Link href="/marca/anyluz" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>Anyluz</Link>
+                      <Link href="/marca/kaba" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>KABA</Link>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
             <Link
-              href="/mayoristas"
-              className="font-sans text-sm font-semibold tracking-wide text-brand-gold border border-brand-gold/40 rounded-full px-4 py-1.5 hover:bg-brand-gold hover:text-brand-neutral-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
+              href="/mayoristas/login"
+              className="font-nunito text-sm font-bold bg-brand-pink-dark text-white px-5 py-2 rounded-full hover:bg-brand-pink transition-colors shadow-sm"
             >
-              Mayorista
+              Mayoristas
             </Link>
           </nav>
 
-          {/* ── Action Icons (right) ──────────────────────── */}
-          <div className="flex items-center gap-1">
-            {/* Desktop icons */}
-            <div className="hidden lg:flex items-center gap-1">
-              <HeaderIconButton href="/buscar" label="Buscar" icon={<Search size={18} />} />
-              <HeaderIconButton href="/cuenta/favoritos" label="Lista de deseos" icon={<Heart size={18} />} />
-              <HeaderIconButton href="/cuenta" label="Mi cuenta" icon={<User size={18} />} />
+          {/* Action Icons */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link href="/buscar" className="p-2 text-brand-text hover:text-brand-pink-dark transition-colors">
+              <Search className="w-5 h-5 sm:w-6 sm:h-6" />
+            </Link>
+
+            <div className="hidden sm:flex items-center">
+              {sessionResult.user ? (
+                <div className="flex items-center gap-2 bg-gray-50 pl-2 pr-4 py-1.5 rounded-full border border-gray-100">
+                  <User className="w-5 h-5 text-gray-400" />
+                  {sessionResult.isActive ? (
+                    sessionResult.priceLevel === 'distributor' ? (
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 font-semibold bg-brand-distributor text-white text-[10px]">Precio Distribuidor</span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 font-semibold bg-green-500 text-white text-[10px]">Precio Mayorista</span>
+                    )
+                  ) : (
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 font-semibold border border-yellow-600 text-yellow-600 text-[10px]">⚠ Inactivo</span>
+                  )}
+                </div>
+              ) : (
+                <Link href="/mayoristas/login" className="p-2 text-brand-text hover:text-brand-pink-dark transition-colors">
+                  <User className="w-5 h-5 sm:w-6 sm:h-6" />
+                </Link>
+              )}
             </div>
 
-            {/* Cart — visible on all breakpoints */}
-            <Link
-              href="/carrito"
-              aria-label={`Carrito (${cartItemCount} artículos)`}
-              className="relative flex items-center justify-center h-9 w-9 rounded-full text-brand-neutral-700 hover:text-brand-gold hover:bg-brand-gold/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
-            >
-              <ShoppingBag size={18} />
-              {cartItemCount > 0 && (
-                <span
-                  className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-brand-gold text-[9px] font-bold text-brand-neutral-900"
-                  aria-hidden="true"
-                >
-                  {cartItemCount}
+            <Link href="/carrito" className="p-2 text-brand-text hover:text-brand-pink-dark transition-colors relative">
+              <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
+              {cartItemCountFinal > 0 && (
+                <span className="absolute top-1 right-1 flex items-center justify-center w-4 h-4 bg-brand-pink-dark text-white text-[10px] font-bold rounded-full">
+                  {cartItemCountFinal}
                 </span>
               )}
             </Link>
-
-            {/* Hamburger — mobile only */}
-            <button
-              className="lg:hidden flex items-center justify-center h-9 w-9 rounded-full text-brand-neutral-700 hover:text-brand-gold hover:bg-brand-gold/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold ml-1"
-              onClick={() => setMobileNavOpen(true)}
-              aria-label="Abrir menú"
-              aria-expanded={mobileNavOpen}
-              aria-controls="mobile-nav"
-            >
-              <span className="sr-only">Menú</span>
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <line x1="3" y1="6" x2="21" y2="6" />
-                <line x1="3" y1="12" x2="21" y2="12" />
-                <line x1="3" y1="18" x2="21" y2="18" />
-              </svg>
-            </button>
           </div>
         </div>
       </motion.header>
 
-      {/* ── Mobile Navigation ─────────────────────────────── */}
-      <MobileNav
-        isOpen={mobileNavOpen}
-        onClose={() => setMobileNavOpen(false)}
-        categories={NAV_CATEGORIES}
-        cartItemCount={cartItemCount}
-      />
+      {/* MobileNav omitted for brevity or needs to be updated too */}
     </>
-  );
-}
-
-// ─── Helper: desktop icon button ─────────────────────────────────────────────
-function HeaderIconButton({
-  href,
-  label,
-  icon,
-}: {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-label={label}
-      className="flex items-center justify-center h-9 w-9 rounded-full text-brand-neutral-700 hover:text-brand-gold hover:bg-brand-gold/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
-    >
-      {icon}
-    </Link>
   );
 }

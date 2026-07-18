@@ -6,9 +6,12 @@
 
 @theme inline {
   /* ── Brand tokens ────────────────────────────────── */
-  --color-brand-gold: #CCA42D;
-  --color-brand-gold-light: #E2CC93;
-  --color-brand-pearl: #FAF8F5;
+  --color-brand-pink: #F472B6;
+  --color-brand-pink-light: #FBCFE8;
+  --color-brand-pink-dark: #DB2777;
+  --color-brand-cream: #FFF0F7;
+  --color-brand-distributor: #E879F9;
+  --color-brand-neutral-dark: #3D1A24;
 
   /* ── Brand Neutrals Scale ────────────────────────── */
   --color-brand-neutral-50: #FAF9F6;
@@ -24,20 +27,20 @@
 
   /* ── Semantic Badge Colors ───────────────────────── */
   --color-badge-nuevo-bg: #FAF9F6;
-  --color-badge-nuevo-fg: #CCA42D;
+  --color-badge-nuevo-fg: #DB2777;
   --color-badge-vendido-bg: #0F0E0D;
-  --color-badge-vendido-fg: #E2CC93;
+  --color-badge-vendido-fg: #FBCFE8;
   --color-badge-oferta-bg: #F5E6E6;
   --color-badge-oferta-fg: #C13B3B;
   --color-badge-tendencia-bg: #EAE6F5;
-  --color-badge-tendencia-fg: #6B4EAB;
+  --color-badge-tendencia-fg: #E879F9;
 
   /* ── shadcn/ui semantic colors ───────────────────── */
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-sans);
-  --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-serif);
+  --font-display: var(--font-display);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);

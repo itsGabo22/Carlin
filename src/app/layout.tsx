@@ -1,10 +1,7 @@
 import type { Metadata } from 'next';
-import { Inter, Playfair_Display } from 'next/font/google';
-import { Geist_Mono } from 'next/font/google';
+import { Inter, Nunito, Pacifico } from 'next/font/google';
 import './globals.css';
 
-import { Header } from '@/components/layout/Header';
-import { Footer } from '@/components/layout/Footer';
 import { WhatsAppButton } from '@/components/layout/WhatsAppButton';
 
 const inter = Inter({
@@ -13,37 +10,39 @@ const inter = Inter({
   display: 'swap',
 });
 
-const playfair = Playfair_Display({
+const nunito = Nunito({
   variable: '--font-serif',
   subsets: ['latin'],
+  weight: ['400', '600', '700', '800'],
   display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-  variable: '--font-geist-mono',
+const pacifico = Pacifico({
+  variable: '--font-display',
   subsets: ['latin'],
+  weight: '400',
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
   title: {
-    default: 'Brisal by Salvador — Accesorios Premium',
-    template: '%s | Brisal by Salvador',
+    default: 'CARLIN',
+    template: '%s | Carlin Cosméticos',
   },
   description:
-    'Catálogo virtual de accesorios premium en acero y rodio. Elegancia, calidad y estilo para mayoristas y clientes.',
+    'Catálogo de maquillaje, accesorios y cuidado personal. Precios especiales para mayoristas y distribuidores.',
   keywords: [
+    'maquillaje',
+    'cosméticos',
     'accesorios',
-    'joyería',
-    'acero',
-    'rodio',
-    'premium',
+    'cuidado personal',
     'mayorista',
-    'Brisal',
-    'Salvador',
+    'distribuidor',
+    'Carlin',
   ],
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -51,22 +50,12 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} ${playfair.variable} ${geistMono.variable} h-full antialiased overflow-x-hidden`}
+      className={`${inter.variable} ${nunito.variable} ${pacifico.variable} h-full antialiased overflow-x-hidden`}
     >
-      {/*
-        Layout decision — MobileNav state lives inside Header via local useState.
-        Rationale: the open/close state is purely local to the Header/MobileNav
-        pair, has no cross-component consumers, and doesn't need to persist across
-        navigations. A Zustand store would add unnecessary complexity at this phase.
-        This can be migrated to a uiStore in Phase 2 if other components need to
-        read or set the drawer state (e.g., a "quick-add" from a product card).
-      */}
-      <body className="flex min-h-full flex-col bg-brand-pearl text-foreground overflow-x-hidden">
-        <Header />
+      <body className="flex min-h-full flex-col bg-brand-cream text-foreground overflow-x-hidden">
         <main className="flex-1">
           {children}
         </main>
-        <Footer />
         <WhatsAppButton />
       </body>
     </html>

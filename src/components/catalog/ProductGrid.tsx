@@ -1,102 +1,100 @@
 'use client';
 
-import * as React from 'react';
-import { motion, useReducedMotion } from 'framer-motion';
-
-import { cn } from '@/lib/utils';
+import React from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { ProductCard } from './ProductCard';
+import { SearchX } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import type { PriceLevel } from '@/lib/auth/carlin-session';
 import type { Product } from '@/types';
 
-// ─── Props ────────────────────────────────────────────────────────────────────
 export interface ProductGridProps {
   products: Product[];
-  className?: string;
+  priceLevel: PriceLevel;
+  pagination?: {
+    total: number;
+    page: number;
+    pages: number;
+    pageSize: number;
+  };
   emptyMessage?: string;
+  className?: string;
 }
 
-// ─── Animation variants ───────────────────────────────────────────────────────
-const containerVariants = {
-  hidden: {},
-  visible: {
-    transition: {
-      staggerChildren: 0.07,
-    },
-  },
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, ease: 'easeOut' },
-  },
-};
-
-// Reduced-motion: items appear instantly, no stagger
-const itemVariantsReduced = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { duration: 0.15 } },
-};
-
-// ─── Component ────────────────────────────────────────────────────────────────
 export function ProductGrid({
   products,
-  className,
-  emptyMessage = 'No hay productos disponibles por ahora.',
+  priceLevel,
+  pagination,
+  emptyMessage = "No encontramos productos con estos filtros.",
+  className
 }: ProductGridProps) {
-  const reducedMotion = useReducedMotion();
+  const searchParams = useSearchParams();
 
   if (products.length === 0) {
     return (
-      <div
-        className="flex flex-col items-center justify-center gap-4 py-24 text-center"
-        role="status"
-        aria-live="polite"
-      >
-        {/* Empty state icon */}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="48"
-          height="48"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.25"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="text-brand-neutral-300"
-          aria-hidden="true"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          <line x1="11" y1="8" x2="11" y2="14" />
-          <line x1="8" y1="11" x2="14" y2="11" />
-        </svg>
-        <p className="font-sans text-sm text-brand-neutral-400">{emptyMessage}</p>
+      <div className="flex flex-col items-center justify-center py-24 px-4 text-center animate-in fade-in duration-500">
+        <div className="bg-brand-pink-light/20 p-6 rounded-full mb-6">
+          <SearchX className="w-12 h-12 text-brand-pink-dark/50" />
+        </div>
+        <h3 className="text-xl font-nunito font-semibold text-gray-900 mb-2">Ups, no hay resultados</h3>
+        <p className="text-gray-500 max-w-md">{emptyMessage}</p>
       </div>
     );
   }
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: '-60px' }}
-      className={cn(
-        'grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 xl:grid-cols-4',
-        className,
+    <div className={cn('flex flex-col gap-8 animate-in fade-in duration-500', className)}>
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+        {products.map((product, idx) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            priceLevel={priceLevel}
+            isPriority={idx < 4}
+          />
+        ))}
+      </div>
+
+      {/* Pagination Controls */}
+      {pagination && pagination.pages > 1 && (
+        <div className="flex items-center justify-center gap-4 py-8 border-t border-gray-100">
+          {pagination.page > 1 ? (
+            <PaginationLink page={pagination.page - 1} searchParams={searchParams}>
+              &larr; Anterior
+            </PaginationLink>
+          ) : (
+            <span className="text-gray-300 cursor-not-allowed text-sm font-medium px-3 py-2">&larr; Anterior</span>
+          )}
+
+          <span className="text-sm text-gray-500 font-medium">
+            Página {pagination.page} de {pagination.pages}
+          </span>
+
+          {pagination.page < pagination.pages ? (
+            <PaginationLink page={pagination.page + 1} searchParams={searchParams}>
+              Siguiente &rarr;
+            </PaginationLink>
+          ) : (
+            <span className="text-gray-300 cursor-not-allowed text-sm font-medium px-3 py-2">Siguiente &rarr;</span>
+          )}
+        </div>
       )}
+    </div>
+  );
+}
+
+function PaginationLink({ page, searchParams, children }: { page: number, searchParams: URLSearchParams, children: React.ReactNode }) {
+  const params = new URLSearchParams(searchParams);
+  params.set('page', page.toString());
+  
+  return (
+    <Link
+      href={`?${params.toString()}`}
+      className="text-brand-pink-dark hover:text-brand-pink-dark/80 text-sm font-medium px-3 py-2 rounded-lg hover:bg-brand-pink-light/20 transition-colors"
+      scroll={true}
     >
-      {products.map((product) => (
-        <motion.div
-          key={product.id}
-          variants={reducedMotion ? itemVariantsReduced : itemVariants}
-        >
-          <ProductCard product={product} />
-        </motion.div>
-      ))}
-    </motion.div>
+      {children}
+    </Link>
   );
 }

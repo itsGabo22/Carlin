@@ -20,7 +20,7 @@ function FacebookIcon({ size = 18 }: { size?: number }) {
 }
 
 // ─── Configurable constants ───────────────────────────────────────────────────
-const CONTACT_EMAIL = 'contacto@brisalbysalvador.com';
+const CONTACT_EMAIL = 'contacto@CarlinbyCarlin.com';
 const CONTACT_PHONE = '+57 300 000 0000';
 const COPYRIGHT_YEAR = 2025;
 
@@ -78,14 +78,14 @@ export function Footer() {
                 className="font-serif text-xl font-bold tracking-widest text-brand-pearl"
                 style={{ letterSpacing: '0.2em' }}
               >
-                BRISAL
+                Carlin
               </span>
               <span className="font-sans text-[9px] font-semibold tracking-[0.35em] text-brand-gold uppercase mt-0.5">
-                BY SALVADOR
+                BY Carlin
               </span>
             </div>
             <p className="font-sans text-sm text-brand-neutral-400 leading-relaxed max-w-xs">
-              Accesorios premium en acero y rodio. Elegancia atemporal para quienes aprecian los detalles.
+              Accesorios premium en maquillaje y accesorios. Elegancia atemporal para quienes aprecian los detalles.
             </p>
             {/* Social icons */}
             <div className="flex items-center gap-3 pt-1">
@@ -169,7 +169,7 @@ export function Footer() {
         {/* ── Bottom bar ──────────────────────────────────── */}
         <div className="mt-12 border-t border-brand-neutral-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="font-sans text-xs text-brand-neutral-500">
-            © {COPYRIGHT_YEAR} Brisal by Salvador. Todos los derechos reservados.
+            © {COPYRIGHT_YEAR} Carlin Cosméticos. Todos los derechos reservados.
           </p>
           <p className="font-sans text-xs text-brand-neutral-600">
             Diseñado con elegancia ✦

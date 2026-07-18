@@ -15,11 +15,16 @@ const buttonVariants = cva(
           'bg-brand-neutral-100 text-brand-neutral-800 border border-brand-neutral-200 hover:bg-brand-neutral-200 hover:text-brand-neutral-950 dark:bg-brand-neutral-800 dark:text-brand-neutral-200 dark:border-brand-neutral-700 dark:hover:bg-brand-neutral-700',
         ghost:
           'text-brand-gold hover:bg-brand-gold/10 hover:text-brand-gold-light active:bg-brand-gold/15',
+        destructive:
+          'bg-red-500 text-white shadow-sm hover:bg-red-600',
+        outline:
+          'border border-input bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground',
       },
       size: {
         sm: 'h-9 px-3 text-xs rounded-sm',
         md: 'h-10 px-5 text-sm rounded-md',
         lg: 'h-12 px-8 text-base rounded-lg',
+        icon: 'h-9 w-9',
       },
     },
     defaultVariants: {

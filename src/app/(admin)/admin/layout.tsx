@@ -1,26 +1,31 @@
-import Link from 'next/link';
+import React from 'react';
+import { AdminSidebar } from '@/components/admin/AdminSidebar';
+import { AdminTopBar } from '@/components/admin/AdminTopBar';
+import { prisma } from '@/lib/prisma';
 
-export default function AdminLayout({
+export const metadata = {
+  title: 'Carlin Admin Panel',
+  description: 'Gestión de tienda Carlin Cosméticos',
+};
+
+export default async function AdminLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
+  const pendingOrdersCount = await prisma.order.count({
+    where: { status: 'PENDING_WHATSAPP' }
+  });
+
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b bg-muted/30 p-4">
-        <div className="container mx-auto flex items-center justify-between">
-          <span className="font-serif text-xl font-bold text-brand-gold">
-            Brisal Admin
-          </span>
-          <nav className="flex gap-4 font-sans text-sm">
-            <Link href="/admin/productos" className="hover:text-brand-gold">Productos</Link>
-            <Link href="/admin/categorias" className="hover:text-brand-gold">Categorías</Link>
-            <Link href="/admin/descuentos" className="hover:text-brand-gold">Descuentos</Link>
-            <Link href="/admin/mayoristas" className="hover:text-brand-gold">Mayoristas</Link>
-          </nav>
+    <div className="flex h-screen overflow-hidden bg-neutral-50">
+      <AdminSidebar pendingOrdersCount={pendingOrdersCount} />
+      <main className="flex-1 overflow-y-auto flex flex-col">
+        <AdminTopBar />
+        <div className="flex-1 p-6">
+          {children}
         </div>
-      </header>
-      <div className="flex-1 container mx-auto p-6">{children}</div>
+      </main>
     </div>
   );
 }

@@ -11,6 +11,7 @@ datasource db {
 enum Role {
   CLIENTE
   MAYORISTA
+  DISTRIBUIDOR
   ADMIN
 }
 
@@ -20,7 +21,24 @@ enum DiscountScope {
   PRODUCT
 }
 
+enum PriceLevel {
+  RETAIL
+  WHOLESALE
+  DISTRIBUTOR
+}
+
 // ── Models ─────────────────────────────────────────────
+
+model SiteConfig {
+  id                  String   @id @default("singleton")
+  wholesaleMinOrder   Decimal  @db.Decimal(10, 2)
+  distributorMinOrder Decimal  @db.Decimal(10, 2)
+  inactivityDays      Int      @default(30)
+  announcementText    String?
+  announcementActive  Boolean  @default(false)
+  heroUseVideo        Boolean  @default(false)
+  updatedAt           DateTime @updatedAt
+}
 
 model Category {
   id          String     @id @default(cuid())
@@ -29,12 +47,24 @@ model Category {
   description String?
   imageUrl    String?
   parentId    String?
+  groupByBrand Boolean @default(false)
   parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryTree")
   products    Product[]
   discounts   Discount[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+}
+
+model Brand {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  logoUrl     String?
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Tag {
@@ -45,24 +75,30 @@ model Tag {
 }
 
 model Product {
-  id           String       @id @default(cuid())
-  name         String
-  slug         String       @unique
-  description  String?
-  price        Decimal      @db.Decimal(10, 2)
-  comparePrice Decimal?     @db.Decimal(10, 2)
-  sku          String?      @unique
-  stock        Int          @default(0)
-  material     String?
-  imageUrls    String[]
-  featured     Boolean      @default(false)
-  active       Boolean      @default(true)
-  categoryId   String
-  category     Category     @relation(fields: [categoryId], references: [id])
-  tags         ProductTag[]
-  discounts    Discount[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id               String       @id @default(cuid())
+  name             String
+  slug             String       @unique
+  description      String?
+  retailPrice      Decimal      @db.Decimal(10, 2)
+  wholesalePrice   Decimal      @db.Decimal(10, 2)
+  distributorPrice Decimal      @db.Decimal(10, 2)
+  comparePrice     Decimal?     @db.Decimal(10, 2)
+  sku              String?      @unique
+  stock            Int          @default(0)
+  unit             String?      
+  tones            String[]     
+  imageUrls        String[]
+  featured         Boolean      @default(false)
+  active           Boolean      @default(true)
+  categoryId       String
+  category         Category     @relation(fields: [categoryId], references: [id])
+  brandId          String?
+  brand            Brand?       @relation(fields: [brandId], references: [id])
+  tags             ProductTag[]
+  discounts        Discount[]
+  orderItems       OrderItem[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
 }
 
 model ProductTag {
@@ -90,15 +126,54 @@ model Discount {
   createdAt  DateTime      @default(now())
 }
 
-model User {
-  id           String   @id @default(cuid())
-  authId       String   @unique
-  email        String   @unique
-  name         String?
-  role         Role     @default(CLIENTE)
-  businessName String?
-  taxId        String?
-  approved     Boolean  @default(true) // set to false explicitly when a wholesale signup is pending review; not used for CLIENTE
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+model WholesaleUser {
+  id             String    @id @default(cuid())
+  authId         String    @unique
+  email          String    @unique
+  name           String?
+  role           Role      @default(MAYORISTA)
+  businessName   String?
+  taxId          String?
+  phone          String?
+  approved       Boolean   @default(false)
+  lastOrderAt    DateTime?
+  orders         Order[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Order {
+  id              String         @id @default(cuid())
+  wholesaleUserId String?
+  wholesaleUser   WholesaleUser? @relation(fields: [wholesaleUserId], references: [id])
+  guestEmail      String?
+  customerName    String?
+  customerPhone   String?
+  priceLevel      PriceLevel     @default(RETAIL)
+  total           Decimal        @db.Decimal(10, 2)
+  status          String         @default("PENDING")
+  items           OrderItem[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model OrderItem {
+  id            String   @id @default(cuid())
+  orderId       String
+  order         Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id])
+  name          String
+  priceSnapshot Decimal  @db.Decimal(10, 2)
+  quantity      Int
+  imageUrl      String?
+}
+
+model ImageBandeja {
+  id        String   @id @default(cuid())
+  url       String
+  filename  String
+  assigned  Boolean  @default(false)
+  productId String?
+  createdAt DateTime @default(now())
 }
