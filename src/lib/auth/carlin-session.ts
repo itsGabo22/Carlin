@@ -15,14 +15,14 @@ export interface SessionResult {
 
 export async function getSessionResult(config: SiteConfig): Promise<SessionResult> {
   const supabase = await createServerSupabaseClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session?.user) {
+  if (!user) {
     return { user: null, priceLevel: 'retail', isActive: false, isPending: false };
   }
 
   const wholesaleUser = await prisma.wholesaleUser.findUnique({
-    where: { authId: session.user.id }
+    where: { authId: user.id }
   });
 
   if (!wholesaleUser) {
@@ -52,14 +52,14 @@ export async function getSessionResult(config: SiteConfig): Promise<SessionResul
 
 export async function requireWholesaleAuth(): Promise<WholesaleUser> {
   const supabase = await createServerSupabaseClient();
-  const { data: { session } } = await supabase.auth.getSession();
+  const { data: { user } } = await supabase.auth.getUser();
 
-  if (!session?.user) {
+  if (!user) {
     redirect('/mayoristas/login');
   }
 
   const wholesaleUser = await prisma.wholesaleUser.findUnique({
-    where: { authId: session.user.id }
+    where: { authId: user.id }
   });
 
   if (!wholesaleUser) {

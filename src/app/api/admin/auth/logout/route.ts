@@ -1,9 +1,34 @@
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 export async function POST() {
-  const response = NextResponse.redirect(new URL('/admin/login', process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'));
+  const cookieStore = await cookies();
+  const response = NextResponse.redirect(new URL('/admin-login', process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'));
   
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return cookieStore.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    }
+  );
+
+  await supabase.auth.signOut();
+
+  // Clear legacy cookie just in case
   response.cookies.delete('admin_session');
+
+  // Prevent BFCache on redirect
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   return response;
 }

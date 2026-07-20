@@ -14,7 +14,7 @@ export async function generateMetadata({
   const resolvedParams = await searchParams;
   const q = typeof resolvedParams.q === 'string' ? resolvedParams.q : '';
   return {
-    title: q ? `Resultados para "${q}"` : 'Búsqueda',
+    title: q ? `"${q}" — Buscar | CARLIN` : 'Buscar | CARLIN',
   };
 }
 

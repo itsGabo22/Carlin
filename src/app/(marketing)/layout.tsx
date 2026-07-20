@@ -3,6 +3,9 @@ import { Footer } from '@/components/layout/Footer';
 import { categoryRepository, brandRepository } from '@/lib/repositories';
 import { getSessionResult } from '@/lib/auth/carlin-session';
 import { prisma } from '@/lib/prisma';
+import { SessionSetter } from '@/components/layout/SessionSetter';
+
+import { LazyMotion, domAnimation } from 'framer-motion';
 
 export default async function MarketingLayout({
   children,
@@ -30,6 +33,10 @@ export default async function MarketingLayout({
 
   return (
     <>
+      <SessionSetter 
+        priceLevel={sessionResult.priceLevel} 
+        userName={sessionResult.user?.name || sessionResult.user?.email || null} 
+      />
       <Header 
         categoriesTree={categoriesTree} 
         brands={brands} 
@@ -38,7 +45,9 @@ export default async function MarketingLayout({
         announcementText={safeConfig.announcementText || undefined}
         announcementActive={safeConfig.announcementActive}
       />
-      {children}
+      <LazyMotion features={domAnimation} strict>
+        {children}
+      </LazyMotion>
       <Footer />
     </>
   );

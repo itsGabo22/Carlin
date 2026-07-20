@@ -3,6 +3,7 @@ import { Inter, Nunito, Pacifico } from 'next/font/google';
 import './globals.css';
 
 import { WhatsAppButton } from '@/components/layout/WhatsAppButton';
+import { ScrollToTopButton } from '@/components/layout/ScrollToTopButton';
 
 const inter = Inter({
   variable: '--font-sans',
@@ -40,6 +41,17 @@ export const metadata: Metadata = {
     'distribuidor',
     'Carlin',
   ],
+  icons: {
+    icon: [
+      { url: '/favicon.png', type: 'image/png' },
+      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/favicon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/favicon.png',
+  },
 };
 
 export default async function RootLayout({
@@ -56,6 +68,7 @@ export default async function RootLayout({
         <main className="flex-1">
           {children}
         </main>
+        <ScrollToTopButton />
         <WhatsAppButton />
       </body>
     </html>

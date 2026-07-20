@@ -78,23 +78,34 @@ export async function POST(request: NextRequest) {
 
     // 3. Construct WhatsApp Message
     let msg = '';
-    if (validated.priceLevel === 'retail') {
-      msg += '¡Hola Carlin! 💄 Quiero hacer un pedido:\n\n';
-    } else if (validated.priceLevel === 'wholesale') {
-      msg += '¡Hola Carlin! 🎀 Pedido MAYORISTA:\n\n';
-    } else {
-      msg += '¡Hola Carlin! ✨ Pedido DISTRIBUIDOR:\n\n';
-    }
-
     const orderNumber = order.id.slice(-6).toUpperCase();
-    msg += `Pedido #${orderNumber}\n`;
+
+    if (validated.priceLevel === 'retail') {
+      msg += `¡Hola Carlin! 💄 Me gustaría hacer el siguiente pedido:\n\n`;
+      msg += `📋 Pedido #${orderNumber}\n`;
+    } else if (validated.priceLevel === 'wholesale') {
+      msg += `¡Hola Carlin! Soy mayorista y quiero hacer el siguiente pedido:\n\n`;
+      msg += `🏷️ Pedido MAYORISTA #${orderNumber}\n`;
+    } else {
+      msg += `¡Hola Carlin! Soy distribuidor y quiero hacer el siguiente pedido:\n\n`;
+      msg += `⭐ Pedido DISTRIBUIDOR #${orderNumber}\n`;
+    }
     
     validated.items.forEach(item => {
       msg += `• ${item.name} x${item.quantity} = ${formatCOP(item.price * item.quantity)}\n`;
     });
     
-    msg += `─────────────────\n`;
-    msg += `TOTAL: ${formatCOP(validated.total)}\n`;
+    msg += `─────────────────────\n`;
+    
+    if (validated.priceLevel === 'retail') {
+      msg += `💰 Total: ${formatCOP(validated.total)}\n\n`;
+    } else if (validated.priceLevel === 'wholesale') {
+      msg += `💰 Total mayorista: ${formatCOP(validated.total)}\n\n`;
+    } else {
+      msg += `💰 Total distribuidor: ${formatCOP(validated.total)}\n\n`;
+    }
+
+    msg += `📞 Mis datos:\n`;
     msg += `Nombre: ${validated.customerName}\n`;
     msg += `Teléfono: ${validated.customerPhone}`;
 

@@ -168,4 +168,61 @@
       box-shadow: 0 0 0 10px rgba(37, 211, 102, 0);
     }
   }
+
+  @keyframes carlin-gradient {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  @keyframes carlin-marquee {
+    from { transform: translateX(0); }
+    to   { transform: translateX(-50%); }
+  }
+
+  .scale-108 {
+    transform: scale(1.08);
+  }
+
+  /* Formas flotantes del hero */
+  @keyframes float-slow {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    33%       { transform: translateY(-20px) rotate(5deg); }
+    66%       { transform: translateY(10px) rotate(-3deg); }
+  }
+  @keyframes float-medium {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50%       { transform: translateY(-30px) scale(1.05); }
+  }
+  @keyframes float-fast {
+    0%, 100% { transform: translateY(0px) translateX(0px); }
+    25%       { transform: translateY(-15px) translateX(10px); }
+    75%       { transform: translateY(15px) translateX(-10px); }
+  }
+  @keyframes pulse-ring {
+    0%, 100% { opacity: 0.15; transform: scale(1); }
+    50%       { opacity: 0.3; transform: scale(1.1); }
+  }
+
+  .hero-shape {
+    @apply transition-transform;
+  }
+
+  @media (max-width: 640px) {
+    .hero-shape:nth-child(n+5) {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hero-shape { animation: none !important; }
+  }
+
+  .icon-pink {
+    filter: brightness(0) saturate(100%) invert(65%) sepia(40%) saturate(600%) hue-rotate(290deg) brightness(100%) contrast(95%);
+  }
+
+  .icon-white {
+    filter: brightness(0) invert(1);
+  }
 }

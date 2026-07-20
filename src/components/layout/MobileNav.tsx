@@ -1,94 +1,55 @@
 'use client';
 
 import * as React from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
-import { AnimatePresence, motion } from 'framer-motion';
-import { Search, Heart, User, ShoppingBag, X, ChevronDown } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { m, AnimatePresence } from 'framer-motion';
+import { X, ChevronDown, Search, ShoppingBag, User } from 'lucide-react';
+import { supabase } from '@/lib/supabase/client';
+import { useSessionStore } from '@/stores/sessionStore';
+import { useCartStore } from '@/stores/cartStore';
 
-import { cn } from '@/lib/utils';
-
-// ─── Types ────────────────────────────────────────────────────────────────────
-type NavCategory = {
+interface Category {
   id: string;
   name: string;
   slug: string;
-  children: { id: string; name: string; slug: string }[];
-};
+  children?: Category[];
+}
 
-export interface MobileNavProps {
+interface MobileNavProps {
   isOpen: boolean;
   onClose: () => void;
-  categories: NavCategory[];
+  categories: Category[];
   cartItemCount: number;
 }
 
-// ─── Focus trap hook ──────────────────────────────────────────────────────────
-// Traps keyboard focus within the drawer when it is open.
-function useFocusTrap(containerRef: React.RefObject<HTMLElement | null>, isActive: boolean) {
-  React.useEffect(() => {
-    if (!isActive || !containerRef.current) return;
+export function MobileNav({ isOpen, onClose, categories }: MobileNavProps) {
+  const router = useRouter();
+  const [openCategories, setOpenCategories] = useState<string[]>([]);
+  
+  const { priceLevel } = useSessionStore();
+  const isWholesale = priceLevel === 'wholesale' || priceLevel === 'distributor';
+  const itemCount = useCartStore(s => s.getItemCount());
 
-    const container = containerRef.current;
-    const focusableSelectors = [
-      'a[href]',
-      'button:not([disabled])',
-      'input:not([disabled])',
-      'select:not([disabled])',
-      'textarea:not([disabled])',
-      '[tabindex]:not([tabindex="-1"])',
-    ].join(', ');
+  const toggleCategory = (id: string) => {
+    setOpenCategories(prev =>
+      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+    );
+  };
 
-    const getFocusableEls = () =>
-      Array.from(container.querySelectorAll<HTMLElement>(focusableSelectors));
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-
-      const focusableEls = getFocusableEls();
-      if (focusableEls.length === 0) return;
-
-      const first = focusableEls[0];
-      const last = focusableEls[focusableEls.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === first) {
-          e.preventDefault();
-          last.focus();
-        }
-      } else {
-        if (document.activeElement === last) {
-          e.preventDefault();
-          first.focus();
-        }
-      }
-    };
-
-    // Auto-focus first element when drawer opens
-    const firstEl = getFocusableEls()[0];
-    firstEl?.focus();
-
-    container.addEventListener('keydown', handleKeyDown);
-    return () => container.removeEventListener('keydown', handleKeyDown);
-  }, [containerRef, isActive]);
-}
-
-// ─── MobileNav component ──────────────────────────────────────────────────────
-export function MobileNav({ isOpen, onClose, categories, cartItemCount }: MobileNavProps) {
-  const drawerRef = React.useRef<HTMLDivElement>(null);
-  const [expandedId, setExpandedId] = React.useState<string | null>(null);
-
-  useFocusTrap(drawerRef, isOpen);
-
-  // Close on Escape
+  // Trapping focus & handling escape key
   React.useEffect(() => {
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
     };
-    if (isOpen) window.addEventListener('keydown', handleKey);
+    window.addEventListener('keydown', handleKey);
     return () => window.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
-  // Prevent body scroll when drawer is open
+  // Lock scroll when open
   React.useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -100,179 +61,156 @@ export function MobileNav({ isOpen, onClose, categories, cartItemCount }: Mobile
     };
   }, [isOpen]);
 
-  const handleLinkClick = () => {
-    setExpandedId(null);
-    onClose();
-  };
-
   return (
     <AnimatePresence>
       {isOpen && (
         <>
-          {/* ── Backdrop ──────────────────────────────────── */}
-          <motion.div
-            key="backdrop"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-            aria-hidden="true"
+          {/* Overlay oscuro detrás del drawer */}
+      <m.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 bg-black/40 z-40"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+
+      {/* Drawer */}
+      <m.div
+        initial={{ x: '-100%' }}
+        animate={{ x: 0 }}
+        exit={{ x: '-100%' }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menú de navegación"
+        className="fixed top-0 left-0 bottom-0 w-[300px] z-50 bg-white shadow-2xl shadow-brand-pink/20 flex flex-col overflow-y-auto"
+      >
+        {/* CABECERA DEL DRAWER */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-brand-pink/15">
+          {/* Logo */}
+          <Link href="/" onClick={onClose} className="flex flex-col leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink rounded-md">
+            <span className="text-xl text-brand-pink-dark block" style={{ fontFamily: 'var(--font-display, Pacifico, cursive)' }}>
+              Carlin
+            </span>
+            <span className="text-[8px] tracking-[0.3em] uppercase text-brand-pink font-sans -mt-0.5 block">
+              Cosméticos
+            </span>
+          </Link>
+
+          {/* Botón cerrar */}
+          <button
             onClick={onClose}
-          />
-
-          {/* ── Drawer ────────────────────────────────────── */}
-          <motion.div
-            key="drawer"
-            id="mobile-nav"
-            ref={drawerRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Menú de navegación"
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-            className="fixed inset-y-0 left-0 z-50 w-80 max-w-[90vw] bg-brand-pearl shadow-2xl lg:hidden flex flex-col"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center text-neutral-400 hover:text-brand-pink transition-colors cursor-pointer rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink"
+            aria-label="Cerrar menú"
           >
-            {/* ── Header strip ──────────────────────────── */}
-            <div
-              className="flex items-center justify-between border-b border-brand-neutral-200 px-6 py-4"
-              style={{ backgroundColor: '#CCA42D' }}
-            >
-              <div className="flex flex-col leading-none">
-                <span className="font-serif text-base font-bold tracking-widest text-brand-neutral-900">
-                  Carlin
-                </span>
-                <span className="font-sans text-[8px] font-semibold tracking-[0.35em] text-brand-neutral-800 uppercase">
-                  BY Carlin
-                </span>
-              </div>
-              <button
-                onClick={onClose}
-                aria-label="Cerrar menú"
-                className="flex items-center justify-center h-8 w-8 rounded-full text-brand-neutral-800 hover:bg-brand-neutral-900/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neutral-900"
-              >
-                <X size={18} />
-              </button>
-            </div>
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
-            {/* ── Nav links ─────────────────────────────── */}
-            <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1" aria-label="Menú móvil">
-              {categories.map((cat) => (
-                <div key={cat.id}>
+        {/* NAVEGACIÓN PRINCIPAL */}
+        <nav className="flex-1 px-4 py-6 flex flex-col gap-1">
+          {/* Categorías con acordeón */}
+          {categories.map((cat) => (
+            <div key={cat.id}>
+              {cat.children && cat.children.length > 0 ? (
+                <>
+                  {/* Ítem con dropdown */}
                   <button
-                    onClick={() =>
-                      setExpandedId((prev) => (prev === cat.id ? null : cat.id))
-                    }
-                    aria-expanded={expandedId === cat.id}
-                    className={cn(
-                      'flex w-full items-center justify-between rounded-lg px-4 py-3 font-sans text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold',
-                      expandedId === cat.id
-                        ? 'bg-brand-gold/10 text-brand-gold'
-                        : 'text-brand-neutral-800 hover:bg-brand-neutral-100 hover:text-brand-gold',
-                    )}
+                    onClick={() => toggleCategory(cat.id)}
+                    className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-left font-sans font-semibold text-brand-neutral-dark hover:bg-brand-pink-light hover:text-brand-pink-dark transition-colors duration-200 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink"
+                    aria-expanded={openCategories.includes(cat.id)}
                   >
-                    {cat.name}
-                    <motion.div
-                      animate={{ rotate: expandedId === cat.id ? 180 : 0 }}
-                      transition={{ duration: 0.2 }}
-                    >
-                      <ChevronDown size={16} aria-hidden="true" />
-                    </motion.div>
+                    <span>{cat.name}</span>
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${openCategories.includes(cat.id) ? 'rotate-180' : ''}`} />
                   </button>
-
-                  <AnimatePresence initial={false}>
-                    {expandedId === cat.id && (
-                      <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.22, ease: 'easeOut' }}
-                        className="overflow-hidden"
+                  {/* Subcategorías */}
+                  {openCategories.includes(cat.id) && (
+                    <div className="ml-3 mt-1 flex flex-col gap-0.5 border-l-2 border-brand-pink/20 pl-3">
+                      {cat.children.map((sub) => (
+                        <Link
+                          key={sub.id}
+                          href={`/catalogo/${cat.slug}/${sub.slug}`}
+                          onClick={onClose}
+                          className="py-2 px-2 text-sm text-neutral-600 hover:text-brand-pink-dark transition-colors rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink"
+                        >
+                          {sub.name}
+                        </Link>
+                      ))}
+                      <Link
+                        href={`/catalogo/${cat.slug}`}
+                        onClick={onClose}
+                        className="py-2 px-2 text-sm text-brand-pink font-medium rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink"
                       >
-                        <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-brand-gold/30 pl-3">
-                          {cat.children.map((child) => (
-                            <Link
-                              key={child.id}
-                              href={`/catalogo/${cat.slug}/${child.slug}`}
-                              onClick={handleLinkClick}
-                              className="block rounded-md px-3 py-2.5 font-sans text-sm text-brand-neutral-600 hover:bg-brand-gold/10 hover:text-brand-gold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
-                            >
-                              {child.name}
-                            </Link>
-                          ))}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              ))}
-
-              <div className="pt-2">
+                        Ver todo →
+                      </Link>
+                    </div>
+                  )}
+                </>
+              ) : (
                 <Link
-                  href="/mayoristas"
-                  onClick={handleLinkClick}
-                  className="flex w-full items-center rounded-lg px-4 py-3 font-sans text-sm font-semibold text-brand-gold border border-brand-gold/40 hover:bg-brand-gold hover:text-brand-neutral-900 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
+                  href={`/catalogo/${cat.slug}`}
+                  onClick={onClose}
+                  className="flex items-center px-3 py-3 rounded-xl font-sans font-semibold text-brand-neutral-dark hover:bg-brand-pink-light hover:text-brand-pink-dark transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink"
                 >
-                  Mayorista
+                  {cat.name}
                 </Link>
-              </div>
+              )}
+            </div>
+          ))}
 
-              <div className="pt-4 border-t border-brand-neutral-200 space-y-0.5">
-                <MobileNavLink
-                  href="/buscar"
-                  label="Buscar"
-                  icon={<Search size={16} />}
-                  onClick={handleLinkClick}
-                />
-                <MobileNavLink
-                  href="/cuenta/favoritos"
-                  label="Lista de deseos"
-                  icon={<Heart size={16} />}
-                  onClick={handleLinkClick}
-                />
-                <MobileNavLink
-                  href="/cuenta"
-                  label="Mi cuenta"
-                  icon={<User size={16} />}
-                  onClick={handleLinkClick}
-                />
-                <MobileNavLink
-                  href="/carrito"
-                  label={`Carrito${cartItemCount > 0 ? ` (${cartItemCount})` : ''}`}
-                  icon={<ShoppingBag size={16} />}
-                  onClick={handleLinkClick}
-                />
-              </div>
-            </nav>
-          </motion.div>
+          {/* Separador */}
+          <div className="my-3 border-t border-brand-pink/15" />
+
+          {/* Links secundarios */}
+          <Link href="/buscar" onClick={onClose} className="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-600 hover:bg-brand-pink-light hover:text-brand-pink-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink">
+            <Search className="w-4 h-4 flex-shrink-0" />
+            <span className="font-sans text-sm">Buscar</span>
+          </Link>
+
+          <Link href="/carrito" onClick={onClose} className="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-600 hover:bg-brand-pink-light hover:text-brand-pink-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink">
+            <ShoppingBag className="w-4 h-4 flex-shrink-0" />
+            <span className="font-sans text-sm flex items-center">
+              Carrito 
+              {itemCount > 0 && (
+                <span className="ml-1 bg-brand-pink text-white text-[10px] font-bold rounded-full px-1.5 py-0.5 leading-none min-w-[16px] text-center flex items-center justify-center">
+                  {itemCount}
+                </span>
+              )}
+            </span>
+          </Link>
+
+          {/* Perfil — solo si hay sesión de mayorista */}
+          {isWholesale && (
+            <Link href="/mayoristas/perfil" onClick={onClose} className="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-600 hover:bg-brand-pink-light hover:text-brand-pink-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink">
+              <User className="w-4 h-4 flex-shrink-0" />
+              <span className="font-sans text-sm">Mi perfil</span>
+            </Link>
+          )}
+        </nav>
+
+        {/* FOOTER DEL DRAWER — CTA de mayoristas */}
+        <div className="px-4 py-5 border-t border-brand-pink/15 bg-brand-pink-light/40 mt-auto">
+          {isWholesale ? (
+            <button
+              onClick={async () => {
+                await supabase.auth.signOut();
+                onClose();
+                router.refresh();
+              }}
+              className="w-full py-2.5 rounded-xl border border-brand-pink/40 text-brand-pink text-sm font-semibold hover:bg-brand-pink hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink"
+            >
+              Cerrar sesión
+            </button>
+          ) : (
+            <Link href="/registro-mayorista" onClick={onClose} className="block w-full py-2.5 rounded-xl text-center bg-brand-pink text-white text-sm font-semibold hover:bg-brand-pink-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink">
+              🎀 Registrarme como mayorista
+            </Link>
+          )}
+        </div>
+      </m.div>
         </>
       )}
     </AnimatePresence>
-  );
-}
-
-// ─── Helper: mobile nav link row ─────────────────────────────────────────────
-function MobileNavLink({
-  href,
-  label,
-  icon,
-  onClick,
-}: {
-  href: string;
-  label: string;
-  icon: React.ReactNode;
-  onClick: () => void;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className="flex items-center gap-3 rounded-lg px-4 py-3 font-sans text-sm text-brand-neutral-700 hover:bg-brand-neutral-100 hover:text-brand-gold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold"
-    >
-      <span aria-hidden="true">{icon}</span>
-      {label}
-    </Link>
   );
 }

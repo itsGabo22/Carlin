@@ -3,6 +3,7 @@ import { Footer } from '@/components/layout/Footer';
 import { categoryRepository, brandRepository } from '@/lib/repositories';
 import { getSessionResult } from '@/lib/auth/carlin-session';
 import { prisma } from '@/lib/prisma';
+import { SessionSetter } from '@/components/layout/SessionSetter';
 
 export default async function ShopLayout({
   children,
@@ -30,6 +31,10 @@ export default async function ShopLayout({
 
   return (
     <>
+      <SessionSetter 
+        priceLevel={sessionResult.priceLevel} 
+        userName={sessionResult.user?.name || sessionResult.user?.email || null} 
+      />
       <Header 
         categoriesTree={categoriesTree} 
         brands={brands} 

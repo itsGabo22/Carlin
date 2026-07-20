@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { m, useReducedMotion, Variants } from 'framer-motion';
 import { ProductCard } from './ProductCard';
 import { SearchX } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,7 @@ export function ProductGrid({
   className
 }: ProductGridProps) {
   const searchParams = useSearchParams();
+  const prefersReducedMotion = useReducedMotion();
 
   if (products.length === 0) {
     return (
@@ -43,22 +45,45 @@ export function ProductGrid({
     );
   }
 
+  const containerVariants: Variants = {
+    hidden: {},
+    show: {
+      transition: { staggerChildren: 0.07 }
+    }
+  };
+
+  const itemVariants: Variants = {
+    hidden: { opacity: 0, y: 24 },
+    show: { 
+      opacity: 1, 
+      y: 0,
+      transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } 
+    }
+  };
+
   return (
-    <div className={cn('flex flex-col gap-8 animate-in fade-in duration-500', className)}>
-      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
+    <div className={cn('flex flex-col gap-8', className)}>
+      <m.div
+        variants={containerVariants}
+        initial={prefersReducedMotion ? "show" : "hidden"}
+        whileInView="show"
+        viewport={{ once: true, margin: '-40px' }}
+        className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
+      >
         {products.map((product, idx) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-            priceLevel={priceLevel}
-            isPriority={idx < 4}
-          />
+          <m.div key={product.id} variants={prefersReducedMotion ? {} : itemVariants}>
+            <ProductCard
+              product={product}
+              priceLevel={priceLevel}
+              isPriority={idx < 4}
+            />
+          </m.div>
         ))}
-      </div>
+      </m.div>
 
       {/* Pagination Controls */}
       {pagination && pagination.pages > 1 && (
-        <div className="flex items-center justify-center gap-4 py-8 border-t border-gray-100">
+        <div className="flex items-center justify-center gap-4 py-8 border-t border-gray-100 mt-8">
           {pagination.page > 1 ? (
             <PaginationLink page={pagination.page - 1} searchParams={searchParams}>
               &larr; Anterior

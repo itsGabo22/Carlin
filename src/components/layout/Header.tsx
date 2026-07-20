@@ -2,14 +2,17 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
-import { Search, User, ShoppingBag, Menu } from 'lucide-react';
+import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
+import { Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileNav } from '@/components/layout/MobileNav';
 import type { Category, Brand } from '@/types';
 import type { SessionResult } from '@/lib/auth/carlin-session';
-import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/stores/cartStore';
+import { SearchIcon, CartIcon, ProfileIcon } from '@/components/icons/CarlinIcons';
+import { useSessionStore } from '@/stores/sessionStore';
+import { supabase } from '@/lib/supabase/client';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   announcementText?: string;
@@ -30,6 +33,31 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
   
   // Use either the prop or the store (store preferred for client reactivity)
   const cartItemCountFinal = cartItemCountFromStore;
+
+  const router = useRouter();
+  const searchInputRef = React.useRef<HTMLInputElement>(null);
+  const [searchOpen, setSearchOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState('');
+  const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
+
+  const { priceLevel } = useSessionStore();
+  const isWholesale = priceLevel === 'wholesale' || priceLevel === 'distributor';
+
+  React.useEffect(() => {
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [searchOpen]);
+
+  React.useEffect(() => {
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && searchOpen) {
+        setSearchOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [searchOpen]);
 
   const { scrollY } = useScroll();
 
@@ -81,21 +109,25 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
           
           {/* Mobile Hamburger (Left) */}
           <button
-            className="lg:hidden p-2 -ml-2 text-brand-text hover:text-brand-pink-dark transition-colors"
+            type="button"
+            className="lg:hidden flex items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer -ml-2 text-brand-text hover:text-brand-pink-dark transition-colors duration-200"
             onClick={() => setMobileNavOpen(true)}
+            aria-label="Abrir menú"
+            aria-expanded={mobileNavOpen}
+            aria-controls="mobile-nav"
           >
             <Menu className="w-6 h-6" />
           </button>
 
           {/* Logo (Center on mobile, Left on desktop) */}
-          <Link
-            href="/"
-            className="flex flex-col items-center lg:items-start leading-none group"
-          >
-            <span className="font-pacifico text-2xl sm:text-3xl text-brand-pink-dark group-hover:text-brand-pink transition-colors">
+          <Link href="/" className="flex flex-col items-start leading-none">
+            <span
+              className="text-2xl text-brand-pink-dark"
+              style={{ fontFamily: 'var(--font-pacifico, Pacifico, cursive)' }}
+            >
               Carlin
             </span>
-            <span className="font-nunito text-[10px] sm:text-xs font-bold tracking-[0.2em] text-brand-text uppercase -mt-1 sm:-mt-2">
+            <span className="text-[9px] tracking-[0.3em] uppercase text-brand-pink font-sans -mt-0.5">
               Cosméticos
             </span>
           </Link>
@@ -163,35 +195,54 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
 
           {/* Action Icons */}
           <div className="flex items-center gap-3 sm:gap-4">
-            <Link href="/buscar" className="p-2 text-brand-text hover:text-brand-pink-dark transition-colors">
-              <Search className="w-5 h-5 sm:w-6 sm:h-6" />
-            </Link>
+            <button onClick={() => setSearchOpen(true)} className="p-2 text-brand-text hover:text-brand-pink-dark transition-colors">
+              <SearchIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
 
-            <div className="hidden sm:flex items-center">
-              {sessionResult.user ? (
-                <div className="flex items-center gap-2 bg-gray-50 pl-2 pr-4 py-1.5 rounded-full border border-gray-100">
-                  <User className="w-5 h-5 text-gray-400" />
-                  {sessionResult.isActive ? (
-                    sessionResult.priceLevel === 'distributor' ? (
-                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 font-semibold bg-brand-distributor text-white text-[10px]">Precio Distribuidor</span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 font-semibold bg-green-500 text-white text-[10px]">Precio Mayorista</span>
-                    )
-                  ) : (
-                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 font-semibold border border-yellow-600 text-yellow-600 text-[10px]">⚠ Inactivo</span>
+            <div className="hidden sm:flex items-center relative">
+              {isWholesale && (
+                <>
+                  <button 
+                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                    className="p-2 text-brand-text hover:text-brand-pink-dark transition-colors focus-visible:outline-none"
+                    aria-label="Menú de perfil"
+                  >
+                    <ProfileIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                  </button>
+                  {profileDropdownOpen && (
+                    <div 
+                      className="absolute top-full mt-2 right-0 w-48 bg-white rounded-xl shadow-lg border border-brand-pink/20 py-2 z-50"
+                      role="menu"
+                    >
+                      <Link 
+                        href="/mayoristas/perfil" 
+                        className="block px-4 py-2 text-sm text-brand-text hover:bg-brand-pink-light/30 transition-colors" 
+                        onClick={() => setProfileDropdownOpen(false)}
+                        role="menuitem"
+                      >
+                        Mi Perfil
+                      </Link>
+                      <button 
+                        onClick={async () => {
+                          await supabase.auth.signOut();
+                          setProfileDropdownOpen(false);
+                          window.location.reload();
+                        }} 
+                        className="block w-full text-left px-4 py-2 text-sm text-brand-text hover:bg-brand-pink-light/30 transition-colors"
+                        role="menuitem"
+                      >
+                        Cerrar sesión
+                      </button>
+                    </div>
                   )}
-                </div>
-              ) : (
-                <Link href="/mayoristas/login" className="p-2 text-brand-text hover:text-brand-pink-dark transition-colors">
-                  <User className="w-5 h-5 sm:w-6 sm:h-6" />
-                </Link>
+                </>
               )}
             </div>
 
             <Link href="/carrito" className="p-2 text-brand-text hover:text-brand-pink-dark transition-colors relative">
-              <ShoppingBag className="w-5 h-5 sm:w-6 sm:h-6" />
+              <CartIcon className="w-5 h-5 sm:w-6 sm:h-6" />
               {cartItemCountFinal > 0 && (
-                <span className="absolute top-1 right-1 flex items-center justify-center w-4 h-4 bg-brand-pink-dark text-white text-[10px] font-bold rounded-full">
+                <span className="absolute top-0 right-0 flex items-center justify-center w-4 h-4 bg-brand-pink text-white text-[10px] font-bold rounded-full">
                   {cartItemCountFinal}
                 </span>
               )}
@@ -200,7 +251,66 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
         </div>
       </motion.header>
 
-      {/* MobileNav omitted for brevity or needs to be updated too */}
+      {/* Search Overlay */}
+      {searchOpen && (
+        <div className="fixed inset-0 z-50 bg-brand-cream/95 backdrop-blur-sm flex flex-col">
+          {/* Barra de búsqueda */}
+          <div className="flex items-center gap-3 px-4 py-4 border-b border-brand-pink/20">
+            <SearchIcon className="w-5 h-5 text-brand-pink flex-shrink-0" />
+            <input
+              ref={searchInputRef}
+              type="search"
+              placeholder="Buscar productos, marcas..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && searchQuery.trim()) {
+                  router.push(`/buscar?q=${encodeURIComponent(searchQuery.trim())}`);
+                  setSearchOpen(false);
+                  setSearchQuery('');
+                }
+              }}
+              className="flex-1 bg-transparent text-lg outline-none text-brand-neutral-dark placeholder:text-neutral-400"
+              autoComplete="off"
+            />
+            <button 
+              onClick={() => setSearchOpen(false)}
+              className="text-neutral-400 hover:text-brand-pink min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
+              aria-label="Cerrar búsqueda"
+            >
+              ✕
+            </button>
+          </div>
+
+          {/* Sugerencias rápidas */}
+          <div className="px-4 py-6">
+            <p className="text-xs text-neutral-400 uppercase tracking-wider mb-3">
+              Búsquedas populares
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {['Bases', 'Labiales', 'Sombras', 'Shampoo', 'Cremas'].map(s => (
+                <button key={s}
+                  onClick={() => {
+                    router.push(`/buscar?q=${encodeURIComponent(s)}`);
+                    setSearchOpen(false);
+                    setSearchQuery('');
+                  }}
+                  className="px-3 py-1.5 rounded-full bg-brand-pink-light text-brand-pink-dark text-sm hover:bg-brand-pink hover:text-white transition-colors"
+                >
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <MobileNav 
+        isOpen={mobileNavOpen} 
+        onClose={() => setMobileNavOpen(false)} 
+        categories={categoriesTree as any} 
+        cartItemCount={cartItemCountFinal} 
+      />
     </>
   );
 }
