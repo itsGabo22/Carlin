@@ -3,6 +3,9 @@ import { FolderTree, Plus, Search, Edit, Trash2, ChevronRight } from 'lucide-rea
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function AdminCategoriasPage() {
   const categories = await prisma.category.findMany({
     include: {

@@ -3,6 +3,9 @@ import Link from 'next/link';
 import { Package, Tags, Users, ClipboardList, TrendingUp } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function AdminDashboardPage() {
   const [
     totalProducts,

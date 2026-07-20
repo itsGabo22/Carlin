@@ -5,14 +5,33 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 
-export default async function AdminProductosPage() {
-  const products = await prisma.product.findMany({
-    include: {
-      category: true,
-      brand: true,
-    },
-    orderBy: { createdAt: 'desc' }
-  });
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
+export default async function AdminProductosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const { page } = await searchParams;
+  const currentPage = Number(page) || 1;
+  const limit = 50;
+  const skip = (currentPage - 1) * limit;
+
+  const [products, totalProducts] = await Promise.all([
+    prisma.product.findMany({
+      include: {
+        category: true,
+        brand: true,
+      },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.product.count()
+  ]);
+
+  const totalPages = Math.ceil(totalProducts / limit);
 
   return (
     <div className="space-y-6">
@@ -114,6 +133,26 @@ export default async function AdminProductosPage() {
             </tbody>
           </table>
         </div>
+        
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-gray-200 flex items-center justify-between">
+            <span className="text-sm text-gray-500">
+              Mostrando {skip + 1} a {Math.min(skip + limit, totalProducts)} de {totalProducts} productos
+            </span>
+            <div className="flex gap-2">
+              <Link href={`/admin/productos?page=${Math.max(1, currentPage - 1)}`}>
+                <Button variant="outline" size="sm" disabled={currentPage === 1}>
+                  Anterior
+                </Button>
+              </Link>
+              <Link href={`/admin/productos?page=${Math.min(totalPages, currentPage + 1)}`}>
+                <Button variant="outline" size="sm" disabled={currentPage === totalPages}>
+                  Siguiente
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

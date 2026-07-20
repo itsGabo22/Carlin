@@ -21,6 +21,12 @@ enum DiscountScope {
   PRODUCT
 }
 
+enum DiscountAudience {
+  ALL
+  WHOLESALE
+  DISTRIBUTOR
+}
+
 enum PriceLevel {
   RETAIL
   WHOLESALE
@@ -116,6 +122,7 @@ model Discount {
   label      String
   percentage Decimal       @db.Decimal(5, 2)
   scope      DiscountScope
+  audience   DiscountAudience @default(ALL)
   productId  String?
   product    Product?      @relation(fields: [productId], references: [id])
   categoryId String?

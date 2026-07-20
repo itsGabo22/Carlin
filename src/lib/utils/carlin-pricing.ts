@@ -61,3 +61,21 @@ export function checkMinimumOrder(
 
   return { meetsMinimum, required, missing };
 }
+
+export function getApplicableDiscounts(
+  product: { discounts?: any[] },
+  priceLevel: string
+): any[] {
+  if (!product.discounts) return [];
+  return product.discounts.filter(d => {
+    if (!d.active) return false;
+    const now = new Date();
+    if (d.startsAt && new Date(d.startsAt) > now) return false;
+    if (d.endsAt && new Date(d.endsAt) < now) return false;
+    
+    if (d.audience === 'WHOLESALE' && priceLevel !== 'wholesale') return false;
+    if (d.audience === 'DISTRIBUTOR' && priceLevel !== 'distributor') return false;
+    
+    return true;
+  });
+}
