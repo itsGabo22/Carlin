@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { m, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence, LazyMotion, domAnimation } from 'framer-motion';
 import { X, ChevronDown, Search, ShoppingBag, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useSessionStore } from '@/stores/sessionStore';
@@ -62,21 +62,23 @@ export function MobileNav({ isOpen, onClose, categories }: MobileNavProps) {
   }, [isOpen]);
 
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <>
-          {/* Overlay oscuro detrás del drawer */}
-      <m.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/40 z-40"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+    <LazyMotion features={domAnimation}>
+      <AnimatePresence>
+        {isOpen && (
+        <m.div
+          key="overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/40 z-40"
+          onClick={onClose}
+          aria-hidden="true"
+        />
+      )}
 
-      {/* Drawer */}
-      <m.div
+      {isOpen && (
+        <m.div
+          key="drawer"
         initial={{ x: '-100%' }}
         animate={{ x: 0 }}
         exit={{ x: '-100%' }}
@@ -209,8 +211,8 @@ export function MobileNav({ isOpen, onClose, categories }: MobileNavProps) {
           )}
         </div>
       </m.div>
-        </>
       )}
-    </AnimatePresence>
+      </AnimatePresence>
+    </LazyMotion>
   );
 }
