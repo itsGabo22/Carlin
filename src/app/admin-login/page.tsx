@@ -21,13 +21,10 @@ export default function AdminLoginPage() {
     setError('');
 
     try {
-      const supabase = createBrowserClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-      );
+      const { supabase } = await import('@/lib/supabase/client');
 
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
+        email: email,
         password,
       });
 
