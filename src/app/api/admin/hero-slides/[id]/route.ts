@@ -31,22 +31,61 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       if (desktopFile) {
         const buffer = await desktopFile.arrayBuffer();
         const processed = await sharp(Buffer.from(buffer)).resize(1920, 1080, { fit: 'cover' }).webp({ quality: 85 }).toBuffer();
-        const path = `hero/slides/${tempId}-desktop.webp`;
-        await supabaseAdmin.storage.from('hero-media').upload(path, processed, { contentType: 'image/webp', upsert: true });
+        
+        const sanitizedName = desktopFile.name.toLowerCase().replace(/[^a-z0-9.-]/g, '-').replace(/-+/g, '-');
+        const path = `slides/${Date.now()}-desktop-${sanitizedName.replace(/\.[^/.]+$/, "")}.webp`;
+
+        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, processed, { contentType: 'image/webp', upsert: true });
+
+        if (error) {
+          console.error('[HERO UPLOAD ERROR]', {
+            message: error.message,
+            path,
+            fileType: 'image/webp',
+            fileSize: processed.byteLength,
+          });
+          return NextResponse.json({ error: `Upload failed: ${error.message}` }, { status: 500 });
+        }
         desktopUrl = supabaseAdmin.storage.from('hero-media').getPublicUrl(path).data.publicUrl;
       }
       if (mobileFile) {
         const buffer = await mobileFile.arrayBuffer();
         const processed = await sharp(Buffer.from(buffer)).resize(800, 1000, { fit: 'cover' }).webp({ quality: 85 }).toBuffer();
-        const path = `hero/slides/${tempId}-mobile.webp`;
-        await supabaseAdmin.storage.from('hero-media').upload(path, processed, { contentType: 'image/webp', upsert: true });
+        
+        const sanitizedName = mobileFile.name.toLowerCase().replace(/[^a-z0-9.-]/g, '-').replace(/-+/g, '-');
+        const path = `slides/${Date.now()}-mobile-${sanitizedName.replace(/\.[^/.]+$/, "")}.webp`;
+
+        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, processed, { contentType: 'image/webp', upsert: true });
+
+        if (error) {
+          console.error('[HERO UPLOAD ERROR]', {
+            message: error.message,
+            path,
+            fileType: 'image/webp',
+            fileSize: processed.byteLength,
+          });
+          return NextResponse.json({ error: `Upload failed: ${error.message}` }, { status: 500 });
+        }
         mobileUrl = supabaseAdmin.storage.from('hero-media').getPublicUrl(path).data.publicUrl;
       }
     } else {
       if (videoFile) {
         const buffer = await videoFile.arrayBuffer();
-        const path = `hero/slides/${tempId}-video.mp4`;
-        await supabaseAdmin.storage.from('hero-media').upload(path, Buffer.from(buffer), { contentType: videoFile.type, upsert: true });
+        
+        const sanitizedName = videoFile.name.toLowerCase().replace(/[^a-z0-9.-]/g, '-').replace(/-+/g, '-');
+        const path = `slides/${Date.now()}-${sanitizedName}`;
+
+        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, Buffer.from(buffer), { contentType: videoFile.type, upsert: true });
+
+        if (error) {
+          console.error('[HERO UPLOAD ERROR]', {
+            message: error.message,
+            path,
+            fileType: videoFile.type,
+            fileSize: buffer.byteLength,
+          });
+          return NextResponse.json({ error: `Upload failed: ${error.message}` }, { status: 500 });
+        }
         desktopUrl = supabaseAdmin.storage.from('hero-media').getPublicUrl(path).data.publicUrl;
       }
     }

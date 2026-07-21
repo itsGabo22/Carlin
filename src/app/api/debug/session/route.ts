@@ -3,6 +3,10 @@ import { createServerSupabaseClient } from '@/lib/supabase/server';
 import { prisma } from '@/lib/prisma';
 
 export async function GET(req: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available' }, { status: 404 })
+  }
+
   try {
     const supabase = await createServerSupabaseClient();
     const { data: { session } } = await supabase.auth.getSession();
