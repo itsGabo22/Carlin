@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import sharp from 'sharp';
 
 export async function GET() {
   try {
@@ -32,37 +30,12 @@ export async function PATCH(req: Request) {
     const formData = await req.formData();
     
     // Parse config fields
-    const wholesaleMinOrder = Number(formData.get('wholesaleMinOrder'));
-    const distributorMinOrder = Number(formData.get('distributorMinOrder'));
-    const inactivityDays = Number(formData.get('inactivityDays'));
-    const announcementText = formData.get('announcementText') as string;
+    const wholesaleMinOrder = Number(formData.get('wholesaleMinOrder')) || 200000;
+    const distributorMinOrder = Number(formData.get('distributorMinOrder')) || 400000;
+    const inactivityDays = Number(formData.get('inactivityDays')) || 30;
+    const announcementText = (formData.get('announcementText') as string) || '';
     const announcementActive = formData.get('announcementActive') === 'true';
     const heroUseVideo = formData.get('heroUseVideo') === 'true';
-
-    const supabaseAdmin = getSupabaseAdmin();
-
-    // Handle files
-    const desktopFile = formData.get('desktop') as File | null;
-    const mobileFile = formData.get('mobile') as File | null;
-    const videoFile = formData.get('video') as File | null;
-
-    if (desktopFile) {
-      const buffer = Buffer.from(await desktopFile.arrayBuffer());
-      const processed = await sharp(buffer).webp({ quality: 85 }).toBuffer();
-      await supabaseAdmin.storage.from('hero-media').upload('hero/desktop.webp', processed, { contentType: 'image/webp', upsert: true });
-    }
-
-    if (mobileFile) {
-      const buffer = Buffer.from(await mobileFile.arrayBuffer());
-      const processed = await sharp(buffer).webp({ quality: 85 }).toBuffer();
-      await supabaseAdmin.storage.from('hero-media').upload('hero/mobile.webp', processed, { contentType: 'image/webp', upsert: true });
-    }
-
-    if (videoFile) {
-      const buffer = Buffer.from(await videoFile.arrayBuffer());
-      // For video, keep original content type
-      await supabaseAdmin.storage.from('hero-media').upload('hero/video' + (videoFile.type === 'video/webm' ? '.webm' : '.mp4'), buffer, { contentType: videoFile.type, upsert: true });
-    }
 
     const config = await prisma.siteConfig.upsert({
       where: { id: 'singleton' },

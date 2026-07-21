@@ -41,17 +41,17 @@ export const metadata: Metadata = {
     'distribuidor',
     'Carlin',
   ],
-  icons: {
-    icon: [
-      { url: '/favicon.png', type: 'image/png' },
-      { url: '/favicon.png', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon.png', sizes: '16x16', type: 'image/png' },
-    ],
-    apple: [
-      { url: '/favicon.png', sizes: '180x180', type: 'image/png' },
-    ],
-    shortcut: '/favicon.png',
-  },
+    icons: {
+      icon: [
+        { url: '/icon.png', type: 'image/png' },
+        { url: '/icon.png', sizes: '32x32', type: 'image/png' },
+        { url: '/icon.png', sizes: '16x16', type: 'image/png' },
+      ],
+      apple: [
+        { url: '/icon.png', sizes: '180x180', type: 'image/png' },
+      ],
+      shortcut: '/icon.png',
+    },
 };
 
 export default async function RootLayout({
