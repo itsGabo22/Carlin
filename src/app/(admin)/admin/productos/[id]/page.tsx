@@ -10,6 +10,8 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import slugify from 'slugify';
 import Link from 'next/link';
+import { FieldHint } from '@/components/admin/FieldHint';
+import { Tooltip } from '@/components/admin/Tooltip';
 
 export default function AdminProductEditPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
@@ -161,11 +163,13 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
               <div className="space-y-2">
                 <label className="text-sm font-medium">Nombre</label>
                 <Input required value={formData.name} onChange={handleNameChange} placeholder="Ej: Base Líquida Matte" />
+                <FieldHint text="Escribe el nombre tal como lo verán tus clientes. Ej: 'Base Líquida Matte OG Tono Natural'" />
               </div>
               
               <div className="space-y-2">
                 <label className="text-sm font-medium">Slug</label>
                 <Input required value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} placeholder="base-liquida-matte" />
+                <FieldHint text="Se genera automáticamente desde el nombre. Es la dirección del producto en la web. No uses espacios ni tildes." type="warning" />
               </div>
               
               <div className="space-y-2">
@@ -176,16 +180,19 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
                   onChange={(e) => setFormData({...formData, description: e.target.value})}
                   placeholder="Descripción detallada del producto..."
                 />
+                <FieldHint text="Describe el producto: tipo, uso, beneficios. Una buena descripción ayuda a que los clientes encuentren el producto en el buscador." />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">SKU</label>
                   <Input value={formData.sku} onChange={(e) => setFormData({...formData, sku: e.target.value})} placeholder="Ej: MAQ-001" />
+                  <FieldHint text="Código interno de referencia. Ej: OG-BASE-001. Opcional pero útil para controlar inventario." />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Unidad de venta</label>
                   <Input value={formData.unit} onChange={(e) => setFormData({...formData, unit: e.target.value})} placeholder="Ej: unidad, caja x12" />
+                  <FieldHint text='Cómo se vende la unidad. Ej: "unidad", "kit de 12", "caja x6", "display x24".' />
                 </div>
               </div>
             </CardContent>
@@ -195,6 +202,18 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
             <CardContent className="p-6 space-y-4">
               <h2 className="text-lg font-semibold border-b pb-2">Precios e Inventario</h2>
               
+              <div className="bg-brand-pink-light/30 border border-brand-pink/20 rounded-xl p-3 mb-4">
+                <p className="text-xs font-semibold text-brand-pink-dark mb-1">
+                  💡 ¿Cómo funcionan los precios?
+                </p>
+                <ul className="text-xs text-neutral-600 space-y-0.5">
+                  <li>• <strong>Precio público:</strong> lo ven todos los visitantes sin cuenta.</li>
+                  <li>• <strong>Precio mayorista:</strong> lo ven los mayoristas aprobados (mínimo $200.000).</li>
+                  <li>• <strong>Precio distribuidor:</strong> lo ven los distribuidores aprobados (mínimo $400.000).</li>
+                  <li>• <strong>Precio comparativo:</strong> opcional. Si es mayor al público, se muestra tachado como oferta.</li>
+                </ul>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Precio Público</label>
@@ -218,6 +237,7 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Stock</label>
                   <Input type="number" required value={formData.stock} onChange={(e) => setFormData({...formData, stock: parseInt(e.target.value)})} />
+                  <FieldHint text="Cuando confirmes un pedido desde 'Pedidos', el stock baja automáticamente." type="tip" />
                 </div>
               </div>
             </CardContent>
@@ -233,6 +253,7 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
                   onKeyDown={handleAddTone}
                   placeholder="Escribe un tono y presiona Enter" 
                 />
+                <FieldHint text='Escribe cada tono y presiona Enter para agregarlo. Ej: "Natural", "Traslúcido", "Rosa Nude". Aparecerá en la ficha del producto.' />
                 <div className="flex flex-wrap gap-2 pt-2">
                   {formData.tones.map((tone, idx) => (
                     <span key={idx} className="px-3 py-1 bg-gray-100 rounded-md text-sm flex items-center gap-2 border">
@@ -288,7 +309,10 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
                 
                 <label className="flex items-center gap-2 cursor-pointer">
                   <input type="checkbox" checked={formData.featured} onChange={(e) => setFormData({...formData, featured: e.target.checked})} className="rounded text-brand-pink focus:ring-brand-pink" />
-                  <span className="text-sm font-medium">Destacado (Home)</span>
+                  <span className="text-sm font-medium">
+                    Destacado (Home)
+                    <Tooltip text="Los productos destacados aparecen en la sección 'Lo más vendido' de la página de inicio." />
+                  </span>
                 </label>
               </div>
             </CardContent>
@@ -300,6 +324,17 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
                 Imágenes
                 <span className="text-xs text-gray-500 font-normal">{formData.imageUrls.length}/3</span>
               </h2>
+
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+                <p className="text-xs font-semibold text-amber-700 mb-1">
+                  📸 Cómo agregar imágenes
+                </p>
+                <ol className="text-xs text-amber-700 space-y-0.5 list-decimal list-inside">
+                  <li>Ve a <strong>Imágenes</strong> en el menú izquierdo y sube las fotos.</li>
+                  <li>Vuelve aquí y haz clic en <strong>"Seleccionar de bandeja"</strong>.</li>
+                  <li>Máximo 3 imágenes por producto.</li>
+                </ol>
+              </div>
 
               {/* Current Images */}
               {formData.imageUrls.length > 0 && (

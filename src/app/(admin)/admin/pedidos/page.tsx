@@ -21,6 +21,28 @@ export default async function AdminPedidosPage() {
         </div>
       </div>
 
+      <div className="bg-brand-pink-light/30 border border-brand-pink/20 rounded-xl p-4 mb-6">
+        <p className="text-sm font-semibold text-brand-pink-dark mb-2">
+          📋 Flujo de pedidos
+        </p>
+        <div className="flex items-start gap-2 text-xs text-neutral-600">
+          <div className="flex flex-col gap-1 w-full">
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center font-bold flex-shrink-0">1</span>
+              <span>El cliente genera el pedido desde el carrito → abre WhatsApp con el resumen.</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold flex-shrink-0">2</span>
+              <span>El pedido aparece aquí como <strong>Pendiente</strong>. Coordina el pago con el cliente por WhatsApp.</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-6 h-6 rounded-full bg-green-100 text-green-700 flex items-center justify-center font-bold flex-shrink-0">3</span>
+              <span>Al confirmar el pedido, el stock se descuenta automáticamente.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <PedidosClient initialOrders={pedidos as any} />
     </div>
   );

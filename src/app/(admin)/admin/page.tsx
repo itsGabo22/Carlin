@@ -11,12 +11,14 @@ export default async function AdminDashboardPage() {
     totalProducts,
     totalBrands,
     pendingWholesalers,
-    pendingOrders
+    pendingOrders,
+    categoryCount
   ] = await Promise.all([
     prisma.product.count({ where: { active: true } }),
     prisma.brand.count(),
     prisma.wholesaleUser.count({ where: { approved: false } }),
-    prisma.order.count({ where: { status: 'PENDING' } })
+    prisma.order.count({ where: { status: 'PENDING' } }),
+    prisma.category.count()
   ]);
 
   return (
@@ -25,6 +27,33 @@ export default async function AdminDashboardPage() {
         <h1 className="text-2xl font-bold font-nunito text-gray-900">Dashboard</h1>
         <p className="text-gray-500">Resumen general de tu tienda Carlin Cosméticos.</p>
       </div>
+
+      {totalProducts === 0 && (
+        <div className="bg-white border border-brand-pink/20 rounded-2xl p-5 mb-6">
+          <p className="font-semibold text-brand-neutral-dark mb-3">
+            🚀 Guía de inicio rápido
+          </p>
+          <div className="space-y-3">
+            {[
+              { step: 1, done: totalBrands > 0,   text: 'Crea las marcas de tus productos',        href: '/admin/marcas' },
+              { step: 2, done: categoryCount > 0, text: 'Crea las categorías del catálogo',        href: '/admin/categorias' },
+              { step: 3, done: false,             text: 'Sube las fotos en la bandeja de imágenes', href: '/admin/imagenes' },
+              { step: 4, done: totalProducts > 0,  text: 'Agrega tus productos',                    href: '/admin/productos/nuevo' },
+              { step: 5, done: false,             text: 'Personaliza el inicio de la web',          href: '/admin/configuracion' },
+            ].map(({ step, done, text, href }) => (
+              <Link key={step} href={href}
+                className="flex items-center gap-3 group">
+                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 transition-colors ${done ? 'bg-green-100 text-green-600' : 'bg-brand-pink-light text-brand-pink-dark'}`}>
+                  {done ? '✓' : step}
+                </span>
+                <span className={`text-sm transition-colors group-hover:text-brand-pink-dark ${done ? 'line-through text-neutral-400' : 'text-neutral-700'}`}>
+                  {text}
+                </span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
