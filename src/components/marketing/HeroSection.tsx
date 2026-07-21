@@ -74,7 +74,7 @@ export function HeroSection({ slides = [] }: { slides?: any[] }) {
     >
       {/* Background Slides */}
       {!hasSlides || mediaError ? (
-        <m.div style={{ y: prefersReducedMotion ? 0 : shapesY }} className="absolute inset-0 overflow-hidden -z-20">
+        <m.div style={{ y: prefersReducedMotion ? 0 : shapesY }} className="absolute inset-0 overflow-hidden z-0">
           <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #FFC8E3 0%, #FB9CD0 40%, #E05FA0 75%, #B5179E 100%)' }} />
           <div className="hero-shape absolute -top-20 -right-20 w-96 h-96 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #FFFFFF 0%, transparent 70%)', animation: 'float-slow 12s ease-in-out infinite' }} />
           <div className="hero-shape absolute top-1/3 -left-16 w-64 h-64 rounded-full border-2 border-white/25 pointer-events-none" style={{ animation: 'float-medium 9s ease-in-out infinite 1s' }} />
@@ -91,7 +91,7 @@ export function HeroSection({ slides = [] }: { slides?: any[] }) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1, ease: "easeInOut" }}
-            className="absolute inset-0 w-full h-full -z-20"
+            className="absolute inset-0 w-full h-full z-0"
           >
             {slides[currentSlide].type === 'VIDEO' ? (
               <video 

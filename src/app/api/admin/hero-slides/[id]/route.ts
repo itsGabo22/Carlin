@@ -10,6 +10,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const { id } = await params;
     const formData = await req.formData();
     
+    const existingSlide = await prisma.heroSlide.findUnique({ where: { id } });
+    if (!existingSlide) {
+      return NextResponse.json({ error: 'Slide no encontrado' }, { status: 404 });
+    }
+
     const type = formData.get('type') as 'IMAGE' | 'VIDEO' || 'IMAGE';
     const title = formData.get('title') as string || null;
     const subtitle = formData.get('subtitle') as string || null;
@@ -17,8 +22,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const ctaHref = formData.get('ctaHref') as string || null;
     const active = formData.get('active') === 'true';
     
-    let desktopUrl = formData.get('desktopUrl') as string || '';
-    let mobileUrl = formData.get('mobileUrl') as string || null;
+    let desktopUrl = formData.get('desktopUrl') as string || existingSlide.desktopUrl;
+    let mobileUrl = formData.get('mobileUrl') as string || existingSlide.mobileUrl;
     
     const desktopFile = formData.get('desktop') as File | null;
     const mobileFile = formData.get('mobile') as File | null;
