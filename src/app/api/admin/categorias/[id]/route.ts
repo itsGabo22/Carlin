@@ -4,8 +4,7 @@ import slugify from 'slugify';
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
+    const { id } = await params;
     const { name, slug, description, imageUrl, parentId, groupByBrand } = await req.json();
     const finalSlug = slug || slugify(name, { lower: true, strict: true });
 
@@ -30,8 +29,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
 export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
+    const { id } = await params;
 
     // Check for active products and children
     const [activeProducts, childrenCount] = await Promise.all([

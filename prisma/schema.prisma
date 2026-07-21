@@ -27,6 +27,11 @@ enum DiscountAudience {
   DISTRIBUTOR
 }
 
+enum HeroSlideType {
+  IMAGE
+  VIDEO
+}
+
 enum PriceLevel {
   RETAIL
   WHOLESALE
@@ -44,6 +49,20 @@ model SiteConfig {
   announcementActive  Boolean  @default(false)
   heroUseVideo        Boolean  @default(false)
   updatedAt           DateTime @updatedAt
+}
+
+model HeroSlide {
+  id             String        @id @default(cuid())
+  type           HeroSlideType @default(IMAGE)
+  desktopUrl     String        
+  mobileUrl      String?       
+  title          String?       
+  subtitle       String?       
+  ctaText        String?       
+  ctaHref        String?       
+  order          Int           @default(0)
+  active         Boolean       @default(true)
+  createdAt      DateTime      @default(now())
 }
 
 model Category {

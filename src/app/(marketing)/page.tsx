@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   // Fetch required data in parallel
-  const [config, categories, brands, latestProducts, popularProducts] = await Promise.all([
+  const [config, categories, brands, latestProducts, popularProducts, slides] = await Promise.all([
     prisma.siteConfig.findUnique({ where: { id: 'singleton' } }),
     prisma.category.findMany({
       where: { parentId: null },
@@ -35,6 +35,10 @@ export default async function HomePage() {
       where: { active: true, tags: { some: { tag: { name: 'Top' } } } },
       include: { brand: true, category: true, tags: { include: { tag: true } }, discounts: true },
       take: 4
+    }),
+    prisma.heroSlide.findMany({
+      where: { active: true },
+      orderBy: { order: 'asc' }
     })
   ]);
 
@@ -58,7 +62,7 @@ export default async function HomePage() {
 
   return (
     <main className="overflow-hidden">
-      <HeroSection useVideo={config?.heroUseVideo ?? false} />
+      <HeroSection slides={slides} />
       <CategoryBar categories={categories as any} />
       <NovedadesSection products={formattedLatestProducts} priceLevel={sessionResult.priceLevel} />
       <WholesaleBanner />

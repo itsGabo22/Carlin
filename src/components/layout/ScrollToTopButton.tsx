@@ -3,8 +3,10 @@
 import * as React from 'react';
 import { m, useScroll, useTransform, AnimatePresence, LazyMotion, domAnimation } from 'framer-motion';
 import { ArrowUp } from 'lucide-react';
+import { usePathname } from 'next/navigation';
 
 export function ScrollToTopButton() {
+  const pathname = usePathname();
   const { scrollYProgress } = useScroll();
   
   // Mostrar el botón solo después de hacer algo de scroll (5% de la página)
@@ -20,6 +22,10 @@ export function ScrollToTopButton() {
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  if (pathname.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <LazyMotion features={domAnimation}>

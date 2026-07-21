@@ -23,12 +23,15 @@ function WhatsAppIcon({ size = 28 }: { size?: number }) {
   );
 }
 
+import { usePathname } from 'next/navigation';
+
 // ─── WhatsAppButton component ─────────────────────────────────────────────────
 // z-index: 40 — above sticky header (z-30) but below Modal overlay (z-50),
 // so modals from Phase 1.2 always appear on top.
 export function WhatsAppButton() {
-  if (!whatsappNumber) {
-    // If the env var is missing, render nothing to avoid a broken link.
+  const pathname = usePathname();
+  if (!whatsappNumber || pathname.startsWith('/admin')) {
+    // If the env var is missing or we are in admin panel, render nothing.
     return null;
   }
 

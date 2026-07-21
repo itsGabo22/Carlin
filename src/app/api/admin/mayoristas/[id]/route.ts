@@ -4,8 +4,7 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const resolvedParams = await params;
-    const { id } = resolvedParams;
+    const { id } = await params;
     const body = await req.json();
     const { action, role } = body;
 

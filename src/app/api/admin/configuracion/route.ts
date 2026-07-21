@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
+import sharp from 'sharp';
 
 export async function GET() {
   try {
@@ -23,9 +26,6 @@ export async function GET() {
     return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
   }
 }
-
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
-import sharp from 'sharp';
 
 export async function PATCH(req: Request) {
   try {
@@ -84,6 +84,9 @@ export async function PATCH(req: Request) {
         heroUseVideo,
       }
     });
+    
+    revalidatePath('/');
+    revalidatePath('/catalogo');
 
     return NextResponse.json(config);
   } catch (error) {

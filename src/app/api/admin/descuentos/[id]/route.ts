@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function PATCH(req: Request, props: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await props.params;
+    const { id } = await params;
     const body = await req.json();
     const discount = await prisma.discount.update({
       where: { id },
@@ -26,9 +26,9 @@ export async function PATCH(req: Request, props: { params: Promise<{ id: string 
   }
 }
 
-export async function DELETE(req: Request, props: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = await props.params;
+    const { id } = await params;
     await prisma.discount.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
