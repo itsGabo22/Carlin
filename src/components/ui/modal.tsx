@@ -49,8 +49,7 @@ export function Modal({
                   exit={{ opacity: 0, scale: 0.95, y: 8 }}
                   transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
                   className={cn(
-                    'relative w-full max-w-lg rounded-xl border border-brand-neutral-200 bg-brand-pearl p-6 shadow-xl dark:border-brand-neutral-800 dark:bg-brand-neutral-900 focus:outline-none',
-                    glass && 'backdrop-blur-md bg-white/40 border-white/30 dark:bg-brand-neutral-900/40 dark:border-white/10',
+                    'relative w-full max-w-lg rounded-xl border border-brand-neutral-200 bg-white p-6 shadow-xl dark:border-brand-neutral-800 dark:bg-zinc-950 focus:outline-none',
                     className
                   )}
                 >
