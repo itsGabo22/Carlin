@@ -341,22 +341,28 @@ export default function AdminConfiguracionPage() {
             </div>
           </div>
 
-          <div className="space-y-4 pt-4 border-t">
+          <div className="space-y-4 pt-4 border-t border-gray-100">
             {slideForm.type === 'IMAGE' ? (
-              <>
-                <div>
-                  <label className="text-sm font-medium block mb-2">Imagen Desktop (Requerido)</label>
-                  <input type="file" accept="image/*" onChange={e => setSlideUploads({...slideUploads, desktop: e.target.files?.[0] || null})} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="relative border-2 border-dashed border-gray-200 hover:border-brand-pink hover:bg-brand-pink/5 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group">
+                  <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={e => setSlideUploads({...slideUploads, desktop: e.target.files?.[0] || null})} />
+                  <Monitor className="text-gray-400 group-hover:text-brand-pink mb-3 transition-colors" size={40} strokeWidth={1.5} />
+                  <p className="text-sm font-semibold text-gray-700">Desktop (1920x1080)</p>
+                  <p className="text-xs text-gray-500 mt-1">{slideUploads.desktop ? slideUploads.desktop.name : 'Haz clic o arrastra'}</p>
                 </div>
-                <div>
-                  <label className="text-sm font-medium block mb-2">Imagen Mobile (Opcional, 9:16)</label>
-                  <input type="file" accept="image/*" onChange={e => setSlideUploads({...slideUploads, mobile: e.target.files?.[0] || null})} />
+                <div className="relative border-2 border-dashed border-gray-200 hover:border-brand-pink hover:bg-brand-pink/5 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group">
+                  <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={e => setSlideUploads({...slideUploads, mobile: e.target.files?.[0] || null})} />
+                  <Smartphone className="text-gray-400 group-hover:text-brand-pink mb-3 transition-colors" size={40} strokeWidth={1.5} />
+                  <p className="text-sm font-semibold text-gray-700">Mobile (1080x1920)</p>
+                  <p className="text-xs text-gray-500 mt-1">{slideUploads.mobile ? slideUploads.mobile.name : 'Opcional, haz clic aquí'}</p>
                 </div>
-              </>
+              </div>
             ) : (
-              <div>
-                <label className="text-sm font-medium block mb-2">Archivo Video (mp4/webm)</label>
-                <input type="file" accept="video/mp4, video/webm" onChange={e => setSlideUploads({...slideUploads, video: e.target.files?.[0] || null})} />
+              <div className="relative border-2 border-dashed border-gray-200 hover:border-purple-500 hover:bg-purple-50 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group">
+                <input type="file" accept="video/mp4, video/webm" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={e => setSlideUploads({...slideUploads, video: e.target.files?.[0] || null})} />
+                <Video className="text-gray-400 group-hover:text-purple-500 mb-3 transition-colors" size={48} strokeWidth={1.5} />
+                <p className="text-sm font-semibold text-gray-700">Subir Video (MP4/WebM)</p>
+                <p className="text-xs text-gray-500 mt-1">{slideUploads.video ? slideUploads.video.name : 'Haz clic o arrastra tu archivo'}</p>
               </div>
             )}
           </div>
