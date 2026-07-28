@@ -217,4 +217,29 @@
   @media (prefers-reduced-motion: reduce) {
     .hero-shape { animation: none !important; }
   }
+
+  /* Category bar kawaii section */
+  @keyframes carlin-bubble-rise {
+    0%   { transform: translateY(0) scale(1);   opacity: 0; }
+    10%  { opacity: 0.2; }
+    90%  { opacity: 0.15; }
+    100% { transform: translateY(-600px) scale(1.15); opacity: 0; }
+  }
+
+  @keyframes carlin-sparkle {
+    0%, 100% { opacity: 0;   transform: scale(0.4) rotate(0deg);   }
+    50%       { opacity: 0.6; transform: scale(1)   rotate(180deg); }
+  }
+
+  @keyframes carlin-float-icon {
+    0%, 100% { transform: translateY(0px)   rotate(-2deg); }
+    50%       { transform: translateY(-10px) rotate(2deg);  }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .carlin-bubble,
+    .carlin-sparkle-dot,
+    .carlin-sparkle-star,
+    .carlin-cat-circle { animation: none !important; }
+  }
 }
