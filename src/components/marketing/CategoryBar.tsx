@@ -47,8 +47,8 @@ export function CategoryBar({ categories }: CategoryBarProps) {
               transition={{ type: 'spring', stiffness: 400, damping: 25 }}
             >
               <Link href={`/catalogo/${cat.slug}`} className="flex flex-col items-center gap-2 group">
-                <div className="w-16 h-16 rounded-full bg-brand-pink-light border-2 border-brand-pink/20 flex items-center justify-center transition-all duration-300 group-hover:bg-brand-pink group-hover:border-brand-pink group-hover:shadow-[0_4px_20px_rgba(251,156,208,0.4)] group-hover:[&_.cat-icon]:icon-white">
-                  <CategoryIcon slug={cat.slug} size={28} className="cat-icon icon-pink transition-all duration-300" />
+                <div className="w-16 h-16 rounded-full bg-brand-pink-light border-2 border-brand-pink/20 flex items-center justify-center transition-all duration-300 overflow-hidden group-hover:bg-brand-pink/20 group-hover:border-brand-pink group-hover:shadow-[0_4px_20px_rgba(251,156,208,0.4)]">
+                  <CategoryIcon slug={cat.slug} size={44} />
                 </div>
                 <span className="text-xs font-sans uppercase tracking-wider text-brand-neutral-dark group-hover:text-brand-pink-dark transition-colors duration-300 text-center max-w-[80px] leading-tight">
                   {cat.name}

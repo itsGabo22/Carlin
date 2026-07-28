@@ -6,24 +6,25 @@ interface CategoryIconProps {
   className?: string
 }
 
-// Slugs que tienen ícono personalizado
-const ICON_SLUGS = [
-  'maquillaje-y-accesorios',
-  'cuidado-facial-y-capilar',
-  'ojos',
-  'labios',
-  'rostro',
-  'brochas-y-herramientas',
-  'accesorios-cosmeticos',
-  'facial-por-marca',
-  'capilar-por-marca',
-]
+// Map category slugs to their PNG icon files
+const ICON_MAP: Record<string, string> = {
+  'maquillaje':       '/icons/categories/makeup.png',
+  'accesorios':       '/icons/categories/accesories.png',
+  'cuidado-facial':   '/icons/categories/skincare.png',
+  'cuidado-capilar':  '/icons/categories/haircare.png',
+  // Keep fallbacks for any old slugs that might still exist:
+  'maquillaje-y-accesorios':    '/icons/categories/makeup.png',
+  'cuidado-facial-y-capilar':   '/icons/categories/skincare.png',
+}
+
+const DEFAULT_ICON = '/icons/categories/makeup.png'
 
 export default function CategoryIcon({
-  slug, size = 32, className = ''
+  slug,
+  size = 56,
+  className = ''
 }: CategoryIconProps) {
-  const hasIcon = ICON_SLUGS.includes(slug)
-  const src = `/icons/categories/${hasIcon ? slug : 'maquillaje-y-accesorios'}.svg`
+  const src = ICON_MAP[slug] ?? DEFAULT_ICON
 
   return (
     <Image
@@ -32,7 +33,7 @@ export default function CategoryIcon({
       width={size}
       height={size}
       unoptimized
-      className={className}
+      className={`object-contain drop-shadow-sm ${className}`}
       aria-hidden="true"
     />
   )

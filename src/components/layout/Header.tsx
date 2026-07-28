@@ -14,6 +14,10 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 
+// Orden de despliegue de las 4 secciones planas del menú (ver PROMPT 2).
+// Solo controla el orden visual; nombres, slugs e hijos vienen de categoriesTree.
+const NAV_ORDER = ['maquillaje', 'accesorios', 'cuidado-facial', 'cuidado-capilar'];
+
 interface HeaderProps {
   announcementText?: string;
   announcementActive?: boolean;
@@ -79,8 +83,16 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
     setOpenMenuId((prev) => (prev === id ? null : id));
   };
 
-  const makeupCategory = categoriesTree.find(c => c.slug === 'maquillaje-y-accesorios');
-  const careCategory = categoriesTree.find(c => c.slug === 'cuidado-facial-y-capilar');
+  const orderedCategories = React.useMemo(() => {
+    return [...categoriesTree].sort((a, b) => {
+      const ai = NAV_ORDER.indexOf(a.slug);
+      const bi = NAV_ORDER.indexOf(b.slug);
+      if (ai === -1 && bi === -1) return a.name.localeCompare(b.name);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+  }, [categoriesTree]);
 
   return (
     <>
@@ -134,56 +146,46 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-8">
-            {makeupCategory && (
-              <div className="relative">
-                <button
-                  onClick={() => toggleMenu('makeup')}
-                  className="font-nunito text-sm font-bold text-brand-text hover:text-brand-pink-dark transition-colors flex items-center gap-1"
-                >
-                  Maquillaje y Accesorios
-                </button>
-                {openMenuId === 'makeup' && (
-                  <div className="absolute top-full left-0 mt-4 w-[600px] bg-white rounded-2xl shadow-xl border border-brand-pink-light/20 p-6 grid grid-cols-3 gap-6">
-                    {makeupCategory.children?.map(sub => (
-                      <div key={sub.id} className="flex flex-col gap-2">
-                        <Link href={`/catalogo/maquillaje-y-accesorios/${sub.slug}`} className="font-nunito font-bold text-brand-pink-dark hover:underline" onClick={() => setOpenMenuId(null)}>
+            {orderedCategories.map(cat => {
+              const hasChildren = !!cat.children && cat.children.length > 0;
+
+              if (!hasChildren) {
+                return (
+                  <Link
+                    key={cat.id}
+                    href={`/catalogo/${cat.slug}`}
+                    className="font-nunito text-sm font-bold text-brand-text hover:text-brand-pink-dark transition-colors"
+                  >
+                    {cat.name}
+                  </Link>
+                );
+              }
+
+              return (
+                <div key={cat.id} className="relative">
+                  <button
+                    onClick={() => toggleMenu(cat.id)}
+                    className="font-nunito text-sm font-bold text-brand-text hover:text-brand-pink-dark transition-colors flex items-center gap-1"
+                  >
+                    {cat.name}
+                  </button>
+                  {openMenuId === cat.id && (
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-[420px] bg-white rounded-2xl shadow-xl border border-brand-pink-light/20 p-6 grid grid-cols-2 gap-x-6 gap-y-3">
+                      {cat.children!.map(sub => (
+                        <Link
+                          key={sub.id}
+                          href={`/catalogo/${cat.slug}/${sub.slug}`}
+                          className="font-nunito font-bold text-brand-pink-dark hover:underline"
+                          onClick={() => setOpenMenuId(null)}
+                        >
                           {sub.name}
                         </Link>
-                        {/* If children of subcategory exist they would go here */}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {careCategory && (
-              <div className="relative">
-                <button
-                  onClick={() => toggleMenu('care')}
-                  className="font-nunito text-sm font-bold text-brand-text hover:text-brand-pink-dark transition-colors flex items-center gap-1"
-                >
-                  Cuidado Facial y Capilar
-                </button>
-                {openMenuId === 'care' && (
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-[400px] bg-white rounded-2xl shadow-xl border border-brand-pink-light/20 p-6 flex justify-between gap-6">
-                    <div className="flex flex-col gap-3 w-1/2 border-r border-gray-100 pr-4">
-                      <span className="font-nunito font-bold text-brand-pink-dark">Cuidado Facial</span>
-                      <Link href="/marca/dolce-bella" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>Dolce Bella</Link>
-                      <Link href="/marca/og" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>OG</Link>
-                      <Link href="/marca/pin-up-glow" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>Pin Up Glow</Link>
+                      ))}
                     </div>
-                    <div className="flex flex-col gap-3 w-1/2 pl-2">
-                      <span className="font-nunito font-bold text-brand-pink-dark">Cuidado Capilar</span>
-                      <Link href="/marca/poccion" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>Pocción</Link>
-                      <Link href="/marca/milagros" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>Milagros</Link>
-                      <Link href="/marca/anyluz" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>Anyluz</Link>
-                      <Link href="/marca/kaba" className="text-sm text-gray-600 hover:text-brand-pink" onClick={() => setOpenMenuId(null)}>KABA</Link>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+                  )}
+                </div>
+              );
+            })}
 
             <Link
               href="/mayoristas/login"

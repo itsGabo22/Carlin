@@ -217,12 +217,4 @@
   @media (prefers-reduced-motion: reduce) {
     .hero-shape { animation: none !important; }
   }
-
-  .icon-pink {
-    filter: brightness(0) saturate(100%) invert(65%) sepia(40%) saturate(600%) hue-rotate(290deg) brightness(100%) contrast(95%);
-  }
-
-  .icon-white {
-    filter: brightness(0) invert(1);
-  }
 }

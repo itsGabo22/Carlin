@@ -195,6 +195,18 @@ model OrderItem {
   imageUrl      String?
 }
 
+model PromoPopup {
+  id        String   @id @default("singleton")
+  active    Boolean  @default(false)
+  imageUrl  String?
+  title     String?
+  subtitle  String?
+  ctaText   String?  @default("Ver oferta")
+  ctaHref   String?
+  showOnce  Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
 model ImageBandeja {
   id        String   @id @default(cuid())
   url       String

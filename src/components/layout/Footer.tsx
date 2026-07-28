@@ -35,8 +35,8 @@ function TikTokIcon({ size = 18 }: { size?: number }) {
 }
 
 const CATALOG_LINKS = [
-  { label: 'Maquillaje y Accesorios', href: '/catalogo/maquillaje-y-accesorios' },
-  { label: 'Cuidado Facial y Capilar', href: '/catalogo/cuidado-facial-y-capilar' },
+  { label: 'Maquillaje y Accesorios', href: '/catalogo/maquillaje' },
+  { label: 'Cuidado Facial y Capilar', href: '/catalogo/cuidado-facial' },
   { label: 'Ver todo', href: '/catalogo' },
   { label: 'Buscar', href: '/buscar' },
 ];

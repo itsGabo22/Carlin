@@ -4,6 +4,7 @@ import { NovedadesSection } from '@/components/marketing/NovedadesSection';
 import { MasVendidosSection } from '@/components/marketing/MasVendidosSection';
 import { MarcasSection } from '@/components/marketing/MarcasSection';
 import { WholesaleBanner } from '@/components/marketing/WholesaleBanner';
+import { PromoPopup } from '@/components/marketing/PromoPopup';
 import { prisma } from '@/lib/prisma';
 import type { Metadata } from 'next';
 import { getSessionResult } from '@/lib/auth/carlin-session';
@@ -15,7 +16,7 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   // Fetch required data in parallel
-  const [config, categories, brands, latestProducts, popularProducts, slides] = await Promise.all([
+  const [config, categories, brands, latestProducts, popularProducts, slides, promoPopup] = await Promise.all([
     prisma.siteConfig.findUnique({ where: { id: 'singleton' } }),
     prisma.category.findMany({
       where: { parentId: null },
@@ -39,7 +40,8 @@ export default async function HomePage() {
     prisma.heroSlide.findMany({
       where: { active: true },
       orderBy: { order: 'asc' }
-    })
+    }),
+    prisma.promoPopup.findUnique({ where: { id: 'singleton' } })
   ]);
 
   const sessionResult = await getSessionResult(config!);
@@ -68,6 +70,7 @@ export default async function HomePage() {
       <WholesaleBanner />
       <MasVendidosSection products={finalPopular} priceLevel={sessionResult.priceLevel} />
       <MarcasSection brands={brands as any} />
+      <PromoPopup popup={promoPopup} />
     </main>
   );
 }

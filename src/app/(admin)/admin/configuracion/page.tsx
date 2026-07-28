@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Save, UploadCloud, Monitor, Smartphone, Video, Plus, ArrowUp, ArrowDown, Trash2, Edit, Image as ImageIcon } from 'lucide-react';
+import { Settings, Save, UploadCloud, Monitor, Smartphone, Video, Plus, ArrowUp, ArrowDown, Trash2, Edit, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -37,12 +37,25 @@ export default function AdminConfiguracionPage() {
     video: null as File | null,
   });
 
+  const [popupLoading, setPopupLoading] = useState(false);
+  const [popup, setPopup] = useState({
+    active: false,
+    imageUrl: '',
+    title: '',
+    subtitle: '',
+    ctaText: 'Ver oferta',
+    ctaHref: '',
+    showOnce: true,
+  });
+  const [popupImage, setPopupImage] = useState<File | null>(null);
+
   const loadData = () => {
     setFetching(true);
     Promise.all([
       fetch('/api/admin/configuracion').then(r => r.json()),
-      fetch('/api/admin/hero-slides').then(r => r.json())
-    ]).then(([configData, slidesData]) => {
+      fetch('/api/admin/hero-slides').then(r => r.json()),
+      fetch('/api/admin/promo-popup').then(r => r.json())
+    ]).then(([configData, slidesData, popupData]) => {
       if (configData && !configData.error) {
         setConfig({
           announcementText: configData.announcementText || '',
@@ -55,7 +68,48 @@ export default function AdminConfiguracionPage() {
       if (slidesData && Array.isArray(slidesData)) {
         setSlides(slidesData);
       }
+      if (popupData && !popupData.error) {
+        setPopup({
+          active: popupData.active || false,
+          imageUrl: popupData.imageUrl || '',
+          title: popupData.title || '',
+          subtitle: popupData.subtitle || '',
+          ctaText: popupData.ctaText || 'Ver oferta',
+          ctaHref: popupData.ctaHref || '',
+          showOnce: popupData.showOnce ?? true,
+        });
+      }
     }).finally(() => setFetching(false));
+  };
+
+  const handleSavePopup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPopupLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append('active', popup.active.toString());
+      fd.append('title', popup.title);
+      fd.append('subtitle', popup.subtitle);
+      fd.append('ctaText', popup.ctaText);
+      fd.append('ctaHref', popup.ctaHref);
+      fd.append('showOnce', popup.showOnce.toString());
+      if (popupImage) fd.append('image', popupImage);
+
+      const res = await fetch('/api/admin/promo-popup', { method: 'PATCH', body: fd });
+      if (res.ok) {
+        const updated = await res.json();
+        setPopup(p => ({ ...p, imageUrl: updated.imageUrl || p.imageUrl }));
+        setPopupImage(null);
+        alert('Popup promocional guardado exitosamente');
+      } else {
+        alert('Error al guardar el popup');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error de conexión');
+    } finally {
+      setPopupLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -302,6 +356,80 @@ export default function AdminConfiguracionPage() {
               ))
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex justify-between items-center border-b pb-2">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Sparkles size={18} className="text-brand-pink" /> Popup Promocional
+            </h2>
+            <Button onClick={handleSavePopup} disabled={popupLoading} size="sm" className="bg-brand-pink hover:bg-brand-pink-dark text-white gap-2">
+              <Save size={16} />
+              {popupLoading ? 'Guardando...' : 'Guardar Popup'}
+            </Button>
+          </div>
+
+          <form onSubmit={handleSavePopup} className="space-y-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={popup.active}
+                onChange={e => setPopup({ ...popup, active: e.target.checked })}
+                className="rounded text-brand-pink focus:ring-brand-pink"
+              />
+              <span className="text-sm font-medium">Popup activo (se muestra al entrar al sitio)</span>
+            </label>
+
+            <div className="relative border-2 border-dashed border-gray-200 hover:border-brand-pink hover:bg-brand-pink/5 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group max-w-sm">
+              <input
+                type="file"
+                accept="image/*"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                onChange={e => setPopupImage(e.target.files?.[0] || null)}
+              />
+              {popup.imageUrl && !popupImage ? (
+                <img src={popup.imageUrl} alt="Popup preview" className="w-full h-32 object-cover rounded-lg mb-3" />
+              ) : (
+                <UploadCloud className="text-gray-400 group-hover:text-brand-pink mb-3 transition-colors" size={40} strokeWidth={1.5} />
+              )}
+              <p className="text-sm font-semibold text-gray-700">Imagen del popup</p>
+              <p className="text-xs text-gray-500 mt-1">{popupImage ? popupImage.name : 'Haz clic o arrastra tu archivo'}</p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Título</label>
+                <Input value={popup.title} onChange={e => setPopup({ ...popup, title: e.target.value })} placeholder="Ej: ¡20% OFF en brochas!" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Subtítulo</label>
+                <Input value={popup.subtitle} onChange={e => setPopup({ ...popup, subtitle: e.target.value })} placeholder="Ej: Solo por tiempo limitado" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Texto del botón</label>
+                <Input value={popup.ctaText} onChange={e => setPopup({ ...popup, ctaText: e.target.value })} placeholder="Ej: Ver brochas" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Link del botón</label>
+                <Input value={popup.ctaHref} onChange={e => setPopup({ ...popup, ctaHref: e.target.value })} placeholder="Ej: /catalogo/brochas-y-herramientas" />
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={popup.showOnce}
+                onChange={e => setPopup({ ...popup, showOnce: e.target.checked })}
+                className="rounded text-brand-pink focus:ring-brand-pink"
+              />
+              <span className="text-sm font-medium">Mostrar solo una vez por sesión (no reaparece tras cerrarlo)</span>
+            </label>
+          </form>
         </CardContent>
       </Card>
 
