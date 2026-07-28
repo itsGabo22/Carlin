@@ -144,42 +144,37 @@ export function Footer() {
             <h3 className="font-nunito text-xs font-semibold tracking-widest text-white uppercase mb-4">
               Contacto
             </h3>
-            <ul className="space-y-3 font-sans text-sm text-white/80" role="list">
-              <li>
-                <a href={`mailto:${CONTACT_EMAIL}`} className="flex items-center gap-2 hover:text-white transition-colors">
-                  <Mail size={16} className="text-brand-pink" />
-                  <span>{CONTACT_EMAIL}</span>
-                </a>
-              </li>
-              <li>
-                <a href={`tel:${CONTACT_PHONE.replace(/\s/g, '')}`} className="flex items-center gap-2 hover:text-white transition-colors">
-                  <Phone size={16} className="text-brand-pink" />
-                  <span>{CONTACT_PHONE}</span>
-                </a>
-              </li>
-              <li>
-                <a 
-                  href={`https://wa.me/${CONTACT_WHATSAPP}`} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 hover:text-white transition-colors"
-                >
-                  <MessageCircle size={16} className="text-brand-pink" />
-                  <span>Escríbenos por WhatsApp</span>
-                </a>
-              </li>
-              <li>
-                <a 
-                  href={CONTACT_MAPS_URL} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="flex items-start gap-2 hover:text-white transition-colors"
-                >
-                  <MapPin size={16} className="text-brand-pink mt-0.5 flex-shrink-0" />
-                  <span>{CONTACT_ADDRESS}</span>
-                </a>
-              </li>
-            </ul>
+            <div className="flex flex-col gap-3 font-sans text-sm">
+              <a href={`mailto:${CONTACT_EMAIL}`} className="flex items-center gap-2 text-white/80 hover:text-white transition-colors">
+                <Mail className="w-4 h-4 flex-shrink-0" />
+                <span>{CONTACT_EMAIL}</span>
+              </a>
+
+              <a href={`tel:${CONTACT_PHONE.replace(/\s/g, '')}`} className="flex items-center gap-2 text-white/80 hover:text-white transition-colors">
+                <Phone className="w-4 h-4 flex-shrink-0" />
+                <span>{CONTACT_PHONE}</span>
+              </a>
+
+              <a
+                href={`https://wa.me/${CONTACT_WHATSAPP}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+              >
+                <MessageCircle className="w-4 h-4 flex-shrink-0" />
+                <span>Escríbenos por WhatsApp</span>
+              </a>
+
+              <a
+                href={CONTACT_MAPS_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-white/80 hover:text-white transition-colors"
+              >
+                <MapPin className="w-4 h-4 flex-shrink-0" />
+                <span>{CONTACT_ADDRESS}</span>
+              </a>
+            </div>
 
             <div className="h-px w-full bg-white/20 my-5" />
 
