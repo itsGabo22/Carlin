@@ -143,7 +143,7 @@ export function CategoryBar({ categories }: CategoryBarProps) {
             <m.div key={cat.id} variants={itemVariants(prefersReduced)}>
               <Link href={`/catalogo/${cat.slug}`} className="flex flex-col items-center gap-3 group">
                 <div
-                  className="carlin-cat-circle relative w-[90px] h-[90px] sm:w-[110px] sm:h-[110px] rounded-full bg-white border-[3px] border-[#FFBDE1] flex items-center justify-center transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(251,156,208,0.25)] group-hover:border-[#FB9CD0] group-hover:shadow-[0_12px_32px_rgba(251,156,208,0.45)]"
+                  className="carlin-cat-circle relative w-[90px] h-[90px] sm:w-[110px] sm:h-[110px] rounded-full bg-white border-[3px] border-[#FFBDE1] flex items-center justify-center overflow-hidden transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(251,156,208,0.25)] group-hover:border-[#FB9CD0] group-hover:shadow-[0_12px_32px_rgba(251,156,208,0.45)]"
                   style={{
                     animation: `carlin-float-icon ${3 + i * 0.7}s ease-in-out infinite`,
                     animationDelay: `${-i * 0.7}s`,
@@ -169,10 +169,10 @@ export function CategoryBar({ categories }: CategoryBarProps) {
                   <Image
                     src={ICON_MAP[cat.slug] ?? ICON_MAP.default}
                     alt={cat.name}
-                    width={100}
-                    height={100}
+                    width={80}
+                    height={80}
                     unoptimized
-                    className="w-full h-full object-contain scale-110 transition-transform duration-300 group-hover:scale-125"
+                    className="object-contain transition-transform duration-300 group-hover:scale-110"
                   />
                 </div>
 
