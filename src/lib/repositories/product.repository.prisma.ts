@@ -51,23 +51,16 @@ class PrismaProductRepository implements IProductRepository {
     const pageSize = options.pageSize || 24;
     const active = options.active !== undefined ? options.active : true;
 
-    const where: Prisma.ProductWhereInput = { active };
-
-    if (options.categorySlug) {
-      // Find category and all its children via parentId
-      const categories = await prisma.category.findMany({
-        where: {
-          OR: [
-            { slug: options.categorySlug },
-            { parent: { slug: options.categorySlug } }
-          ]
-        },
-        select: { id: true }
-      });
-      const categoryIds = categories.map(c => c.id);
-      
-      where.categoryId = { in: categoryIds };
-    }
+    const where: Prisma.ProductWhereInput = {
+      active,
+      ...(options.categorySlug && {
+        OR: [
+          { category: { slug: options.categorySlug } },
+          { category: { parent: { slug: options.categorySlug } } },
+          { category: { parent: { parent: { slug: options.categorySlug } } } },
+        ]
+      })
+    };
 
     if (options.brandSlug) {
       where.brand = { slug: options.brandSlug };

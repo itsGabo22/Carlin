@@ -165,10 +165,17 @@ export function MobileNav({ isOpen, onClose, categories }: MobileNavProps) {
           <div className="my-3 border-t border-brand-pink/15" />
 
           {/* Links secundarios */}
-          <Link href="/buscar" onClick={onClose} className="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-600 hover:bg-brand-pink-light hover:text-brand-pink-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink">
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              window.dispatchEvent(new CustomEvent('carlin:open-search'));
+            }}
+            className="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-600 hover:bg-brand-pink-light hover:text-brand-pink-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink text-left"
+          >
             <Search className="w-4 h-4 flex-shrink-0" />
             <span className="font-sans text-sm">Buscar</span>
-          </Link>
+          </button>
 
           <Link href="/carrito" onClick={onClose} className="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-600 hover:bg-brand-pink-light hover:text-brand-pink-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink">
             <ShoppingBag className="w-4 h-4 flex-shrink-0" />

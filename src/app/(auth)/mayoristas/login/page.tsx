@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase/client';
+import { Eye, EyeOff } from 'lucide-react';
 
 const formSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -20,6 +21,7 @@ type FormValues = z.infer<typeof formSchema>;
 export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
@@ -53,6 +55,15 @@ export default function LoginPage() {
 
   return (
     <div className="max-w-md mx-auto py-24 px-4">
+      <div className="text-center mb-6">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm text-brand-pink hover:text-brand-pink-dark transition-colors font-semibold"
+        >
+          ← Volver al inicio
+        </Link>
+      </div>
+
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-brand-pink-light/20">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-nunito font-bold text-gray-900 mb-2">Ingreso Mayoristas</h1>
@@ -74,7 +85,21 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Contraseña</label>
-            <Input type="password" {...register('password')} className={errors.password ? 'border-red-500' : ''} />
+            <div className="relative">
+              <Input
+                type={showPassword ? 'text' : 'password'}
+                {...register('password')}
+                className={`pr-10 ${errors.password ? 'border-red-500' : ''}`}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((prev) => !prev)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-brand-pink transition-colors min-w-[24px] min-h-[24px] flex items-center justify-center"
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Ver contraseña'}
+              >
+                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
             {errors.password && <p className="text-xs text-red-500 mt-1">{errors.password.message}</p>}
           </div>
 
@@ -86,6 +111,12 @@ export default function LoginPage() {
             ¿No tienes cuenta? <Link href="/registro-mayorista" className="text-brand-pink hover:underline">Regístrate aquí</Link>
           </p>
         </form>
+
+        <p className="text-center text-xs text-neutral-400 mt-4">
+          <Link href="/" className="hover:text-brand-pink transition-colors">
+            Volver a la tienda
+          </Link>
+        </p>
       </div>
     </div>
   );

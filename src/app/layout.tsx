@@ -2,9 +2,6 @@ import type { Metadata } from 'next';
 import { Inter, Nunito, Pacifico } from 'next/font/google';
 import './globals.css';
 
-import { WhatsAppButton } from '@/components/layout/WhatsAppButton';
-import { ScrollToTopButton } from '@/components/layout/ScrollToTopButton';
-
 const inter = Inter({
   variable: '--font-sans',
   subsets: ['latin'],
@@ -68,8 +65,6 @@ export default async function RootLayout({
         <main className="flex-1">
           {children}
         </main>
-        <ScrollToTopButton />
-        <WhatsAppButton />
       </body>
     </html>
   );

@@ -1,5 +1,7 @@
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
+import { WhatsAppButton } from '@/components/layout/WhatsAppButton';
+import { ScrollToTopButton } from '@/components/layout/ScrollToTopButton';
 import { categoryRepository, brandRepository } from '@/lib/repositories';
 import { getSessionResult } from '@/lib/auth/carlin-session';
 import { prisma } from '@/lib/prisma';
@@ -45,6 +47,8 @@ export default async function ShopLayout({
       />
       {children}
       <Footer />
+      <ScrollToTopButton />
+      <WhatsAppButton />
     </>
   );
 }

@@ -64,6 +64,14 @@ export default function RegistroMayoristaPage() {
   if (success) {
     return (
       <div className="max-w-md mx-auto py-24 px-4 text-center">
+        <div className="text-center mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-sm text-brand-pink hover:text-brand-pink-dark transition-colors font-semibold"
+          >
+            ← Volver al inicio
+          </Link>
+        </div>
         <div className="bg-brand-pink-light/20 p-6 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
           <svg className="w-12 h-12 text-brand-pink-dark" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -84,6 +92,15 @@ export default function RegistroMayoristaPage() {
 
   return (
     <div className="max-w-xl mx-auto py-12 px-4">
+      <div className="text-center mb-6">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-sm text-brand-pink hover:text-brand-pink-dark transition-colors font-semibold"
+        >
+          ← Volver al inicio
+        </Link>
+      </div>
+
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-brand-pink-light/20">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-nunito font-bold text-gray-900 mb-2">Registro para Mayoristas</h1>
@@ -173,6 +190,12 @@ export default function RegistroMayoristaPage() {
             ¿Ya tienes una cuenta? <Link href="/mayoristas/login" className="text-brand-pink hover:underline">Inicia sesión aquí</Link>
           </p>
         </form>
+
+        <p className="text-center text-xs text-neutral-400 mt-4">
+          <Link href="/" className="hover:text-brand-pink transition-colors">
+            Volver a la tienda
+          </Link>
+        </p>
       </div>
     </div>
   );

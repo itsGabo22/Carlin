@@ -63,6 +63,12 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
     return () => window.removeEventListener('keydown', handleKey);
   }, [searchOpen]);
 
+  React.useEffect(() => {
+    const handler = () => setSearchOpen(true);
+    window.addEventListener('carlin:open-search', handler);
+    return () => window.removeEventListener('carlin:open-search', handler);
+  }, []);
+
   const { scrollY } = useScroll();
 
   useMotionValueEvent(scrollY, 'change', (latest) => {
