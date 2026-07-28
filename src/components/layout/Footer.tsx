@@ -62,7 +62,7 @@ export function Footer() {
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '';
 
   return (
-    <footer className="bg-[#6B1A35] text-white/70 border-t border-brand-pink/20" aria-label="Pie de página">
+    <footer className="bg-[#FCE7F3] text-neutral-600 border-t border-brand-pink/30" aria-label="Pie de página">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           
@@ -79,7 +79,7 @@ export function Footer() {
                 Cosméticos
               </span>
             </Link>
-            <p className="font-sans text-sm text-white/60 leading-relaxed max-w-xs">
+            <p className="font-sans text-sm text-neutral-600 leading-relaxed max-w-xs">
               Catálogo mayorista de maquillaje, cuidado facial y accesorios. Precios especiales para mayoristas y distribuidores. Envíos a toda Colombia. 🚚
             </p>
             <div className="flex items-center gap-3 pt-2">
@@ -88,7 +88,7 @@ export function Footer() {
                   key={label}
                   href={href}
                   aria-label={label}
-                  className="flex items-center justify-center h-9 w-9 rounded-full border border-brand-pink/30 text-brand-pink hover:bg-brand-pink/20 hover:border-brand-pink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink"
+                  className="flex items-center justify-center h-9 w-9 rounded-full border border-brand-pink/40 text-brand-pink-dark hover:bg-brand-pink/20 hover:border-brand-pink transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink"
                 >
                   {icon}
                 </a>
@@ -98,7 +98,7 @@ export function Footer() {
 
           {/* ── Col 2: Catálogo ────────────────────────────── */}
           <div>
-            <h3 className="font-nunito text-xs font-bold tracking-widest text-brand-pink uppercase mb-4">
+            <h3 className="font-nunito text-xs font-bold tracking-widest text-brand-pink-dark uppercase mb-4">
               Catálogo
             </h3>
             <ul className="space-y-2.5" role="list">
@@ -106,7 +106,7 @@ export function Footer() {
                 <li key={href}>
                   <Link
                     href={href}
-                    className="font-sans text-sm text-white/60 hover:text-brand-pink transition-colors focus-visible:outline-none rounded-sm"
+                    className="font-sans text-sm text-neutral-600 hover:text-brand-pink-dark transition-colors focus-visible:outline-none rounded-sm"
                   >
                     {label}
                   </Link>
@@ -117,7 +117,7 @@ export function Footer() {
 
           {/* ── Col 3: Mayoristas ──────────────────────────────── */}
           <div>
-            <h3 className="font-nunito text-xs font-bold tracking-widest text-brand-pink uppercase mb-4">
+            <h3 className="font-nunito text-xs font-bold tracking-widest text-brand-pink-dark uppercase mb-4">
               Mayoristas
             </h3>
             <ul className="space-y-2.5" role="list">
@@ -125,7 +125,7 @@ export function Footer() {
                 <li key={href}>
                   <Link
                     href={href}
-                    className="font-sans text-sm text-white/60 hover:text-brand-pink transition-colors focus-visible:outline-none rounded-sm"
+                    className="font-sans text-sm text-neutral-600 hover:text-brand-pink-dark transition-colors focus-visible:outline-none rounded-sm"
                   >
                     {label}
                   </Link>
@@ -133,7 +133,7 @@ export function Footer() {
               ))}
             </ul>
             <div className="mt-5">
-              <span className="inline-block bg-brand-pink/15 border border-brand-pink/30 text-brand-pink rounded-full px-3 py-1 text-xs font-medium">
+              <span className="inline-block bg-brand-pink/30 border border-brand-pink/30 text-brand-pink rounded-full px-3 py-1 text-xs font-medium">
                 🎀 Sin mínimo por referencia
               </span>
             </div>
@@ -141,18 +141,18 @@ export function Footer() {
 
           {/* ── Col 4: Contacto ───────────────────────────── */}
           <div>
-            <h3 className="font-nunito text-xs font-bold tracking-widest text-brand-pink uppercase mb-4">
+            <h3 className="font-nunito text-xs font-bold tracking-widest text-brand-pink-dark uppercase mb-4">
               Contacto
             </h3>
-            <ul className="space-y-3 font-sans text-sm text-white/60" role="list">
+            <ul className="space-y-3 font-sans text-sm text-neutral-600" role="list">
               <li>
-                <a href={`mailto:${CONTACT_EMAIL}`} className="flex items-center gap-2 hover:text-brand-pink transition-colors">
+                <a href={`mailto:${CONTACT_EMAIL}`} className="flex items-center gap-2 hover:text-brand-pink-dark transition-colors">
                   <Mail size={16} className="text-brand-pink" />
                   <span>{CONTACT_EMAIL}</span>
                 </a>
               </li>
               <li>
-                <a href={`tel:${CONTACT_PHONE.replace(/\s/g, '')}`} className="flex items-center gap-2 hover:text-brand-pink transition-colors">
+                <a href={`tel:${CONTACT_PHONE.replace(/\s/g, '')}`} className="flex items-center gap-2 hover:text-brand-pink-dark transition-colors">
                   <Phone size={16} className="text-brand-pink" />
                   <span>{CONTACT_PHONE}</span>
                 </a>
@@ -162,7 +162,7 @@ export function Footer() {
                   href={`https://wa.me/${CONTACT_WHATSAPP}`} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 hover:text-brand-pink transition-colors"
+                  className="flex items-center gap-2 hover:text-brand-pink-dark transition-colors"
                 >
                   <MessageCircle size={16} className="text-brand-pink" />
                   <span>Escríbenos por WhatsApp</span>
@@ -173,7 +173,7 @@ export function Footer() {
                   href={CONTACT_MAPS_URL} 
                   target="_blank" 
                   rel="noopener noreferrer"
-                  className="flex items-start gap-2 hover:text-brand-pink transition-colors"
+                  className="flex items-start gap-2 hover:text-brand-pink-dark transition-colors"
                 >
                   <MapPin size={16} className="text-brand-pink mt-0.5 flex-shrink-0" />
                   <span>{CONTACT_ADDRESS}</span>
@@ -183,10 +183,10 @@ export function Footer() {
 
             <div className="h-px w-full bg-brand-pink/20 my-5" />
 
-            <ul className="flex flex-col gap-2 font-sans text-xs text-white/40">
+            <ul className="flex flex-col gap-2 font-sans text-xs text-neutral-400">
               {LEGAL_LINKS.map(({ label, href }) => (
                 <li key={href}>
-                  <Link href={href} className="hover:text-brand-pink transition-colors">
+                  <Link href={href} className="hover:text-brand-pink-dark transition-colors">
                     {label}
                   </Link>
                 </li>
@@ -197,7 +197,7 @@ export function Footer() {
         </div>
 
         {/* ── Bottom bar ──────────────────────────────────── */}
-        <div className="mt-8 border-t border-brand-pink/20 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 font-sans text-xs text-white/40">
+        <div className="mt-8 border-t border-brand-pink/20 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 font-sans text-xs text-neutral-400">
           <p>
             © 2025 Carlin Cosméticos. Todos los derechos reservados.
           </p>
