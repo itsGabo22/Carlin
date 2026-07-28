@@ -1,111 +1,114 @@
 'use client';
 
-import * as React from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from 'react';
+import { m, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
-import { m, AnimatePresence, LazyMotion, domAnimation } from 'framer-motion';
-import { X } from 'lucide-react';
-import type { PromoPopup as PromoPopupModel } from '@prisma/client';
+import Link from 'next/link';
 
-const SEEN_KEY = 'carlin-promo-seen';
-
-interface PromoPopupProps {
-  popup: PromoPopupModel | null;
+interface PromoPopupData {
+  id: string;
+  active: boolean;
+  imageUrl?: string | null;
+  title?: string | null;
+  subtitle?: string | null;
+  ctaText?: string | null;
+  ctaHref?: string | null;
+  showOnce: boolean;
 }
 
-export function PromoPopup({ popup }: PromoPopupProps) {
-  const [visible, setVisible] = React.useState(() => !!popup && !popup.showOnce);
+export function PromoPopup({ popup }: { popup: PromoPopupData | null }) {
+  const [visible, setVisible] = useState(false);
 
-  React.useEffect(() => {
-    if (!popup?.showOnce) return;
+  useEffect(() => {
+    if (!popup || !popup.active) return;
 
-    const seen = localStorage.getItem(SEEN_KEY);
-    if (seen === popup.id) return;
+    if (popup.showOnce) {
+      const key = `carlin-popup-${popup.id}`;
+      if (localStorage.getItem(key)) return;
+    }
 
+    // Always show after 1.5s if active
     const timer = setTimeout(() => setVisible(true), 1500);
     return () => clearTimeout(timer);
   }, [popup]);
 
   const handleClose = () => {
     if (popup?.showOnce) {
-      localStorage.setItem(SEEN_KEY, popup.id);
+      localStorage.setItem(`carlin-popup-${popup.id}`, '1');
     }
     setVisible(false);
   };
 
-  if (!popup || !popup.active) {
-    return null;
-  }
-
-  const hasText = !!(popup.title || popup.ctaText);
+  if (!popup || !popup.active) return null;
 
   return (
-    <LazyMotion features={domAnimation}>
-      <AnimatePresence>
-        {visible && (
+    <AnimatePresence>
+      {visible && (
+        <m.div
+          key="popup-overlay"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+          onClick={handleClose}
+        >
           <m.div
-            key="promo-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 z-[100] backdrop-blur-sm flex items-center justify-center p-4"
-            onClick={handleClose}
+            key="popup-card"
+            initial={{ opacity: 0, scale: 0.85, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: 10 }}
+            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+            className="relative bg-white rounded-3xl overflow-hidden max-w-sm w-full shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
           >
-            <m.div
-              key="promo-card"
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-              className="max-w-md w-full rounded-3xl overflow-hidden bg-white relative"
-              onClick={(e) => e.stopPropagation()}
+            {/* Close button */}
+            <button
+              onClick={handleClose}
+              className="absolute top-3 right-3 z-10 w-8 h-8 rounded-full bg-white/90 shadow-md flex items-center justify-center text-neutral-500 hover:text-brand-pink transition-colors text-lg font-bold"
+              aria-label="Cerrar"
             >
-              {popup.imageUrl && (
-                <div className="relative w-full aspect-[4/3]">
-                  <Image
-                    src={popup.imageUrl}
-                    fill
-                    unoptimized
-                    className="object-cover"
-                    alt={popup.title ?? 'Promoción'}
-                  />
-                </div>
-              )}
+              ✕
+            </button>
 
-              {hasText && (
-                <div className="p-6 text-center">
-                  {popup.title && (
-                    <h2 className="font-serif text-2xl font-bold text-brand-pink-dark">
-                      {popup.title}
-                    </h2>
-                  )}
-                  {popup.subtitle && (
-                    <p className="mt-2 text-sm text-neutral-500">{popup.subtitle}</p>
-                  )}
-                  {popup.ctaText && popup.ctaHref && (
-                    <Link
-                      href={popup.ctaHref}
-                      onClick={handleClose}
-                      className="mt-4 block w-full rounded-2xl bg-brand-pink text-white font-nunito font-bold py-3 hover:bg-brand-pink-dark transition-colors"
-                    >
-                      {popup.ctaText}
-                    </Link>
-                  )}
-                </div>
-              )}
+            {/* Image */}
+            {popup.imageUrl && (
+              <div className="relative w-full aspect-square">
+                <Image
+                  src={popup.imageUrl}
+                  alt={popup.title ?? 'Promoción'}
+                  fill
+                  unoptimized
+                  className="object-cover"
+                  priority
+                />
+              </div>
+            )}
 
-              <button
-                type="button"
-                onClick={handleClose}
-                aria-label="Cerrar"
-                className="absolute top-3 right-3 flex items-center justify-center w-8 h-8 rounded-full bg-white text-neutral-500 hover:text-brand-pink-dark shadow-md transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </m.div>
+            {/* Text content */}
+            {(popup.title || popup.ctaText) && (
+              <div className="p-5 text-center">
+                {popup.title && (
+                  <h2 className="font-serif text-xl font-bold text-brand-pink-dark mb-1">
+                    {popup.title}
+                  </h2>
+                )}
+                {popup.subtitle && (
+                  <p className="text-sm text-neutral-500 mb-3">{popup.subtitle}</p>
+                )}
+                {popup.ctaText && popup.ctaHref && (
+                  <Link
+                    href={popup.ctaHref}
+                    onClick={handleClose}
+                    className="block w-full py-3 rounded-2xl bg-brand-pink text-white font-semibold text-sm hover:bg-brand-pink-dark transition-colors"
+                  >
+                    {popup.ctaText}
+                  </Link>
+                )}
+              </div>
+            )}
           </m.div>
-        )}
-      </AnimatePresence>
-    </LazyMotion>
+        </m.div>
+      )}
+    </AnimatePresence>
   );
 }

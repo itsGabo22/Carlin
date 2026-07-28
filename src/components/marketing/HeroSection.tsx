@@ -145,11 +145,6 @@ export function HeroSection({ slides = [] }: { slides?: any[] }) {
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
           >
-            {/* Tagline */}
-            <p className="text-brand-pink text-sm uppercase tracking-widest font-semibold mb-3">
-              Accesorios de distinción
-            </p>
-
             <h1 className="font-serif text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6 tracking-tight drop-shadow-lg">
               {activeSlide?.title ? (
                 activeSlide.title
