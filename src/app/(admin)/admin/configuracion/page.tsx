@@ -450,14 +450,17 @@ export default function AdminConfiguracionPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Título (Opcional)</label>
-              <Input value={slideForm.title} onChange={e => setSlideForm({...slideForm, title: e.target.value})} placeholder="Ej: Nueva Colección" />
+              <Input value={slideForm.title} onChange={e => setSlideForm({...slideForm, title: e.target.value})} placeholder="Texto principal del hero (ej: Nueva Colección de Verano)" />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Subtítulo (Opcional)</label>
-              <Input value={slideForm.subtitle} onChange={e => setSlideForm({...slideForm, subtitle: e.target.value})} placeholder="Ej: Descubre lo último" />
+              <Input value={slideForm.subtitle} onChange={e => setSlideForm({...slideForm, subtitle: e.target.value})} placeholder="Párrafo descriptivo (ej: Descubre nuestros nuevos productos)" />
             </div>
           </div>
-          
+          <p className="text-xs text-neutral-400 mt-1">
+            Si dejas estos campos vacíos, se mostrará el texto por defecto de la tienda.
+          </p>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Botón (Opcional)</label>

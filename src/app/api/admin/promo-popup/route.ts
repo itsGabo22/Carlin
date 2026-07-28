@@ -6,7 +6,11 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
 export async function GET() {
   try {
-    const popup = await prisma.promoPopup.findUnique({ where: { id: 'singleton' } });
+    const popup = await prisma.promoPopup.upsert({
+      where: { id: 'singleton' },
+      create: { id: 'singleton', active: false },
+      update: {},
+    });
     return NextResponse.json(popup);
   } catch (error) {
     console.error('[ADMIN PROMO POPUP GET ERROR]', error);
