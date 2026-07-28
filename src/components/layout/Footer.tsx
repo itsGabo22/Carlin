@@ -62,7 +62,7 @@ export function Footer() {
   const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '';
 
   return (
-    <footer className="bg-[#3D1020] text-white/70 border-t border-brand-pink/20" aria-label="Pie de página">
+    <footer className="bg-[#6B1A35] text-white/70 border-t border-brand-pink/20" aria-label="Pie de página">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           

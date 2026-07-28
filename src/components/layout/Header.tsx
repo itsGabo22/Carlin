@@ -122,7 +122,7 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
           {/* Logo (Center on mobile, Left on desktop) */}
           <Link href="/" className="flex flex-col items-start leading-none">
             <span
-              className="text-2xl text-brand-pink-dark"
+              className="text-2xl text-brand-pink"
               style={{ fontFamily: 'var(--font-pacifico, Pacifico, cursive)' }}
             >
               Carlin

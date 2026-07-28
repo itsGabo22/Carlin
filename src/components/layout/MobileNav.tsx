@@ -92,7 +92,7 @@ export function MobileNav({ isOpen, onClose, categories }: MobileNavProps) {
         <div className="flex items-center justify-between px-5 py-4 border-b border-brand-pink/15">
           {/* Logo */}
           <Link href="/" onClick={onClose} className="flex flex-col leading-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink rounded-md">
-            <span className="text-xl text-brand-pink-dark block" style={{ fontFamily: 'var(--font-display, Pacifico, cursive)' }}>
+            <span className="text-xl text-brand-pink block" style={{ fontFamily: 'var(--font-display, Pacifico, cursive)' }}>
               Carlin
             </span>
             <span className="text-[8px] tracking-[0.3em] uppercase text-brand-pink font-sans -mt-0.5 block">
