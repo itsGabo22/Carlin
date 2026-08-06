@@ -102,6 +102,26 @@ CREATE POLICY "Wholesale user can read own order items"
 -- No creamos política de SELECT → acceso denegado por defecto con RLS activo
 
 -- ═══════════════════════════════════════════
+-- TABLAS AGREGADAS DESPUÉS DEL LOCKDOWN ORIGINAL
+-- (aplicado 2026-08-04 tras alerta rls_disabled_in_public)
+-- ═══════════════════════════════════════════
+
+ALTER TABLE "public"."HeroSlide"  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."PromoPopup" ENABLE ROW LEVEL SECURITY;
+
+-- HeroSlide: solo slides activos son públicamente legibles
+CREATE POLICY "Public can read active hero slides"
+  ON "public"."HeroSlide"
+  FOR SELECT
+  USING (active = true);
+
+-- PromoPopup: solo legible cuando el popup está activo
+CREATE POLICY "Public can read active promo popup"
+  ON "public"."PromoPopup"
+  FOR SELECT
+  USING (active = true);
+
+-- ═══════════════════════════════════════════
 -- NOTA IMPORTANTE SOBRE ESCRITURA
 -- ═══════════════════════════════════════════
 -- No creamos políticas INSERT/UPDATE/DELETE para anon ni authenticated
