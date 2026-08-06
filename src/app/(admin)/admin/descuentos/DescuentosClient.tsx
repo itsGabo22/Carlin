@@ -24,8 +24,14 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
     audience: 'ALL' as DiscountAudience,
     productId: '',
     categoryId: '',
+    startsAt: '',
+    endsAt: '',
     active: true,
   });
+
+  // DateTime ISO → valor yyyy-MM-dd que acepta <input type="date">
+  const toDateInputValue = (value: string | Date | null) =>
+    value ? new Date(value).toISOString().slice(0, 10) : '';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -41,6 +47,8 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
         ...formData,
         productId: formData.scope === 'PRODUCT' ? formData.productId : null,
         categoryId: formData.scope === 'CATEGORY' ? formData.categoryId : null,
+        startsAt: formData.startsAt || null,
+        endsAt: formData.endsAt || null,
       })
     });
 
@@ -67,6 +75,8 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
         audience: discount.audience,
         productId: discount.productId || '',
         categoryId: discount.categoryId || '',
+        startsAt: toDateInputValue(discount.startsAt),
+        endsAt: toDateInputValue(discount.endsAt),
         active: discount.active,
       });
     } else {
@@ -78,6 +88,8 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
         audience: 'ALL',
         productId: '',
         categoryId: '',
+        startsAt: '',
+        endsAt: '',
         active: true,
       });
     }
@@ -209,6 +221,21 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
                     <span className="text-sm">Solo distribuidores aprobados</span>
                   </label>
                 </div>
+              </fieldset>
+
+              <fieldset className="border p-3 rounded-md mt-4">
+                <legend className="text-sm font-medium px-1 text-gray-700">Vigencia (opcional)</legend>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Fecha inicio</label>
+                    <Input type="date" value={formData.startsAt} onChange={e => setFormData({...formData, startsAt: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">Fecha fin</label>
+                    <Input type="date" value={formData.endsAt} min={formData.startsAt || undefined} onChange={e => setFormData({...formData, endsAt: e.target.value})} />
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">Sin fechas = siempre activo. Borra el valor para quitar el límite.</p>
               </fieldset>
 
               <label className="flex items-center gap-2 mt-4">

@@ -6,13 +6,15 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function AdminDescuentosPage() {
-  const discounts = await prisma.discount.findMany({
+  const discountRows = await prisma.discount.findMany({
     include: {
       product: { select: { id: true, name: true } },
       category: { select: { id: true, name: true } }
     },
     orderBy: { createdAt: 'desc' }
   });
+  // Decimal no es serializable hacia Client Components
+  const discounts = discountRows.map(d => ({ ...d, percentage: Number(d.percentage) }));
 
   const products = await prisma.product.findMany({
     select: { id: true, name: true },

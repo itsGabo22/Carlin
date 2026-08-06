@@ -1,9 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
-import { Package, Plus, Search, Edit, Trash2, Import } from 'lucide-react';
+import { Package, Plus, Search, Edit, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { CsvImportModal } from '@/components/admin/CsvImportModal';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -43,10 +44,7 @@ export default async function AdminProductosPage({
           <p className="text-gray-500">Administra el catálogo y los precios.</p>
         </div>
         <div className="flex gap-2">
-          {/* CsvImportModal will be integrated here */}
-          <Button variant="outline" className="gap-2">
-            <Import size={16} /> Importar CSV
-          </Button>
+          <CsvImportModal />
           <Link href="/admin/productos/nuevo">
             <Button className="bg-brand-pink hover:bg-brand-pink-dark text-white gap-2">
               <Plus size={16} /> Nuevo producto
