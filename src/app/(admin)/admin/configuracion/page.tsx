@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Save, UploadCloud, Monitor, Smartphone, Video, Plus, ArrowUp, ArrowDown, Trash2, Edit, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Settings, Save, UploadCloud, Monitor, Smartphone, Video, Plus, ArrowUp, ArrowDown, Trash2, Edit, Image as ImageIcon, Sparkles, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -208,6 +208,22 @@ export default function AdminConfiguracionPage() {
     }
   };
 
+  const handleToggleSlideActive = async (slide: any) => {
+    try {
+      const fd = new FormData();
+      fd.append('active', (!slide.active).toString());
+      const res = await fetch(`/api/admin/hero-slides/${slide.id}`, { method: 'PATCH', body: fd });
+      if (res.ok) {
+        setSlides(prev => prev.map(s => s.id === slide.id ? { ...s, active: !slide.active } : s));
+      } else {
+        alert('Error al actualizar el slide');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error de conexión');
+    }
+  };
+
   const handleDeleteSlide = async (id: string) => {
     if (!confirm('¿Estás seguro de eliminar este slide?')) return;
     try {
@@ -345,8 +361,22 @@ export default function AdminConfiguracionPage() {
                     </p>
                     <p className="text-xs text-gray-500 truncate">{slide.subtitle || 'Sin Subtítulo'}</p>
                   </div>
-                  
+
+                  {slide.active ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Activo</span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactivo</span>
+                  )}
+
                   <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleToggleSlideActive(slide)}
+                      title={slide.active ? 'Ocultar slide' : 'Mostrar slide'}
+                    >
+                      {slide.active ? <Eye size={16} className="text-green-600" /> : <EyeOff size={16} className="text-gray-400" />}
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => handleReorder(idx, 'up')} disabled={idx === 0}><ArrowUp size={16} /></Button>
                     <Button variant="ghost" size="icon" onClick={() => handleReorder(idx, 'down')} disabled={idx === slides.length - 1}><ArrowDown size={16} /></Button>
                     <Button variant="ghost" size="icon" onClick={() => openEditSlideModal(slide)}><Edit size={16} className="text-blue-600" /></Button>
@@ -497,6 +527,16 @@ export default function AdminConfiguracionPage() {
               </div>
             )}
           </div>
+
+          <label className="flex items-center gap-2 cursor-pointer pt-2">
+            <input
+              type="checkbox"
+              checked={slideForm.active}
+              onChange={e => setSlideForm({ ...slideForm, active: e.target.checked })}
+              className="rounded text-brand-pink focus:ring-brand-pink"
+            />
+            <span className="text-sm font-medium">Slide activo (visible en la tienda)</span>
+          </label>
 
           <div className="pt-4 flex justify-end gap-2">
             <Button type="button" variant="ghost" onClick={() => setSlideModalOpen(false)}>Cancelar</Button>

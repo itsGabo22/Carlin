@@ -15,12 +15,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: 'Slide no encontrado' }, { status: 404 });
     }
 
-    const type = formData.get('type') as 'IMAGE' | 'VIDEO' || 'IMAGE';
-    const title = formData.get('title') as string || null;
-    const subtitle = formData.get('subtitle') as string || null;
-    const ctaText = formData.get('ctaText') as string || null;
-    const ctaHref = formData.get('ctaHref') as string || null;
-    const active = formData.get('active') === 'true';
+    // Campos ausentes en el FormData conservan el valor existente (permite PATCH parcial, ej. quick-toggle de active)
+    const type = (formData.get('type') as 'IMAGE' | 'VIDEO') || existingSlide.type;
+    const title = formData.has('title') ? (formData.get('title') as string || null) : existingSlide.title;
+    const subtitle = formData.has('subtitle') ? (formData.get('subtitle') as string || null) : existingSlide.subtitle;
+    const ctaText = formData.has('ctaText') ? (formData.get('ctaText') as string || null) : existingSlide.ctaText;
+    const ctaHref = formData.has('ctaHref') ? (formData.get('ctaHref') as string || null) : existingSlide.ctaHref;
+    const active = formData.has('active') ? formData.get('active') === 'true' : existingSlide.active;
     
     let desktopUrl = formData.get('desktopUrl') as string || existingSlide.desktopUrl;
     let mobileUrl = formData.get('mobileUrl') as string || existingSlide.mobileUrl;

@@ -5,7 +5,6 @@ import { revalidatePath } from 'next/cache';
 export async function GET() {
   try {
     const slides = await prisma.heroSlide.findMany({
-      where: { active: true },
       orderBy: { order: 'asc' }
     });
     return NextResponse.json(slides);
@@ -26,7 +25,8 @@ export async function POST(req: Request) {
     const subtitle = formData.get('subtitle') as string || null;
     const ctaText = formData.get('ctaText') as string || null;
     const ctaHref = formData.get('ctaHref') as string || null;
-    
+    const active = formData.get('active') !== 'false';
+
     let desktopUrl = formData.get('desktopUrl') as string || '';
     let mobileUrl = formData.get('mobileUrl') as string || null;
     
@@ -105,7 +105,7 @@ export async function POST(req: Request) {
 
     const slide = await prisma.heroSlide.create({
       data: {
-        type, desktopUrl, mobileUrl, title, subtitle, ctaText, ctaHref, order
+        type, desktopUrl, mobileUrl, title, subtitle, ctaText, ctaHref, order, active
       }
     });
     
