@@ -169,10 +169,10 @@ export function CategoryBar({ categories }: CategoryBarProps) {
                   <Image
                     src={ICON_MAP[cat.slug] ?? ICON_MAP.default}
                     alt={cat.name}
-                    width={80}
-                    height={80}
+                    width={88}
+                    height={88}
                     unoptimized
-                    className="w-[80px] h-[80px] sm:w-[110px] sm:h-[110px] object-contain transition-transform duration-300 group-hover:scale-110"
+                    className="w-[88px] h-[88px] sm:w-[120px] sm:h-[120px] object-contain transition-transform duration-300 group-hover:scale-110"
                   />
                 </div>
 

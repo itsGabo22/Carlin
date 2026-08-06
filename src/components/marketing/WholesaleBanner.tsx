@@ -17,10 +17,7 @@ export function WholesaleBanner() {
     >
       <div className="max-w-5xl mx-auto relative rounded-3xl overflow-hidden shadow-2xl">
         {/* Fondo */}
-        <div 
-          className="absolute inset-0 -z-20"
-          style={{ background: 'linear-gradient(135deg, #E05FA0 0%, #C084FC 100%)' }}
-        />
+        <div className="absolute inset-0 -z-20 bg-brand-pink" />
         {/* Patrón de puntos */}
         <div 
           className="absolute inset-0 -z-10"

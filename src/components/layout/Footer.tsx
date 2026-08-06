@@ -2,7 +2,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { Mail, Phone, MessageCircle, MapPin } from 'lucide-react';
 
-const CONTACT_EMAIL = 'erica0199@hotmail.com';
+const CONTACT_EMAIL = 'carlincosmeticos@hotmail.com';
 const CONTACT_PHONE = '317 441 7921';
 const CONTACT_WHATSAPP = '573174417921';
 const CONTACT_ADDRESS = 'Centro Comercial Galerías, Local 116';
