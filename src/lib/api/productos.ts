@@ -128,7 +128,12 @@ export function productErrorResponse(error: unknown, context: string) {
 
   const code = (error as { code?: string })?.code;
   const target = (error as { meta?: { target?: string[] | string } })?.meta?.target;
-  const targetStr = Array.isArray(target) ? target.join(', ') : String(target ?? '');
+  // Con @prisma/adapter-pg, meta.target suele venir vacío: el nombre del campo
+  // solo aparece en el texto del mensaje ("...failed on the fields: (`sku`)").
+  const targetStr = [
+    Array.isArray(target) ? target.join(', ') : (target ?? ''),
+    (error as { message?: string })?.message ?? '',
+  ].join(' ');
 
   if (code === 'P2002') {
     if (targetStr.includes('slug')) {
@@ -144,7 +149,7 @@ export function productErrorResponse(error: unknown, context: string) {
       );
     }
     return NextResponse.json(
-      { error: `Ya existe un producto con ese valor duplicado (${targetStr}).` },
+      { error: 'Ya existe otro producto con uno de esos datos únicos (slug o SKU). Cámbialo e intenta de nuevo.' },
       { status: 409 },
     );
   }
