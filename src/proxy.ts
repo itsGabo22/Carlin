@@ -64,8 +64,8 @@ export async function proxy(request: NextRequest) {
   // ── RUTAS DEL ADMIN (UI y API) ───────────────────────────────────────────────
   // Solo aquí hacemos getUser() — una llamada a Supabase Auth.
   // Afecta a /admin/* (UI) y /api/admin/* (API).
-  const isAdminUI = pathname.startsWith('/admin');
-  const isAdminAPI = pathname.startsWith('/api/admin');
+  const isAdminUI = pathname.startsWith('/admin') && pathname !== '/admin-login';
+  const isAdminAPI = pathname.startsWith('/api/admin') && !pathname.startsWith('/api/admin/auth/login');
 
   if (isAdminUI || isAdminAPI) {
     const { isAuthenticated, response } = await checkAdminAuth(request);
