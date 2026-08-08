@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-async function checkAdminAuth(request: NextRequest) {
+export async function checkAdminAuth(request: NextRequest) {
   const response = NextResponse.next({ request });
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -11,8 +11,14 @@ async function checkAdminAuth(request: NextRequest) {
         getAll() { return request.cookies.getAll() },
         setAll(cookiesToSet) {
           cookiesToSet.forEach(({ name, value, options }) => {
+            const secureOptions = {
+              ...options,
+              secure: process.env.NODE_ENV === 'production',
+              httpOnly: true,
+              sameSite: 'lax' as const,
+            };
             request.cookies.set(name, value)
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, secureOptions)
           })
         },
       },
@@ -97,8 +103,14 @@ export async function proxy(request: NextRequest) {
           getAll() { return request.cookies.getAll() },
           setAll(cookiesToSet) {
             cookiesToSet.forEach(({ name, value, options }) => {
+              const secureOptions = {
+                ...options,
+                secure: process.env.NODE_ENV === 'production',
+                httpOnly: true,
+                sameSite: 'lax' as const,
+              };
               request.cookies.set(name, value)
-              response.cookies.set(name, value, options)
+              response.cookies.set(name, value, secureOptions)
             })
           },
         },

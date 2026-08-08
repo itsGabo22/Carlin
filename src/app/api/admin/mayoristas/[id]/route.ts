@@ -1,9 +1,13 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { checkAdminAuth } from '@/proxy';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { isAuthenticated } = await checkAdminAuth(req as any);
+    if (!isAuthenticated) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const { id } = await params;
     const body = await req.json();
     const { action, role } = body;

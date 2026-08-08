@@ -215,3 +215,11 @@ model ImageBandeja {
   productId String?
   createdAt DateTime @default(now())
 }
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  ip        String
+  email     String
+  success   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

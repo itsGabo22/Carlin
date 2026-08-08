@@ -21,23 +21,16 @@ export default function AdminLoginPage() {
     setError('');
 
     try {
-      const { supabase } = await import('@/lib/supabase/client');
-
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email,
-        password,
+      const res = await fetch('/api/admin/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password })
       });
+      
+      const data = await res.json();
 
-      if (signInError) {
-        // Generic error message for security
-        setError('Credenciales incorrectas');
-        setLoading(false);
-        return;
-      }
-
-      if (data.user?.user_metadata?.role !== 'admin') {
-        await supabase.auth.signOut();
-        setError('No tienes permisos de administrador.');
+      if (!res.ok) {
+        setError(data.error || 'Credenciales incorrectas');
         setLoading(false);
         return;
       }
@@ -49,6 +42,7 @@ export default function AdminLoginPage() {
       setLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#2d0a14] to-[#1a0008] flex items-center justify-center p-4">

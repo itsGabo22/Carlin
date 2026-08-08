@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
+import { checkAdminAuth } from '@/proxy';
 import { normalizeProductInput, productErrorResponse } from '@/lib/api/productos';
 
 export async function GET() {
@@ -22,6 +23,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    // Defense in depth
+    const { isAuthenticated } = await checkAdminAuth(req as any);
+    if (!isAuthenticated) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     let body: Record<string, unknown>;
     try {
       body = await req.json();

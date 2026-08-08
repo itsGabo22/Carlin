@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
+import { checkAdminAuth } from '@/proxy';
 import { normalizeProductInput, productErrorResponse } from '@/lib/api/productos';
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -47,6 +48,9 @@ export async function GET(_req: Request, { params }: RouteContext) {
 
 export async function PATCH(req: Request, { params }: RouteContext) {
   try {
+    const { isAuthenticated } = await checkAdminAuth(req as any);
+    if (!isAuthenticated) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const { id } = await params;
 
     let body: Record<string, unknown>;
@@ -104,8 +108,11 @@ export async function PATCH(req: Request, { params }: RouteContext) {
   }
 }
 
-export async function DELETE(_req: Request, { params }: RouteContext) {
+export async function DELETE(req: Request, { params }: RouteContext) {
   try {
+    const { isAuthenticated } = await checkAdminAuth(req as any);
+    if (!isAuthenticated) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
     const { id } = await params;
 
     const product = await prisma.product.update({
