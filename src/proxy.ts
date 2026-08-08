@@ -1,6 +1,30 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
+async function checkAdminAuth(request: NextRequest) {
+  const response = NextResponse.next({ request });
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() { return request.cookies.getAll() },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value)
+            response.cookies.set(name, value, options)
+          })
+        },
+      },
+    }
+  );
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const isAdmin = user?.user_metadata?.role === 'admin';
+
+  return { isAuthenticated: !!user && isAdmin, response };
+}
+
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
@@ -31,39 +55,28 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // ── RUTAS DEL ADMIN ───────────────────────────────────────────────
+  // ── RUTAS DEL ADMIN (UI y API) ───────────────────────────────────────────────
   // Solo aquí hacemos getUser() — una llamada a Supabase Auth.
-  // Solo afecta a /admin/* rutas, no a todo el sitio.
-  if (pathname.startsWith('/admin')) {
-    const response = NextResponse.next({ request });
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() { return request.cookies.getAll() },
-          setAll(cookiesToSet) {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              request.cookies.set(name, value)
-              response.cookies.set(name, value, options)
-            })
-          },
-        },
+  // Afecta a /admin/* (UI) y /api/admin/* (API).
+  const isAdminUI = pathname.startsWith('/admin');
+  const isAdminAPI = pathname.startsWith('/api/admin');
+
+  if (isAdminUI || isAdminAPI) {
+    const { isAuthenticated, response } = await checkAdminAuth(request);
+
+    if (!isAuthenticated) {
+      if (isAdminAPI) {
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      } else {
+        const redirectResponse = NextResponse.redirect(
+          new URL('/admin-login', request.url)
+        )
+        redirectResponse.headers.set(
+          'Cache-Control',
+          'no-store, no-cache, must-revalidate'
+        )
+        return redirectResponse
       }
-    )
-
-    const { data: { user } } = await supabase.auth.getUser()
-    const isAdmin = user?.user_metadata?.role === 'admin'
-
-    if (!user || !isAdmin) {
-      const redirectResponse = NextResponse.redirect(
-        new URL('/admin-login', request.url)
-      )
-      redirectResponse.headers.set(
-        'Cache-Control',
-        'no-store, no-cache, must-revalidate'
-      )
-      return redirectResponse
     }
 
     response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate')
@@ -109,6 +122,7 @@ export const config = {
   matcher: [
     // Solo rutas que necesitan lógica del proxy.
     // Excluye archivos estáticos explícitamente.
+    '/api/admin/:path*',
     '/((?!_next/static|_next/image|favicon.ico|icons/|images/|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js)$).*)',
   ],
 }
