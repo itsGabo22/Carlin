@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
 import sharp from 'sharp';
+import { toBlob } from '@/lib/images';
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -41,7 +42,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         const sanitizedName = desktopFile.name.toLowerCase().replace(/[^a-z0-9.-]/g, '-').replace(/-+/g, '-');
         const path = `slides/${Date.now()}-desktop-${sanitizedName.replace(/\.[^/.]+$/, "")}.webp`;
 
-        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, processed, { contentType: 'image/webp', upsert: true });
+        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, toBlob(processed, 'image/webp'), { contentType: 'image/webp', upsert: true });
 
         if (error) {
           console.error('[HERO UPLOAD ERROR]', {
@@ -61,7 +62,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         const sanitizedName = mobileFile.name.toLowerCase().replace(/[^a-z0-9.-]/g, '-').replace(/-+/g, '-');
         const path = `slides/${Date.now()}-mobile-${sanitizedName.replace(/\.[^/.]+$/, "")}.webp`;
 
-        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, processed, { contentType: 'image/webp', upsert: true });
+        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, toBlob(processed, 'image/webp'), { contentType: 'image/webp', upsert: true });
 
         if (error) {
           console.error('[HERO UPLOAD ERROR]', {
@@ -81,7 +82,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         const sanitizedName = videoFile.name.toLowerCase().replace(/[^a-z0-9.-]/g, '-').replace(/-+/g, '-');
         const path = `slides/${Date.now()}-${sanitizedName}`;
 
-        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, Buffer.from(buffer), { contentType: videoFile.type, upsert: true });
+        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, toBlob(Buffer.from(buffer), videoFile.type), { contentType: videoFile.type, upsert: true });
 
         if (error) {
           console.error('[HERO UPLOAD ERROR]', {

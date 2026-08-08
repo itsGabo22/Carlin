@@ -13,12 +13,40 @@ import Link from 'next/link';
 import { FieldHint } from '@/components/admin/FieldHint';
 import { Tooltip } from '@/components/admin/Tooltip';
 
+/**
+ * Lee el body como JSON sin lanzar si viene vacío o no es JSON.
+ * Next devuelve body vacío en varios errores (405, 502...), y un `.json()`
+ * directo sobre eso tira "SyntaxError: Unexpected end of JSON input".
+ */
+async function readJson(res: Response): Promise<any | null> {
+  const text = await res.text().catch(() => '');
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    return null;
+  }
+}
+
+/** parseFloat('') es NaN y JSON.stringify(NaN) es null → NOT NULL violation. */
+const numOrZero = (value: string) => {
+  const n = parseFloat(value);
+  return Number.isFinite(n) ? n : 0;
+};
+
+const intOrZero = (value: string) => {
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) ? n : 0;
+};
+
 export default function AdminProductEditPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
   const isNew = id === 'nuevo';
 
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -55,15 +83,28 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
       if (cats.categories) setCategories(cats.categories);
       if (brnds.brands) setBrands(brnds.brands);
       if (imgs.images) setBandejaImages(imgs.images);
+    }).catch(() => {
+      setLoadError('No se pudieron cargar las categorías, marcas e imágenes. Revisa tu conexión y recarga la página.');
     });
 
     if (!isNew) {
-      // fetch product
-      fetch(`/api/admin/productos/${id}`).then(r => r.json()).then(data => {
-        if (data) {
-          setFormData(data);
-        }
-      });
+      // fetch product — nunca hacer r.json() a ciegas: si la respuesta es un
+      // error sin body (ej. 405), revienta con "Unexpected end of JSON input".
+      fetch(`/api/admin/productos/${id}`)
+        .then(async (r) => {
+          const data = await readJson(r);
+          if (!r.ok) {
+            setLoadError(data?.error ?? `No se pudo cargar el producto (error ${r.status}). No guardes: sobrescribirías los datos con el formulario vacío.`);
+            return;
+          }
+          if (data) {
+            setLoadError(null);
+            setFormData(prev => ({ ...prev, ...data }));
+          }
+        })
+        .catch(() => {
+          setLoadError('No se pudo cargar el producto. Revisa tu conexión y recarga la página.');
+        });
     }
   }, [id, isNew]);
 
@@ -109,6 +150,16 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Evita el doble envío (doble clic en Guardar): el segundo POST chocaba
+    // contra el índice único de slug y devolvía un 500.
+    if (loading) return;
+
+    if (loadError && !isNew) {
+      setSaveError('No se cargaron los datos del producto. Recarga la página antes de guardar para no sobrescribirlos.');
+      return;
+    }
+
+    setSaveError(null);
     setLoading(true);
 
     try {
@@ -121,15 +172,17 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
         body: JSON.stringify(formData),
       });
 
+      const data = await readJson(res);
+
       if (res.ok) {
         router.push('/admin/productos');
         router.refresh();
       } else {
-        alert('Error al guardar el producto');
+        setSaveError(data?.error ?? `No se pudo guardar el producto (error ${res.status}). Intenta de nuevo.`);
       }
     } catch (error) {
       console.error(error);
-      alert('Error de red');
+      setSaveError('Error de red al guardar. Revisa tu conexión e intenta de nuevo.');
     } finally {
       setLoading(false);
     }
@@ -153,6 +206,20 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
           {loading ? 'Guardando...' : 'Guardar'}
         </Button>
       </div>
+
+      {loadError && (
+        <div role="alert" className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+          <strong className="font-semibold">No se pudo cargar la información. </strong>
+          {loadError}
+        </div>
+      )}
+
+      {saveError && (
+        <div role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+          <strong className="font-semibold">No se guardó el producto. </strong>
+          {saveError}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -217,26 +284,26 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Precio Público</label>
-                  <Input type="number" required value={formData.retailPrice} onChange={(e) => setFormData({...formData, retailPrice: parseFloat(e.target.value)})} />
+                  <Input type="number" required value={formData.retailPrice} onChange={(e) => setFormData({...formData, retailPrice: numOrZero(e.target.value)})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Precio Mayorista</label>
-                  <Input type="number" required value={formData.wholesalePrice} onChange={(e) => setFormData({...formData, wholesalePrice: parseFloat(e.target.value)})} />
+                  <Input type="number" required value={formData.wholesalePrice} onChange={(e) => setFormData({...formData, wholesalePrice: numOrZero(e.target.value)})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Precio Distribuidor</label>
-                  <Input type="number" required value={formData.distributorPrice} onChange={(e) => setFormData({...formData, distributorPrice: parseFloat(e.target.value)})} />
+                  <Input type="number" required value={formData.distributorPrice} onChange={(e) => setFormData({...formData, distributorPrice: numOrZero(e.target.value)})} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-500">Precio Comparativo (Opcional)</label>
-                  <Input type="number" value={formData.comparePrice} onChange={(e) => setFormData({...formData, comparePrice: parseFloat(e.target.value)})} />
+                  <Input type="number" value={formData.comparePrice} onChange={(e) => setFormData({...formData, comparePrice: numOrZero(e.target.value)})} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Stock</label>
-                  <Input type="number" required value={formData.stock} onChange={(e) => setFormData({...formData, stock: parseInt(e.target.value)})} />
+                  <Input type="number" required value={formData.stock} onChange={(e) => setFormData({...formData, stock: intOrZero(e.target.value)})} />
                   <FieldHint text="Cuando confirmes un pedido desde 'Pedidos', el stock baja automáticamente." type="tip" />
                 </div>
               </div>

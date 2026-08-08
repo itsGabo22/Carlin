@@ -15,6 +15,7 @@ export async function GET() {
 }
 
 import sharp from 'sharp';
+import { toBlob } from '@/lib/images';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
 export async function POST(req: Request) {
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
         const sanitizedName = desktopFile.name.toLowerCase().replace(/[^a-z0-9.-]/g, '-').replace(/-+/g, '-');
         const path = `slides/${Date.now()}-desktop-${sanitizedName.replace(/\.[^/.]+$/, "")}.webp`;
 
-        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, processed, { contentType: 'image/webp', upsert: true });
+        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, toBlob(processed, 'image/webp'), { contentType: 'image/webp', upsert: true });
 
         if (error) {
           console.error('[HERO UPLOAD ERROR]', {
@@ -65,7 +66,7 @@ export async function POST(req: Request) {
         const sanitizedName = mobileFile.name.toLowerCase().replace(/[^a-z0-9.-]/g, '-').replace(/-+/g, '-');
         const path = `slides/${Date.now()}-mobile-${sanitizedName.replace(/\.[^/.]+$/, "")}.webp`;
 
-        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, processed, { contentType: 'image/webp', upsert: true });
+        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, toBlob(processed, 'image/webp'), { contentType: 'image/webp', upsert: true });
 
         if (error) {
           console.error('[HERO UPLOAD ERROR]', {
@@ -85,7 +86,7 @@ export async function POST(req: Request) {
         const sanitizedName = videoFile.name.toLowerCase().replace(/[^a-z0-9.-]/g, '-').replace(/-+/g, '-');
         const path = `slides/${Date.now()}-${sanitizedName}`;
 
-        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, Buffer.from(buffer), { contentType: videoFile.type, upsert: true });
+        const { data, error } = await supabaseAdmin.storage.from('hero-media').upload(path, toBlob(Buffer.from(buffer), videoFile.type), { contentType: videoFile.type, upsert: true });
 
         if (error) {
           console.error('[HERO UPLOAD ERROR]', {

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import sharp from 'sharp';
+import { toBlob } from '@/lib/images';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
 export async function GET() {
@@ -43,7 +44,7 @@ export async function PATCH(req: Request) {
       const supabaseAdmin = getSupabaseAdmin();
       const { error } = await supabaseAdmin.storage
         .from('hero-media')
-        .upload(path, processed, { contentType: 'image/webp', upsert: true });
+        .upload(path, toBlob(processed, 'image/webp'), { contentType: 'image/webp', upsert: true });
 
       if (error) {
         console.error('[PROMO POPUP UPLOAD ERROR]', { message: error.message, path });

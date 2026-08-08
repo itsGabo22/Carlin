@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { prisma } from '@/lib/prisma';
-import sharp from 'sharp';
-import slugify from 'slugify';
+import { processAndUploadImage, safeStorageName } from '@/lib/images';
 
 export async function POST(req: Request) {
   try {
@@ -22,40 +20,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'La imagen debe pesar menos de 10MB' }, { status: 400 });
     }
 
-    // Convert File to Buffer
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-
-    // Process image with sharp
-    const processedBuffer = await sharp(buffer)
-      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
-      .webp({ quality: 82 })
-      .toBuffer();
-
     // Create unique filename
-    const originalName = file.name.split('.')[0];
-    const safeName = slugify(originalName, { lower: true, strict: true });
-    const filename = `${Date.now()}-${safeName}.webp`;
+    const filename = `${Date.now()}-${safeStorageName(file.name)}.webp`;
     const path = bucket === 'brand-logos' ? `logos/${filename}` : `bandeja/${filename}`;
 
-    // Upload to Supabase Storage
-    const supabaseAdmin = getSupabaseAdmin();
-    const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-      .from(bucket)
-      .upload(path, processedBuffer, {
-        contentType: 'image/webp',
-        upsert: false
-      });
-
-    if (uploadError) {
-      console.error('Supabase upload error:', uploadError);
-      return NextResponse.json({ error: 'Error al subir la imagen a Supabase' }, { status: 500 });
-    }
-
-    // Get public URL
-    const { data: { publicUrl } } = supabaseAdmin.storage
-      .from(bucket)
-      .getPublicUrl(path);
+    // sharp → WebP → Blob-wrap → Supabase Storage (ver src/lib/images.ts)
+    const publicUrl = await processAndUploadImage({
+      file,
+      bucket,
+      path,
+      resize: { width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true },
+      quality: 82,
+    });
 
     // If it's a product image, save it in ImageBandeja
     if (bucket === 'product-images') {
@@ -73,6 +49,7 @@ export async function POST(req: Request) {
 
   } catch (error) {
     console.error('Image upload processing error:', error);
-    return NextResponse.json({ error: 'Error interno del servidor' }, { status: 500 });
+    const message = error instanceof Error ? error.message : 'Error interno del servidor';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
