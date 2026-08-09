@@ -32,40 +32,45 @@ export async function checkAdminAuth(request: NextRequest) {
 }
 
 export async function proxy(request: NextRequest) {
-  const pathname = request.nextUrl.pathname;
+  let originalPathname = request.nextUrl.pathname;
+  let pathname = originalPathname;
+
+  try {
+    // Attempt to decode to catch %2F and other encoded bypasses
+    pathname = decodeURIComponent(pathname);
+  } catch (err) {
+    return NextResponse.json({ error: 'Bad Request' }, { status: 400 });
+  }
+
+  // Normalize case and multiple slashes for security matching
+  const normalizedPath = pathname.replace(/\/+/g, '/').toLowerCase();
 
   // ── RUTAS COMPLETAMENTE PÚBLICAS ──────────────────────────────────
-  // No necesitan ninguna verificación de sesión.
-  // Devuelven NextResponse.next() inmediatamente sin tocar Supabase.
   const isPublicRoute =
-    pathname === '/' ||
-    pathname.startsWith('/catalogo') ||
-    pathname.startsWith('/producto') ||
-    pathname.startsWith('/marca') ||
-    pathname.startsWith('/buscar') ||
-    pathname.startsWith('/contacto') ||
-    pathname.startsWith('/legal') ||
-    pathname.startsWith('/mayoristas') ||     // página info de mayoristas
-    pathname === '/carrito' ||
-    pathname === '/admin-login' ||
-    pathname.startsWith('/registro-mayorista');
+    normalizedPath === '/' ||
+    normalizedPath.startsWith('/catalogo') ||
+    normalizedPath.startsWith('/producto') ||
+    normalizedPath.startsWith('/marca') ||
+    normalizedPath.startsWith('/buscar') ||
+    normalizedPath.startsWith('/contacto') ||
+    normalizedPath.startsWith('/legal') ||
+    normalizedPath.startsWith('/mayoristas') ||
+    normalizedPath === '/carrito' ||
+    normalizedPath === '/admin-login' ||
+    normalizedPath.startsWith('/registro-mayorista');
 
   if (isPublicRoute) {
     return NextResponse.next();
   }
 
   // ── RUTAS DE AUTH DE MAYORISTAS ───────────────────────────────────
-  // /mayoristas/login y /mayoristas/pendiente no necesitan verificación
-  // (son páginas públicas de auth)
-  if (pathname === '/mayoristas/login' || pathname === '/mayoristas/pendiente') {
+  if (normalizedPath === '/mayoristas/login' || normalizedPath === '/mayoristas/pendiente') {
     return NextResponse.next();
   }
 
   // ── RUTAS DEL ADMIN (UI y API) ───────────────────────────────────────────────
-  // Solo aquí hacemos getUser() — una llamada a Supabase Auth.
-  // Afecta a /admin/* (UI) y /api/admin/* (API).
-  const isAdminUI = pathname.startsWith('/admin') && pathname !== '/admin-login';
-  const isAdminAPI = pathname.startsWith('/api/admin') && !pathname.startsWith('/api/admin/auth/login');
+  const isAdminUI = normalizedPath.startsWith('/admin') && normalizedPath !== '/admin-login';
+  const isAdminAPI = normalizedPath.startsWith('/api/admin') && normalizedPath !== '/api/admin/auth/login';
 
   if (isAdminUI || isAdminAPI) {
     const { isAuthenticated, response } = await checkAdminAuth(request);
@@ -93,7 +98,7 @@ export async function proxy(request: NextRequest) {
   // /mayoristas/perfil requiere sesión de mayorista aprobado.
   // Usa getSession() aquí (más rápido, cookie local) porque
   // la verificación real del rol se hace en el Server Component.
-  if (pathname.startsWith('/mayoristas/perfil')) {
+  if (normalizedPath.startsWith('/mayoristas/perfil')) {
     const response = NextResponse.next({ request });
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
