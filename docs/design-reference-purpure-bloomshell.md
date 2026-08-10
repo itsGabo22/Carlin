@@ -361,10 +361,169 @@ Conviene confirmar con el cliente si quiere círculos en los dos niveles o repli
 
 ---
 
-## 6. Verificado vs. no verificado
+## 6. Colores exactos del nav bar de Purpure
+
+> **Alcance:** el cliente confirmó que el nav de CARLIN debe ser un **clon literal** de los colores
+> y tipografías de Purpure — **no** se le aplica la paleta de Bloomshell que va al resto del sitio.
+> Esta sección existe para poder replicarlo sin volver a inspeccionar el sitio.
+>
+> Extraído el 2026-08-10 con `getComputedStyle`, mismo método que las secciones 1–5.
+
+### 6.1 Resumen: `#FF80B3` es el color dominante del nav
+
+**Sí, se reutiliza el mismo hex del marquee.** `#FF80B3` (documentado en la sección 2) aparece en
+**siete** lugares del nav:
+
+1. Fondo del marquee superior
+2. Fondo de la fila 2 (menú de categorías)
+3. Fondo del botón "Buscar"
+4. Borde del formulario de búsqueda
+5. Texto del `<select>` "Todas las Categorías"
+6. Los 3 iconos de la derecha (cuenta, wishlist, carrito)
+7. Fondo de los badges de conteo sobre wishlist y carrito
+
+Es efectivamente **el color de marca de Purpure**. Los demás colores del nav son de apoyo.
+
+### 6.2 Colores genuinamente distintos de `#FF80B3`
+
+| Hex | Rol | Dónde |
+|---|---|---|
+| `#FF3385` | **Hover del botón "Buscar"** | Rosa más saturado y oscuro. Solo en ese hover. |
+| `#A99DEA` | **Badge "VER CATALOGO"** | Lavanda / violeta. Único color no-rosa del nav. |
+| `#D8759D` | Color de texto base del tema | Texto del input de búsqueda y su placeholder. |
+| `#FAFAFA` | Relleno del campo de búsqueda | Gris casi blanco. |
+| `#000000` | **Hover de los iconos** | Los iconos pasan de rosa a negro. |
+| `#FFFFFF` | Fondo de la fila 1 y todo el texto del nav | — |
+
+### 6.3 Fila 1 — logo / búsqueda / iconos
+
+**Contenedor** (`.t4s-header__wrapper`)
+
+| Propiedad | Valor |
+|---|---|
+| Fondo | **`#FFFFFF`** |
+| Alto total del header | 152 px (fila 1 de 102 px + fila 2 de 50 px) |
+| `border-bottom` | **`0px` — ninguno** |
+| `box-shadow` | **`none`** |
+| Tipografía base | `Lato`, 14 px, peso 400 |
+
+> **No hay línea divisoria entre las dos filas.** La separación es puramente el cambio de color
+> (blanco → rosa). Tampoco hay sombra bajo el header cuando está pegado.
+
+**Formulario de búsqueda** (`.t4s-search-header__form`) — 570 × 46 px
+
+| Elemento | Propiedad | Valor |
+|---|---|---|
+| Contenedor | Fondo | `#FAFAFA` |
+| Contenedor | Borde | **`0.8px solid #FF80B3`** |
+| Contenedor | `border-radius` | 5 px |
+| `<select>` "Todas las Categorías" | Fondo | `transparent` |
+| `<select>` | Color de texto | **`#FF80B3`** |
+| `<select>` | Medida | 207 × 40 px, `Lato` 14 px / 400 |
+| Separador select↔input | Fondo | **`#FF80B3` al 15 % de opacidad**, 2 × 18 px |
+| `<input>` | Fondo | `transparent` |
+| `<input>` | Color de texto | `#D8759D` |
+| `<input>` | Color del placeholder | `#D8759D` |
+| `<input>` | Tipografía | `Lato` 13 px |
+
+**Botón "Buscar"** — 130 × 40 px
+
+| Estado | Fondo | Texto |
+|---|---|---|
+| Normal | **`#FF80B3`** | `#FFFFFF` |
+| **Hover** | **`#FF3385`** | `#FFFFFF` |
+
+`border-radius: 5px`, `Lato` **14 px / peso 600**. Transición sobre `background-color`.
+
+**Iconos de la derecha**
+
+| Icono | Medida | Color normal | Color hover |
+|---|---|---|---|
+| Cuenta | 24 × 24 px | **`#FF80B3`** | `#000000` |
+| Wishlist | 22 × 22 px | **`#FF80B3`** | `#000000` |
+| Carrito | 22 × 22 px | **`#FF80B3`** | `#000000` |
+
+Son iconos de línea (SVG vía `<use>` de un sprite, coloreados con `currentColor`).
+
+**Badges de conteo** (sobre wishlist y carrito)
+
+| Propiedad | Valor |
+|---|---|
+| Fondo | **`#FF80B3`** |
+| Texto | `#FFFFFF` |
+| `border-radius` | **50 %** (círculo) |
+| Medida | 15 × 15 px |
+| Tipografía | `Lato` 10 px / 400 |
+
+### 6.4 Fila 2 — menú de categorías
+
+**Barra** (`.t4s-section-header__bot`)
+
+| Propiedad | Valor |
+|---|---|
+| Fondo | **`#FF80B3`** — idéntico al marquee |
+| Alto | **50 px** |
+| Ancho | 100 % |
+| `border-top` / `border-bottom` | **`0px` — ninguno** |
+
+**Links** (INICIO · PURPURE · CUIDADO FACIAL · MAQUILLAJE · BROCHAS · CORPORAL · CAPILAR · HAZTE MAYORISTA · COMBOS Y PROMOS)
+
+| Propiedad | Valor |
+|---|---|
+| Color | **`#FFFFFF`** |
+| Tipografía | `Lato` |
+| Tamaño | **14 px** |
+| Peso | **400** (normal, no negrita) |
+| `letter-spacing` | `normal` |
+| `text-transform` | `none` — **el texto ya viene en mayúsculas desde el menú**, no se transforma por CSS |
+| `padding` | `5px 17.5px` |
+
+**Estados hover y activo — no cambian de color.** Verificado con el mouse encima de MAQUILLAJE y
+sobre el ítem activo INICIO (`is--nav__active`): en ambos casos el color sigue en `#FFFFFF`,
+`opacity: 1`, sin subrayado y sin fondo. Confirmado además por inspección visual ampliada: los
+nueve links se ven idénticos. **El único feedback visual al pasar el mouse es que se abre el
+desplegable** (ver sección 4.5).
+
+### 6.5 Badge "VER CATALOGO"
+
+Pastilla que flota sobre el link "HAZTE MAYORISTA", solapando el borde superior de la barra.
+
+| Propiedad | Valor |
+|---|---|
+| Fondo | **`#A99DEA`** (lavanda) |
+| Color de texto | **`#FFFFFF`** |
+| Forma | `border-radius: 50px` → **pastilla** |
+| Medida | **83 × 18 px** |
+| `padding` | `0 8px` |
+| Tipografía | `Lato` **9 px / peso 400** |
+
+Es el **único elemento no rosado** de todo el nav — el contraste lavanda sobre rosa es
+justamente lo que lo hace resaltar.
+
+### 6.6 Ficha rápida para implementar
+
+```
+Marquee            fondo #FF80B3   texto #FFFFFF   Lato 18/400   alto 45px
+Fila 1 (blanca)    fondo #FFFFFF   sin borde ni sombra           alto 102px
+  Buscador         fondo #FAFAFA   borde 0.8px #FF80B3   radio 5px
+  Select categoría texto #FF80B3                                 207x40
+  Input            texto/placeholder #D8759D            Lato 13
+  Botón Buscar     fondo #FF80B3 -> hover #FF3385   texto #FFFFFF   Lato 14/600   radio 5px
+  Iconos           #FF80B3 -> hover #000000         24x24 / 22x22
+  Badges conteo    fondo #FF80B3   texto #FFFFFF    radio 50%   15x15   Lato 10/400
+Fila 2 (rosada)    fondo #FF80B3   sin bordes                    alto 50px
+  Links            #FFFFFF   Lato 14/400   padding 5px 17.5px   sin cambio en hover/activo
+  Badge catálogo   fondo #A99DEA   texto #FFFFFF   radio 50px   83x18   Lato 9/400
+```
+
+Tipografía única en todo el nav: **`Lato`**.
+
+---
+
+## 7. Verificado vs. no verificado
 
 **Verificado en vivo** (medición directa, escritorio 1536×816): todos los hex, tipografías, medidas
-en px, tiempos de animación, URLs, comportamiento sticky y estructura de menús de las secciones 1–5.
+en px, tiempos de animación, URLs, comportamiento sticky y estructura de menús de las secciones 1–6.
 
 **No verificado:**
 
@@ -374,5 +533,8 @@ en px, tiempos de animación, URLs, comportamiento sticky y estructura de menús
   por debajo de 768 px no se observó**. Confirmar en un dispositivo real antes de fijarlo en la fase de catálogo.
 - **Filtros en móvil.** Existe un botón "FILTRAR" en el sidebar, pero **no se confirmó** si en móvil
   el sidebar pasa a modal, acordeón o drawer.
-- **Estados hover** de botones y links (se documentó `#E58EC7` como candidato a hover del primario
-  por dónde aparece, pero no se capturó el estado `:hover` en vivo).
+- **Estados hover de Bloomshell.** Se documentó `#E58EC7` como candidato a hover del primario por
+  dónde aparece, pero **no** se capturó el estado `:hover` en vivo.
+  (Los hover del nav de **Purpure** sí están verificados — ver 6.3 y 6.4.)
+- **Nav de Purpure en móvil.** Toda la sección 6 es de escritorio. No se capturó cómo colapsa el
+  nav en móvil (menú hamburguesa, si el buscador se oculta, si la fila 2 se convierte en drawer).
