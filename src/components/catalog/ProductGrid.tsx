@@ -39,7 +39,7 @@ export function ProductGrid({
         <div className="bg-brand-pink-light/20 p-6 rounded-full mb-6">
           <SearchX className="w-12 h-12 text-brand-pink-dark/50" />
         </div>
-        <h3 className="text-xl font-nunito font-semibold text-gray-900 mb-2">Ups, no hay resultados</h3>
+        <h3 className="text-xl font-serif font-semibold text-gray-900 mb-2">Ups, no hay resultados</h3>
         <p className="text-gray-500 max-w-md">{emptyMessage}</p>
       </div>
     );

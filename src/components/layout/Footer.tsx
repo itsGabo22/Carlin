@@ -71,11 +71,11 @@ export function Footer() {
             <Link href="/" className="inline-block leading-none">
               <span
                 className="text-2xl text-white block"
-                style={{ fontFamily: 'var(--font-pacifico, Pacifico, cursive)' }}
+                style={{ fontFamily: 'var(--font-display, Pacifico, cursive)' }}
               >
                 Carlin
               </span>
-              <span className="font-nunito text-xs font-semibold tracking-widest text-white/80 uppercase block -mt-1">
+              <span className="font-sans text-xs font-semibold tracking-widest text-white/80 uppercase block -mt-1">
                 Cosméticos
               </span>
             </Link>
@@ -98,7 +98,7 @@ export function Footer() {
 
           {/* ── Col 2: Catálogo ────────────────────────────── */}
           <div>
-            <h3 className="font-nunito text-xs font-semibold tracking-widest text-white uppercase mb-4">
+            <h3 className="font-sans text-xs font-semibold tracking-widest text-white uppercase mb-4">
               Catálogo
             </h3>
             <ul className="space-y-2.5" role="list">
@@ -117,7 +117,7 @@ export function Footer() {
 
           {/* ── Col 3: Mayoristas ──────────────────────────────── */}
           <div>
-            <h3 className="font-nunito text-xs font-semibold tracking-widest text-white uppercase mb-4">
+            <h3 className="font-sans text-xs font-semibold tracking-widest text-white uppercase mb-4">
               Mayoristas
             </h3>
             <ul className="space-y-2.5" role="list">
@@ -141,7 +141,7 @@ export function Footer() {
 
           {/* ── Col 4: Contacto ───────────────────────────── */}
           <div>
-            <h3 className="font-nunito text-xs font-semibold tracking-widest text-white uppercase mb-4">
+            <h3 className="font-sans text-xs font-semibold tracking-widest text-white uppercase mb-4">
               Contacto
             </h3>
             <div className="flex flex-col gap-3 font-sans text-sm">

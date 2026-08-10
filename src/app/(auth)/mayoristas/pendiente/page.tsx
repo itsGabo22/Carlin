@@ -31,7 +31,7 @@ export default async function PendientePage() {
       <div className="bg-orange-100 p-6 rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-6">
         <Clock className="w-12 h-12 text-orange-500" />
       </div>
-      <h1 className="text-3xl font-nunito font-bold text-gray-900 mb-4">Cuenta en Revisión</h1>
+      <h1 className="text-3xl font-serif font-bold text-gray-900 mb-4">Cuenta en Revisión</h1>
       <p className="text-gray-600 mb-8">
         Tu solicitud como mayorista está siendo revisada por nuestro equipo. Te notificaremos pronto cuando haya sido aprobada.
       </p>

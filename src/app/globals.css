@@ -5,13 +5,15 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  /* ── Brand tokens ────────────────────────────────── */
-  --color-brand-pink: #F472B6;
-  --color-brand-pink-light: #FBCFE8;
-  --color-brand-pink-dark: #DB2777;
-  --color-brand-cream: #FFF0F7;
-  --color-brand-distributor: #E879F9;
-  --color-brand-neutral-dark: #3D1A24;
+  /* ── Brand tokens (Bloomshell Palette) ───────────── */
+  --color-brand-pink: #F0A0C6;       /* Primary - buttons, badges */
+  --color-brand-pink-dark: #E58EC7;  /* Primary dark hover */
+  --color-brand-pink-light: #FFBBEC; /* Bright accent - strips */
+  --color-brand-cream: #FDECF5;      /* Very light pink - borders */
+  --color-brand-distributor: #F09FC5;/* Overlay / Footer */
+  --color-brand-neutral-dark: #333333; /* Headings */
+  --color-brand-text: #6D6D6D;       /* Body / prices */
+  --color-brand-text-nav: #666666;   /* Nav links */
 
   /* ── Brand Neutrals Scale ────────────────────────── */
   --color-brand-neutral-50: #FAF9F6;

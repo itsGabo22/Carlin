@@ -53,7 +53,7 @@ export default async function SubcategoriaPage({
             <Link href={`/catalogo/${categoria}`} className="text-xs text-gray-400 hover:text-brand-pink block mb-2">
               &larr; Volver a {parentCategory?.name}
             </Link>
-            <h2 className="font-nunito font-bold text-brand-pink-dark text-lg mb-4">{category.name}</h2>
+            <h2 className="font-serif font-bold text-brand-pink-dark text-lg mb-4">{category.name}</h2>
           </div>
         </aside>
 
@@ -66,7 +66,7 @@ export default async function SubcategoriaPage({
               <span>/</span>
               <span className="text-gray-900 font-medium">{category.name}</span>
             </div>
-            <h1 className="text-3xl font-nunito font-bold text-gray-900 mb-2">{category.name}</h1>
+            <h1 className="text-3xl font-serif font-bold text-gray-900 mb-2">{category.name}</h1>
             {category.description && <p className="text-gray-600">{category.description}</p>}
           </div>
 

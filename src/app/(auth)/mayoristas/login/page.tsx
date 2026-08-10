@@ -66,7 +66,7 @@ export default function LoginPage() {
 
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-brand-pink-light/20">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-nunito font-bold text-gray-900 mb-2">Ingreso Mayoristas</h1>
+          <h1 className="text-2xl font-serif font-bold text-gray-900 mb-2">Ingreso Mayoristas</h1>
           <p className="text-gray-500">Inicia sesión para ver tus precios especiales.</p>
         </div>
 

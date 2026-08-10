@@ -48,7 +48,7 @@ export default async function BrandPage({
       <div className="flex flex-col md:flex-row gap-8">
         <aside className="w-full md:w-64 shrink-0 hidden md:block">
           <div className="bg-white rounded-2xl p-6 border border-brand-pink-light/20 shadow-sm sticky top-24">
-            <h2 className="font-nunito font-bold text-brand-pink-dark text-lg mb-4">{brand.name}</h2>
+            <h2 className="font-serif font-bold text-brand-pink-dark text-lg mb-4">{brand.name}</h2>
             {brand.description && <p className="text-sm text-gray-600">{brand.description}</p>}
           </div>
         </aside>
@@ -61,7 +61,7 @@ export default async function BrandPage({
               </div>
             )}
             <div>
-              <h1 className="text-3xl font-nunito font-bold text-gray-900 mb-2">{brand.name}</h1>
+              <h1 className="text-3xl font-serif font-bold text-gray-900 mb-2">{brand.name}</h1>
               <p className="text-gray-600">Todos los productos de {brand.name}</p>
             </div>
           </div>

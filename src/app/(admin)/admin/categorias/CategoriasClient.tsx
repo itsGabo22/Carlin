@@ -119,7 +119,7 @@ export function CategoriasClient({ categories }: { categories: CategoryRow[] }) 
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold font-nunito text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold font-serif text-gray-900 flex items-center gap-2">
             <FolderTree className="text-brand-pink" /> Categorías
           </h1>
           <p className="text-gray-500">Organiza el catálogo en categorías y subcategorías.</p>

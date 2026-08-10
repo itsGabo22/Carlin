@@ -48,8 +48,8 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-gradient-to-br from-[#2d0a14] to-[#1a0008] flex items-center justify-center p-4">
       <div className="bg-white/[0.05] border border-brand-pink/20 p-8 rounded-2xl w-full max-w-md shadow-2xl backdrop-blur-md">
         <div className="text-center mb-8">
-          <h1 className="font-pacifico text-5xl text-[#FFBDE1] mb-2">Carlin</h1>
-          <p className="text-white/50 font-nunito text-sm">Panel de Administración</p>
+          <h1 className="font-display text-5xl text-[#FFBDE1] mb-2">Carlin</h1>
+          <p className="text-white/50 font-sans text-sm">Panel de Administración</p>
           
           <div className="mx-auto w-[60px] h-px bg-brand-pink/30 my-6"></div>
         </div>

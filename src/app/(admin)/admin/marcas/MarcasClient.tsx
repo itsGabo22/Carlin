@@ -86,7 +86,7 @@ export function MarcasClient({ brands }: { brands: BrandRow[] }) {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold font-nunito text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold font-serif text-gray-900 flex items-center gap-2">
             <Tags className="text-brand-pink" /> Marcas
           </h1>
           <p className="text-gray-500">Administra las marcas de los productos.</p>

@@ -162,12 +162,12 @@ export function HeroSection({ slides = [] }: { slides?: any[] }) {
               {activeSlide?.ctaText ? (
                 <Link
                   href={activeSlide.ctaHref || '/catalogo'}
-                  className="w-full sm:w-auto px-8 py-4 bg-brand-pink text-white rounded-full font-nunito font-bold text-lg hover:bg-brand-pink-dark hover:scale-105 transition-all shadow-lg shadow-brand-pink/30 text-center"
+                  className="w-full sm:w-auto px-8 py-4 bg-brand-pink text-white rounded-full font-sans font-bold text-lg hover:bg-brand-pink-dark hover:scale-105 transition-all shadow-lg shadow-brand-pink/30 text-center"
                 >
                   {activeSlide.ctaText}
                 </Link>
               ) : (
-                <Link href="/catalogo" className="w-full sm:w-auto px-8 py-4 bg-brand-pink text-white rounded-full font-nunito font-bold text-lg hover:bg-brand-pink-dark hover:scale-105 transition-all shadow-lg shadow-brand-pink/30 text-center">
+                <Link href="/catalogo" className="w-full sm:w-auto px-8 py-4 bg-brand-pink text-white rounded-full font-sans font-bold text-lg hover:bg-brand-pink-dark hover:scale-105 transition-all shadow-lg shadow-brand-pink/30 text-center">
                   Ver Catálogo Completo
                 </Link>
               )}

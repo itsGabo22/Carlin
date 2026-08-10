@@ -24,7 +24,7 @@ export default async function AdminDashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold font-nunito text-gray-900">Dashboard</h1>
+        <h1 className="text-2xl font-bold font-serif text-gray-900">Dashboard</h1>
         <p className="text-gray-500">Resumen general de tu tienda Carlin Cosméticos.</p>
       </div>
 

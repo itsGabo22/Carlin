@@ -38,7 +38,7 @@ export default async function AdminProductosPage({
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold font-nunito text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold font-serif text-gray-900 flex items-center gap-2">
             <Package className="text-brand-pink" /> Productos
           </h1>
           <p className="text-gray-500">Administra el catálogo y los precios.</p>

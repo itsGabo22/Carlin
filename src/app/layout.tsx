@@ -1,24 +1,25 @@
 import type { Metadata } from 'next';
-import { Inter, Nunito, Pacifico } from 'next/font/google';
+import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
 import './globals.css';
 
-const inter = Inter({
+const dmSans = DM_Sans({
   variable: '--font-sans',
   subsets: ['latin'],
   display: 'swap',
 });
 
-const nunito = Nunito({
+const cormorant = Cormorant_Garamond({
   variable: '--font-serif',
   subsets: ['latin'],
-  weight: ['400', '600', '700', '800'],
+  weight: ['400', '500', '600', '700'],
   display: 'swap',
 });
 
-const pacifico = Pacifico({
+// Reuse Cormorant Garamond for display
+const cormorantDisplay = Cormorant_Garamond({
   variable: '--font-display',
   subsets: ['latin'],
-  weight: '400',
+  weight: ['400', '600', '700'],
   display: 'swap',
 });
 
@@ -59,9 +60,9 @@ export default async function RootLayout({
   return (
     <html
       lang="es"
-      className={`${inter.variable} ${nunito.variable} ${pacifico.variable} h-full antialiased overflow-x-hidden`}
+      className={`${dmSans.variable} ${cormorant.variable} ${cormorantDisplay.variable} h-full antialiased overflow-x-hidden`}
     >
-      <body className="flex min-h-full flex-col bg-brand-cream text-foreground overflow-x-hidden">
+      <body className="flex min-h-full flex-col bg-white text-brand-text overflow-x-hidden">
         <main className="flex-1">
           {children}
         </main>

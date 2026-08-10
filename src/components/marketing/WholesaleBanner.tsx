@@ -59,7 +59,7 @@ export function WholesaleBanner() {
             >
               <Link 
                 href="/registro-mayorista" 
-                className="block px-8 py-4 bg-white text-brand-pink-dark rounded-full font-nunito font-bold text-lg hover:bg-brand-cream transition-colors shadow-lg"
+                className="block px-8 py-4 bg-white text-brand-pink-dark rounded-full font-sans font-bold text-lg hover:bg-brand-cream transition-colors shadow-lg"
               >
                 Ser Mayorista
               </Link>
@@ -72,7 +72,7 @@ export function WholesaleBanner() {
             >
               <Link 
                 href="/mayoristas/login" 
-                className="block px-8 py-4 bg-transparent text-white border-2 border-white rounded-full font-nunito font-bold text-lg hover:bg-white/10 transition-colors"
+                className="block px-8 py-4 bg-transparent text-white border-2 border-white rounded-full font-sans font-bold text-lg hover:bg-white/10 transition-colors"
               >
                 Iniciar Sesión
               </Link>

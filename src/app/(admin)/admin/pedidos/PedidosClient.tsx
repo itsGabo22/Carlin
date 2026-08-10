@@ -114,7 +114,7 @@ export default function PedidosClient({ initialOrders }: { initialOrders: Order[
 
       <div className="overflow-x-auto">
         <table className="w-full text-left text-sm">
-          <thead className="bg-gray-50 text-gray-600 font-nunito">
+          <thead className="bg-gray-50 text-gray-600 font-sans">
             <tr>
               <th className="px-4 py-3 rounded-l-lg">ID</th>
               <th className="px-4 py-3">Cliente</th>
@@ -190,7 +190,7 @@ export default function PedidosClient({ initialOrders }: { initialOrders: Order[
                   <tr>
                     <td colSpan={8} className="px-4 py-4 bg-gray-50 border-b border-gray-100">
                       <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                        <h4 className="font-nunito font-bold text-gray-900 mb-4">Detalle de Productos</h4>
+                        <h4 className="font-serif font-bold text-gray-900 mb-4">Detalle de Productos</h4>
                         <div className="space-y-3">
                           {order.items.map(item => {
                             const hasStock = item.product.stock >= item.quantity;

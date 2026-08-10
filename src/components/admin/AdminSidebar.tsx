@@ -44,7 +44,7 @@ export function AdminSidebar({ pendingOrdersCount = 0 }: { pendingOrdersCount?: 
       )}
     >
       <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 shrink-0">
-        {!collapsed && <span className="font-pacifico text-xl text-brand-pink-light">Carlin Admin</span>}
+        {!collapsed && <span className="font-display text-xl text-brand-pink-light">Carlin Admin</span>}
         <button
           onClick={() => setCollapsed(!collapsed)}
           className={cn("p-1 hover:bg-white/10 rounded-md transition-colors", collapsed && "mx-auto")}

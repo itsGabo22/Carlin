@@ -47,7 +47,7 @@ export default async function CategoriaPage({
       <div className="flex flex-col md:flex-row gap-8">
         <aside className="w-full md:w-64 shrink-0 hidden md:block">
           <div className="bg-white rounded-2xl p-6 border border-brand-pink-light/20 shadow-sm sticky top-24">
-            <h2 className="font-nunito font-bold text-brand-pink-dark text-lg mb-4">{category.name}</h2>
+            <h2 className="font-serif font-bold text-brand-pink-dark text-lg mb-4">{category.name}</h2>
             {category.children && category.children.length > 0 && (
               <ul className="flex flex-col gap-2">
                 {category.children.map(child => (
@@ -64,7 +64,7 @@ export default async function CategoriaPage({
 
         <div className="flex-1">
           <div className="mb-8">
-            <h1 className="text-3xl font-nunito font-bold text-gray-900 mb-2">{category.name}</h1>
+            <h1 className="text-3xl font-serif font-bold text-gray-900 mb-2">{category.name}</h1>
             {category.description && <p className="text-gray-600">{category.description}</p>}
           </div>
 

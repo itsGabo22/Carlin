@@ -86,7 +86,7 @@ export function ProductCard({ product, priceLevel, isPriority, className }: Prod
           </span>
         )}
         
-        <h3 className="font-nunito font-semibold text-gray-900 text-sm sm:text-base leading-snug line-clamp-2 mb-2 flex-1">
+        <h3 className="font-sans font-semibold text-gray-900 text-sm sm:text-base leading-snug line-clamp-2 mb-2 flex-1">
           {product.name}
         </h3>
 

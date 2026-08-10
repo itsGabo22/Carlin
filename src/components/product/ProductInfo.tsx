@@ -48,7 +48,7 @@ export function ProductInfo({ product, priceLevel }: ProductInfoProps) {
         </span>
       )}
 
-      <h1 className="font-nunito text-2xl sm:text-3xl font-bold text-gray-900">{product.name}</h1>
+      <h1 className="font-serif text-2xl sm:text-3xl font-bold text-gray-900">{product.name}</h1>
 
       <PriceDisplay product={product} priceLevel={priceLevel} size="lg" />
 
@@ -102,7 +102,7 @@ export function ProductInfo({ product, priceLevel }: ProductInfoProps) {
           <button
             type="button"
             onClick={handleAddToCart}
-            className="flex-1 flex items-center justify-center gap-2 bg-brand-pink hover:bg-brand-pink-dark text-white font-nunito font-bold py-3 rounded-xl transition-colors"
+            className="flex-1 flex items-center justify-center gap-2 bg-brand-pink hover:bg-brand-pink-dark text-white font-sans font-bold py-3 rounded-xl transition-colors"
           >
             <ShoppingBag className="w-4 h-4" />
             {added ? '¡Agregado!' : 'Agregar al carrito'}

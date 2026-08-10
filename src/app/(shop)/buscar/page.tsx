@@ -33,7 +33,7 @@ export default async function BuscarPage({
         <div className="bg-brand-pink-light/20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
           <Search className="w-10 h-10 text-brand-pink-dark/50" />
         </div>
-        <h1 className="text-3xl font-nunito font-bold text-gray-900 mb-2">Búsqueda</h1>
+        <h1 className="text-3xl font-serif font-bold text-gray-900 mb-2">Búsqueda</h1>
         <p className="text-gray-600 max-w-md mx-auto">
           Escribe algo en la barra superior para buscar productos.
         </p>
@@ -52,7 +52,7 @@ export default async function BuscarPage({
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
       <div className="mb-8">
-        <h1 className="text-3xl font-nunito font-bold text-gray-900 mb-2">
+        <h1 className="text-3xl font-serif font-bold text-gray-900 mb-2">
           Resultados para "{q}"
         </h1>
         <p className="text-gray-600">

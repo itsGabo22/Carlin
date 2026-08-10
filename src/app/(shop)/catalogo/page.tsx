@@ -32,14 +32,14 @@ export default async function CatalogoPage({
         {/* Sidebar placeholder para filtros - Hito 1 simple */}
         <aside className="w-full md:w-64 shrink-0 hidden md:block">
           <div className="bg-white rounded-2xl p-6 border border-brand-pink-light/20 shadow-sm sticky top-24">
-            <h2 className="font-nunito font-bold text-brand-pink-dark text-lg mb-4">Filtros</h2>
+            <h2 className="font-serif font-bold text-brand-pink-dark text-lg mb-4">Filtros</h2>
             <p className="text-sm text-gray-500">Próximamente filtros por categoría, marca y precio.</p>
           </div>
         </aside>
 
         <div className="flex-1">
           <div className="mb-8">
-            <h1 className="text-3xl font-nunito font-bold text-gray-900 mb-2">Catálogo</h1>
+            <h1 className="text-3xl font-serif font-bold text-gray-900 mb-2">Catálogo</h1>
             <p className="text-gray-600">Explora todos nuestros productos con tus precios especiales.</p>
           </div>
 

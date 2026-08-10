@@ -77,7 +77,7 @@ export default function RegistroMayoristaPage() {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
-        <h2 className="text-2xl font-nunito font-bold text-gray-900 mb-4">¡Solicitud recibida!</h2>
+        <h2 className="text-2xl font-serif font-bold text-gray-900 mb-4">¡Solicitud recibida!</h2>
         <p className="text-gray-600 mb-8">
           Tu solicitud fue recibida correctamente. Estaremos revisando tus datos y te notificaremos por correo cuando tu cuenta sea aprobada para ver los precios especiales.
         </p>
@@ -103,7 +103,7 @@ export default function RegistroMayoristaPage() {
 
       <div className="bg-white p-8 rounded-2xl shadow-sm border border-brand-pink-light/20">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-nunito font-bold text-gray-900 mb-2">Registro para Mayoristas</h1>
+          <h1 className="text-2xl font-serif font-bold text-gray-900 mb-2">Registro para Mayoristas</h1>
           <p className="text-gray-500">Completa tus datos para acceder a precios exclusivos.</p>
         </div>
 
@@ -148,14 +148,14 @@ export default function RegistroMayoristaPage() {
               <label className="flex flex-col border rounded-xl p-4 cursor-pointer hover:border-brand-pink-light transition-colors has-[:checked]:border-brand-pink has-[:checked]:bg-brand-pink-light/5">
                 <div className="flex items-center gap-2 mb-1">
                   <input type="radio" value="MAYORISTA" {...register('role')} className="text-brand-pink focus:ring-brand-pink accent-brand-pink" />
-                  <span className="font-nunito font-bold text-gray-900">Mayorista</span>
+                  <span className="font-sans font-bold text-gray-900">Mayorista</span>
                 </div>
                 <span className="text-xs text-gray-500 pl-6">Compras desde $200.000</span>
               </label>
               <label className="flex flex-col border rounded-xl p-4 cursor-pointer hover:border-brand-pink-light transition-colors has-[:checked]:border-brand-distributor has-[:checked]:bg-brand-distributor/5">
                 <div className="flex items-center gap-2 mb-1">
                   <input type="radio" value="DISTRIBUIDOR" {...register('role')} className="text-brand-distributor focus:ring-brand-distributor accent-brand-distributor" />
-                  <span className="font-nunito font-bold text-gray-900">Distribuidor</span>
+                  <span className="font-sans font-bold text-gray-900">Distribuidor</span>
                 </div>
                 <span className="text-xs text-gray-500 pl-6">Compras desde $400.000</span>
               </label>

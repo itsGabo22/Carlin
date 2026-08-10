@@ -197,7 +197,7 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
               <ArrowLeft size={20} />
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold font-nunito text-gray-900">
+          <h1 className="text-2xl font-bold font-serif text-gray-900">
             {isNew ? 'Nuevo Producto' : 'Editar Producto'}
           </h1>
         </div>

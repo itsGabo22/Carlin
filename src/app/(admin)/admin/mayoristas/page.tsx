@@ -12,7 +12,7 @@ export default async function AdminMayoristasPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold font-nunito text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold font-serif text-gray-900 flex items-center gap-2">
             <Users className="text-brand-pink" /> Mayoristas
           </h1>
           <p className="text-gray-500">Gestiona las solicitudes y cuentas de clientes mayoristas.</p>

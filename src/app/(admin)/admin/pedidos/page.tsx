@@ -14,7 +14,7 @@ export default async function AdminPedidosPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold font-nunito text-gray-900 flex items-center gap-2">
+          <h1 className="text-2xl font-bold font-serif text-gray-900 flex items-center gap-2">
             <ShoppingBag className="text-brand-pink" /> Pedidos
           </h1>
           <p className="text-gray-500">Gestiona y procesa los pedidos generados por WhatsApp.</p>

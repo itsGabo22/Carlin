@@ -114,7 +114,7 @@ export default function AdminImagenesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold font-nunito text-gray-900">Bandeja de Imágenes</h1>
+        <h1 className="text-2xl font-bold font-serif text-gray-900">Bandeja de Imágenes</h1>
         <p className="text-gray-500">Sube imágenes masivamente para luego asignarlas a productos.</p>
       </div>
 

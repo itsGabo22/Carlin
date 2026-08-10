@@ -86,7 +86,7 @@ export function CsvImportModal() {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col overflow-hidden">
             <div className="px-6 py-4 border-b flex justify-between items-center bg-gray-50">
-              <h2 className="text-xl font-bold font-nunito">Importación Masiva de Productos</h2>
+              <h2 className="text-xl font-bold font-serif">Importación Masiva de Productos</h2>
               <button onClick={() => setOpen(false)} className="text-gray-500 hover:text-gray-800 text-xl font-bold">&times;</button>
             </div>
 

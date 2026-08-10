@@ -46,7 +46,7 @@ export default async function ProductoPage({ params }: ProductoPageProps) {
 
       {relatedProducts.length > 0 && (
         <section className="mt-16">
-          <h2 className="text-2xl font-nunito font-bold text-gray-900 mb-6">
+          <h2 className="text-2xl font-serif font-bold text-gray-900 mb-6">
             También te puede interesar
           </h2>
           <ProductGrid products={relatedProducts} priceLevel={sessionResult.priceLevel} />

@@ -114,7 +114,7 @@ export default function CarritoPage() {
                 </div>
                 
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-nunito font-bold text-brand-text truncate">{item.name}</h3>
+                  <h3 className="font-serif font-bold text-brand-text truncate">{item.name}</h3>
                   <div className="font-sans text-brand-pink-dark font-semibold mt-1">
                     {formatCOP(item.price)}
                   </div>
@@ -166,7 +166,7 @@ export default function CarritoPage() {
                 <span className="font-semibold text-brand-pink-dark capitalize">{priceLevel}</span>
               </div>
               
-              <div className="flex justify-between py-4 font-nunito text-lg font-bold text-brand-text">
+              <div className="flex justify-between py-4 font-sans text-lg font-bold text-brand-text">
                 <span>Total Estimado</span>
                 <span>{formatCOP(total)}</span>
               </div>

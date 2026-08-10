@@ -46,7 +46,7 @@ export default function MayoristasInfoPage() {
             <div className="w-14 h-14 rounded-full bg-brand-pink-light/40 flex items-center justify-center mb-4">
               <Icon className="w-6 h-6 text-brand-pink-dark" />
             </div>
-            <h2 className="font-nunito font-bold text-gray-900 mb-2">{title}</h2>
+            <h2 className="font-serif font-bold text-gray-900 mb-2">{title}</h2>
             <p className="text-sm text-gray-500">{description}</p>
           </div>
         ))}
