@@ -77,10 +77,10 @@ export function HeroSection({ slides = [] }: { slides?: any[] }) {
       <div className="absolute inset-0 z-0">
         {!hasSlides ? (
           <m.div style={{ y: prefersReducedMotion ? 0 : shapesY }} className="absolute inset-0 overflow-hidden">
-            <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #FFC8E3 0%, #FB9CD0 40%, #E05FA0 75%, #B5179E 100%)' }} />
+            <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #FDECF5 0%, #F0A0C6 40%, #E58EC7 75%, #9081DC 100%)' }} />
             <div className="hero-shape absolute -top-20 -right-20 w-96 h-96 rounded-full opacity-20 pointer-events-none" style={{ background: 'radial-gradient(circle, #FFFFFF 0%, transparent 70%)', animation: 'float-slow 12s ease-in-out infinite' }} />
             <div className="hero-shape absolute top-1/3 -left-16 w-64 h-64 rounded-full border-2 border-white/25 pointer-events-none" style={{ animation: 'float-medium 9s ease-in-out infinite 1s' }} />
-            <div className="hero-shape absolute top-16 right-1/4 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle, #FFBDE1 0%, transparent 70%)', animation: 'float-fast 7s ease-in-out infinite 0.5s' }} />
+            <div className="hero-shape absolute top-16 right-1/4 w-24 h-24 rounded-full opacity-30 pointer-events-none" style={{ background: 'radial-gradient(circle, #FFBBEC 0%, transparent 70%)', animation: 'float-fast 7s ease-in-out infinite 0.5s' }} />
             <div className="hero-shape absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 w-[600px] h-[600px] rounded-full border border-white/10 pointer-events-none" style={{ animation: 'pulse-ring 8s ease-in-out infinite' }} />
             <div className="hero-shape absolute -bottom-8 left-1/4 w-48 h-48 rounded-full opacity-15 pointer-events-none" style={{ background: 'radial-gradient(circle, #C084FC 0%, transparent 70%)', animation: 'float-slow 11s ease-in-out infinite 2s' }} />
             <div className="absolute inset-0 bg-black/10" />

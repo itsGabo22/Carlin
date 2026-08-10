@@ -9,7 +9,7 @@ export interface CategoryBarProps {
   categories: { id: string; name: string; slug: string }[];
 }
 
-const BUBBLE_SHADES = ['#FFBDE1', '#FB9CD0', '#FFF0F7', '#E879F9', '#FBCFE8', '#FCE7F3'];
+const BUBBLE_SHADES = ['var(--color-brand-pink-light)', 'var(--color-brand-pink)', 'var(--color-brand-cream)', 'var(--color-brand-distributor)', 'var(--color-brand-pink-light)', 'var(--color-brand-cream)'];
 
 const ICON_MAP: Record<string, string> = {
   'maquillaje': '/icons/categories/makeup.png',
@@ -27,9 +27,9 @@ const SPARKLE_STARS = [
 ];
 
 const SPARKLE_DOTS = [
-  { top: '8px', right: '14px', size: 8, color: '#E879F9', delay: '0s' },
-  { bottom: '10px', left: '10px', size: 6, color: '#FB9CD0', delay: '0.6s' },
-  { top: '20px', left: '8px', size: 5, color: '#FFBDE1', delay: '1.2s' },
+  { top: '8px', right: '14px', size: 8, color: 'var(--color-brand-distributor)', delay: '0s' },
+  { bottom: '10px', left: '10px', size: 6, color: 'var(--color-brand-pink)', delay: '0.6s' },
+  { top: '20px', left: '8px', size: 5, color: 'var(--color-brand-pink-light)', delay: '1.2s' },
 ];
 
 const containerVariants = (prefersReduced: boolean) => ({
@@ -66,7 +66,7 @@ export function CategoryBar({ categories }: CategoryBarProps) {
   );
 
   return (
-    <section className="relative overflow-hidden py-12 md:py-16" style={{ background: '#FFF0F7' }}>
+    <section className="relative overflow-hidden py-12 md:py-16" style={{ background: 'var(--color-brand-cream)' }}>
       {/* Bubble layer */}
       <div className="absolute inset-0 z-0 pointer-events-none" aria-hidden="true">
         {bubbles.map((b) => (
@@ -97,7 +97,7 @@ export function CategoryBar({ categories }: CategoryBarProps) {
             bottom: s.bottom,
             left: s.left,
             right: s.right,
-            color: '#DB2777',
+            color: 'var(--color-brand-pink-dark)',
             opacity: 0.2,
             fontSize: `${s.fontSize}px`,
             animation: `carlin-sparkle 3s ease-in-out infinite ${s.delay}`,
@@ -112,15 +112,15 @@ export function CategoryBar({ categories }: CategoryBarProps) {
         <div className="flex flex-col items-center mb-10 md:mb-12">
           <p
             className="text-2xl md:text-3xl text-center mb-2"
-            style={{ fontFamily: 'var(--font-serif)', fontWeight: 800, color: '#DB2777' }}
+            style={{ fontFamily: 'var(--font-serif)', fontWeight: 800, color: 'var(--color-brand-pink-dark)' }}
           >
             ¡Explora nuestras categorías!
           </p>
           <span
             className="bg-white rounded-full uppercase"
             style={{
-              border: '1.5px solid #FFBDE1',
-              color: '#FB9CD0',
+              border: '1.5px solid var(--color-brand-pink-light)',
+              color: 'var(--color-brand-pink)',
               fontSize: '11px',
               fontWeight: 700,
               padding: '4px 16px',
@@ -143,7 +143,7 @@ export function CategoryBar({ categories }: CategoryBarProps) {
             <m.div key={cat.id} variants={itemVariants(prefersReduced)}>
               <Link href={`/catalogo/${cat.slug}`} className="flex flex-col items-center gap-3 group">
                 <div
-                  className="carlin-cat-circle relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] rounded-full bg-white border-[3px] border-[#FFBDE1] flex items-center justify-center overflow-hidden transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(251,156,208,0.25)] group-hover:border-[#FB9CD0] group-hover:shadow-[0_12px_32px_rgba(251,156,208,0.45)]"
+                  className="carlin-cat-circle relative w-[100px] h-[100px] sm:w-[140px] sm:h-[140px] rounded-full bg-white border-[3px] border-[var(--color-brand-pink-light)] flex items-center justify-center overflow-hidden transition-all duration-300 cursor-pointer shadow-[0_4px_20px_rgba(251,156,208,0.25)] group-hover:border-[var(--color-brand-pink)] group-hover:shadow-[0_12px_32px_rgba(251,156,208,0.45)]"
                   style={{
                     animation: `carlin-float-icon ${3 + i * 0.7}s ease-in-out infinite`,
                     animationDelay: `${-i * 0.7}s`,
@@ -176,7 +176,7 @@ export function CategoryBar({ categories }: CategoryBarProps) {
                   />
                 </div>
 
-                <span className="text-[11px] font-extrabold tracking-widest uppercase text-[#DB2777] text-center leading-tight transition-colors duration-300 group-hover:text-[#FB9CD0]">
+                <span className="text-[11px] font-extrabold tracking-widest uppercase text-[var(--color-brand-pink-dark)] text-center leading-tight transition-colors duration-300 group-hover:text-[var(--color-brand-pink)]">
                   {cat.name}
                 </span>
               </Link>

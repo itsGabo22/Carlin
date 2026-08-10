@@ -10,7 +10,8 @@
   --color-brand-pink-dark: #E58EC7;  /* Primary dark hover */
   --color-brand-pink-light: #FFBBEC; /* Bright accent - strips */
   --color-brand-cream: #FDECF5;      /* Very light pink - borders */
-  --color-brand-distributor: #F09FC5;/* Overlay / Footer */
+  --color-brand-distributor: #A99DEA;/* Distributor tier (Lavender) */
+  --color-brand-distributor-dark: #9081DC;
   --color-brand-neutral-dark: #333333; /* Headings */
   --color-brand-text: #6D6D6D;       /* Body / prices */
   --color-brand-text-nav: #666666;   /* Nav links */
@@ -29,13 +30,13 @@
 
   /* ── Semantic Badge Colors ───────────────────────── */
   --color-badge-nuevo-bg: #FAF9F6;
-  --color-badge-nuevo-fg: #DB2777;
+  --color-badge-nuevo-fg: #A99DEA;
   --color-badge-vendido-bg: #0F0E0D;
-  --color-badge-vendido-fg: #FBCFE8;
+  --color-badge-vendido-fg: #FFBBEC;
   --color-badge-oferta-bg: #F5E6E6;
   --color-badge-oferta-fg: #C13B3B;
   --color-badge-tendencia-bg: #EAE6F5;
-  --color-badge-tendencia-fg: #E879F9;
+  --color-badge-tendencia-fg: #A99DEA;
 
   /* ── shadcn/ui semantic colors ───────────────────── */
   --color-background: var(--background);
