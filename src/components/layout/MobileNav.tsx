@@ -9,6 +9,11 @@ import { X, ChevronDown, Search, ShoppingBag, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useSessionStore } from '@/stores/sessionStore';
 import { useCartStore } from '@/stores/cartStore';
+import { cn } from '@/lib/utils';
+
+import { Lato } from 'next/font/google';
+
+const lato = Lato({ subsets: ['latin'], weight: ['400', '700'] });
 
 interface Category {
   id: string;
@@ -86,7 +91,7 @@ export function MobileNav({ isOpen, onClose, categories }: MobileNavProps) {
         role="dialog"
         aria-modal="true"
         aria-label="Menú de navegación"
-        className="fixed top-0 left-0 bottom-0 w-[300px] z-50 bg-white shadow-2xl shadow-brand-pink/20 flex flex-col overflow-y-auto"
+        className={cn("fixed top-0 left-0 bottom-0 w-[300px] z-50 bg-white shadow-2xl shadow-brand-pink/20 flex flex-col overflow-y-auto", lato.className)}
       >
         {/* CABECERA DEL DRAWER */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-brand-pink/15">

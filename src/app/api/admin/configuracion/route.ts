@@ -36,6 +36,7 @@ export async function PATCH(req: Request) {
     const announcementText = (formData.get('announcementText') as string) || '';
     const announcementActive = formData.get('announcementActive') === 'true';
     const heroUseVideo = formData.get('heroUseVideo') === 'true';
+    const wholesaleCatalogUrl = (formData.get('wholesaleCatalogUrl') as string) || '';
 
     const config = await prisma.siteConfig.upsert({
       where: { id: 'singleton' },
@@ -46,6 +47,7 @@ export async function PATCH(req: Request) {
         announcementText,
         announcementActive,
         heroUseVideo,
+        wholesaleCatalogUrl,
       },
       create: {
         id: 'singleton',
@@ -55,6 +57,7 @@ export async function PATCH(req: Request) {
         announcementText,
         announcementActive,
         heroUseVideo,
+        wholesaleCatalogUrl,
       }
     });
     

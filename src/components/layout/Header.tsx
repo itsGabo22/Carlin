@@ -2,20 +2,23 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { motion, useScroll, useMotionValueEvent, AnimatePresence } from 'framer-motion';
-import { Menu } from 'lucide-react';
+import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
+import { Menu, Search, User, ShoppingCart, Heart, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileNav } from '@/components/layout/MobileNav';
 import type { Category, Brand } from '@/types';
 import type { SessionResult } from '@/lib/auth/carlin-session';
 import { useCartStore } from '@/stores/cartStore';
-import { SearchIcon, CartIcon, ProfileIcon } from '@/components/icons/CarlinIcons';
 import { useSessionStore } from '@/stores/sessionStore';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { Lato } from 'next/font/google';
+import Image from 'next/image';
 
-// Orden de despliegue de las 4 secciones planas del menú (ver PROMPT 2).
-// Solo controla el orden visual; nombres, slugs e hijos vienen de categoriesTree.
+import { Marquee } from '@/components/layout/Marquee';
+
+const lato = Lato({ subsets: ['latin'], weight: ['400', '700'] });
+
 const NAV_ORDER = ['maquillaje', 'accesorios', 'cuidado-facial', 'cuidado-capilar'];
 
 interface HeaderProps {
@@ -24,50 +27,40 @@ interface HeaderProps {
   categoriesTree: Category[];
   brands: Brand[];
   sessionResult: SessionResult;
-  cartItemCount: number; // passed from layout if it reads cookies, or we read from Zustand? Zustand is better for client.
+  cartItemCount: number;
+  marquees?: string[];
+  wholesaleCatalogUrl?: string;
 }
 
-export function Header({ announcementText = 'Envíos gratis a todo el país', announcementActive = true, categoriesTree, brands, sessionResult }: HeaderProps) {
+// Icon component with fallback to Lucide
+function NavIcon({ src, fallback: FallbackIcon }: { src: string, fallback: any }) {
+  const [error, setError] = React.useState(false);
+  if (error) return <FallbackIcon className="w-6 h-6 text-gray-700" />;
+  return (
+    <img 
+      src={src} 
+      alt="icon" 
+      className="w-6 h-6 object-contain"
+      onError={() => setError(true)} 
+    />
+  );
+}
+
+export function Header({ announcementText = 'Envíos gratis a todo el país', announcementActive = true, categoriesTree, brands, sessionResult, marquees = [], wholesaleCatalogUrl }: HeaderProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const headerRef = React.useRef<HTMLElement>(null);
   
-  const cartItemCountFromStore = useCartStore((state) => state.getItemCount());
-  
-  // Use either the prop or the store (store preferred for client reactivity)
-  const cartItemCountFinal = cartItemCountFromStore;
-
+  const cartItemCountFinal = useCartStore((state) => state.getItemCount());
   const router = useRouter();
-  const searchInputRef = React.useRef<HTMLInputElement>(null);
-  const [searchOpen, setSearchOpen] = React.useState(false);
+  
   const [searchQuery, setSearchQuery] = React.useState('');
+  const [searchCategory, setSearchCategory] = React.useState('');
+  
   const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
-
   const { priceLevel } = useSessionStore();
   const isWholesale = priceLevel === 'wholesale' || priceLevel === 'distributor';
-
-  React.useEffect(() => {
-    if (searchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [searchOpen]);
-
-  React.useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && searchOpen) {
-        setSearchOpen(false);
-      }
-    };
-    window.addEventListener('keydown', handleKey);
-    return () => window.removeEventListener('keydown', handleKey);
-  }, [searchOpen]);
-
-  React.useEffect(() => {
-    const handler = () => setSearchOpen(true);
-    window.addEventListener('carlin:open-search', handler);
-    return () => window.removeEventListener('carlin:open-search', handler);
-  }, []);
 
   const { scrollY } = useScroll();
 
@@ -100,14 +93,24 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
     });
   }, [categoriesTree]);
 
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/buscar?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
+
   return (
-    <>
+    <div className={lato.className}>
       {/* Announcement Bar */}
       {announcementActive && announcementText && (
-        <div className="w-full py-2 px-4 text-center font-nunito text-xs sm:text-sm font-semibold tracking-wide bg-brand-pink text-white">
+        <div className="w-full py-2 px-4 text-center text-xs sm:text-sm font-semibold tracking-wide bg-brand-pink text-white">
           {announcementText}
         </div>
       )}
+
+      {/* New Marquee */}
+      {marquees.length > 0 && <Marquee messages={marquees} />}
 
       {/* Main Header */}
       <motion.header
@@ -120,68 +123,128 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
         transition={{ duration: 0.3, ease: 'easeOut' }}
         className={cn(
           'sticky top-0 z-30 w-full transition-shadow',
-          scrolled && 'shadow-sm backdrop-blur-md border-b border-brand-pink-light/30'
+          scrolled && 'shadow-md backdrop-blur-md'
         )}
       >
-        <div className="mx-auto flex h-16 sm:h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          
-          {/* Mobile Hamburger (Left) */}
-          <button
-            type="button"
-            className="lg:hidden flex items-center justify-center min-w-[44px] min-h-[44px] cursor-pointer -ml-2 text-brand-text hover:text-brand-pink-dark transition-colors duration-200"
-            onClick={() => setMobileNavOpen(true)}
-            aria-label="Abrir menú"
-            aria-expanded={mobileNavOpen}
-            aria-controls="mobile-nav"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-
-          {/* Logo (Center on mobile, Left on desktop) */}
-          <Link href="/" className="flex flex-col items-start leading-none">
-            <span
-              className="text-2xl text-brand-pink"
-              style={{ fontFamily: 'var(--font-pacifico, Pacifico, cursive)' }}
+        {/* ROW 1: Logo, Search, Icons */}
+        <div className="bg-white border-b border-gray-100">
+          <div className="mx-auto flex h-[102px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 gap-4">
+            
+            {/* Mobile Hamburger (Left) */}
+            <button
+              type="button"
+              className="lg:hidden flex items-center justify-center p-2 text-gray-700"
+              onClick={() => setMobileNavOpen(true)}
             >
-              Carlin
-            </span>
-            <span className="text-[9px] tracking-[0.3em] uppercase text-brand-pink font-sans -mt-0.5">
-              Cosméticos
-            </span>
-          </Link>
+              <Menu className="w-6 h-6" />
+            </button>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center gap-8">
+            {/* Logo */}
+            <Link href="/" className="flex shrink-0 items-center justify-center h-full py-1">
+              {/* Purpure logo sizing constraint: ~98% height, natural aspect ratio */}
+              <div className="flex flex-col items-center justify-center h-[98%] w-auto bg-white px-2">
+                <span className="text-4xl text-brand-pink" style={{ fontFamily: 'var(--font-pacifico, Pacifico, cursive)' }}>Carlin</span>
+                <span className="text-[10px] tracking-[0.3em] uppercase text-brand-pink font-sans -mt-1">Cosméticos</span>
+              </div>
+            </Link>
+
+            {/* Desktop Search Bar */}
+            <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
+              <form onSubmit={handleSearch} className="flex w-full h-[45px] rounded-full border-[0.8px] border-[#FF80B3] overflow-hidden bg-[#FAFAFA]">
+                <select 
+                  className="px-4 text-sm text-gray-600 bg-[#FAFAFA] border-r border-[#FF80B3] outline-none cursor-pointer"
+                  value={searchCategory}
+                  onChange={e => setSearchCategory(e.target.value)}
+                >
+                  <option value="">Todas las categorías</option>
+                  {orderedCategories.map(cat => (
+                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                  ))}
+                </select>
+                <input 
+                  type="text"
+                  placeholder="Buscar productos..."
+                  className="flex-1 px-4 bg-transparent outline-none text-sm"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+                <button type="submit" className="px-6 bg-[#FF80B3] text-white flex items-center justify-center hover:bg-[#E573A1] transition-colors">
+                  <NavIcon src="/icons/nav/search.svg" fallback={Search} />
+                </button>
+              </form>
+            </div>
+
+            {/* Action Icons */}
+            <div className="flex items-center gap-6 shrink-0">
+              {/* Desktop search icon (mobile only) */}
+              <button onClick={() => {}} className="lg:hidden p-2 flex flex-col items-center gap-1">
+                <NavIcon src="/icons/nav/search.svg" fallback={Search} />
+              </button>
+
+              <Link href="/lista-deseos" className="hidden sm:flex flex-col items-center gap-1 group">
+                <NavIcon src="/icons/nav/wishlist.svg" fallback={Heart} />
+                <span className="text-[10px] uppercase text-gray-500 group-hover:text-[#FF80B3]">Deseos</span>
+              </Link>
+
+              <div className="relative">
+                <button 
+                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                  className="flex flex-col items-center gap-1 group"
+                >
+                  <NavIcon src="/icons/nav/user.svg" fallback={User} />
+                  <span className="text-[10px] uppercase text-gray-500 group-hover:text-[#FF80B3]">Mi Cuenta</span>
+                </button>
+
+                {profileDropdownOpen && (
+                  <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-50">
+                    {isWholesale ? (
+                      <>
+                        <Link href="/mayoristas/perfil" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setProfileDropdownOpen(false)}>Mi Perfil</Link>
+                        <button onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cerrar sesión</button>
+                      </>
+                    ) : (
+                      <Link href="/mayoristas/login" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setProfileDropdownOpen(false)}>Ingreso Mayoristas</Link>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <Link href="/carrito" className="flex flex-col items-center gap-1 group relative">
+                <div className="relative">
+                  <NavIcon src="/icons/nav/cart.svg" fallback={ShoppingCart} />
+                  {cartItemCountFinal > 0 && (
+                    <span className="absolute -top-2 -right-2 flex items-center justify-center w-5 h-5 bg-[#FF80B3] text-white text-[11px] font-bold rounded-full">
+                      {cartItemCountFinal}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[10px] uppercase text-gray-500 group-hover:text-[#FF80B3]">Carrito</span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* ROW 2: Categories Menu */}
+        <div className="hidden lg:block bg-[#FF80B3]">
+          <nav className="max-w-7xl mx-auto flex items-center justify-center h-[50px] gap-8 px-4">
             {orderedCategories.map(cat => {
               const hasChildren = !!cat.children && cat.children.length > 0;
 
-              if (!hasChildren) {
-                return (
+              return (
+                <div key={cat.id} className="relative h-full flex items-center" onMouseEnter={() => setOpenMenuId(cat.id)} onMouseLeave={() => setOpenMenuId(null)}>
                   <Link
-                    key={cat.id}
                     href={`/catalogo/${cat.slug}`}
-                    className="font-nunito text-sm font-bold text-brand-text hover:text-brand-pink-dark transition-colors"
+                    className="text-white text-[14px] font-bold uppercase tracking-wider hover:text-white/80 transition-colors"
                   >
                     {cat.name}
                   </Link>
-                );
-              }
-
-              return (
-                <div key={cat.id} className="relative">
-                  <button
-                    onClick={() => toggleMenu(cat.id)}
-                    className="font-nunito text-sm font-bold text-brand-text hover:text-brand-pink-dark transition-colors flex items-center gap-1"
-                  >
-                    {cat.name}
-                  </button>
-                  {openMenuId === cat.id && (
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 mt-4 w-[420px] bg-white rounded-2xl shadow-xl border border-brand-pink-light/20 p-6 grid grid-cols-2 gap-x-6 gap-y-3">
+                  {hasChildren && openMenuId === cat.id && (
+                    <div className="absolute top-[50px] left-0 w-64 bg-white shadow-xl border-t-2 border-[#FF80B3] py-2 z-50 flex flex-col">
                       {cat.children!.map(sub => (
                         <Link
                           key={sub.id}
                           href={`/catalogo/${cat.slug}/${sub.slug}`}
-                          className="font-nunito font-bold text-brand-pink-dark hover:underline"
+                          className="px-4 py-3 text-sm text-gray-700 hover:bg-[#FF80B3] hover:text-white transition-colors"
                           onClick={() => setOpenMenuId(null)}
                         >
                           {sub.name}
@@ -193,125 +256,29 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
               );
             })}
 
+            {wholesaleCatalogUrl && (
+              <a
+                href={wholesaleCatalogUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-white text-[14px] font-bold uppercase tracking-wider hover:text-white/80 transition-colors ml-4"
+              >
+                Catálogo Mayorista
+                <span className="bg-[#A99DEA] text-white text-[10px] px-2 py-0.5 rounded uppercase tracking-wider">
+                  VER CATALOGO
+                </span>
+              </a>
+            )}
+
             <Link
               href="/mayoristas/login"
-              className="font-nunito text-sm font-bold bg-brand-pink-dark text-white px-5 py-2 rounded-full hover:bg-brand-pink transition-colors shadow-sm"
+              className="text-white text-[14px] font-bold uppercase tracking-wider hover:text-white/80 transition-colors ml-auto"
             >
               Mayoristas
             </Link>
           </nav>
-
-          {/* Action Icons */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            <button onClick={() => setSearchOpen(true)} className="p-2 text-brand-text hover:text-brand-pink-dark transition-colors">
-              <SearchIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-            </button>
-
-            <div className="hidden sm:flex items-center relative">
-              {isWholesale && (
-                <>
-                  <button 
-                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                    className="p-2 text-brand-text hover:text-brand-pink-dark transition-colors focus-visible:outline-none"
-                    aria-label="Menú de perfil"
-                  >
-                    <ProfileIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </button>
-                  {profileDropdownOpen && (
-                    <div 
-                      className="absolute top-full mt-2 right-0 w-48 bg-white rounded-xl shadow-lg border border-brand-pink/20 py-2 z-50"
-                      role="menu"
-                    >
-                      <Link 
-                        href="/mayoristas/perfil" 
-                        className="block px-4 py-2 text-sm text-brand-text hover:bg-brand-pink-light/30 transition-colors" 
-                        onClick={() => setProfileDropdownOpen(false)}
-                        role="menuitem"
-                      >
-                        Mi Perfil
-                      </Link>
-                      <button 
-                        onClick={async () => {
-                          await supabase.auth.signOut();
-                          setProfileDropdownOpen(false);
-                          window.location.reload();
-                        }} 
-                        className="block w-full text-left px-4 py-2 text-sm text-brand-text hover:bg-brand-pink-light/30 transition-colors"
-                        role="menuitem"
-                      >
-                        Cerrar sesión
-                      </button>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-
-            <Link href="/carrito" className="p-2 text-brand-text hover:text-brand-pink-dark transition-colors relative">
-              <CartIcon className="w-5 h-5 sm:w-6 sm:h-6" />
-              {cartItemCountFinal > 0 && (
-                <span className="absolute top-0 right-0 flex items-center justify-center w-4 h-4 bg-brand-pink text-white text-[10px] font-bold rounded-full">
-                  {cartItemCountFinal}
-                </span>
-              )}
-            </Link>
-          </div>
         </div>
       </motion.header>
-
-      {/* Search Overlay */}
-      {searchOpen && (
-        <div className="fixed inset-0 z-50 bg-brand-cream/95 backdrop-blur-sm flex flex-col">
-          {/* Barra de búsqueda */}
-          <div className="flex items-center gap-3 px-4 py-4 border-b border-brand-pink/20">
-            <SearchIcon className="w-5 h-5 text-brand-pink flex-shrink-0" />
-            <input
-              ref={searchInputRef}
-              type="search"
-              placeholder="Buscar productos, marcas..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && searchQuery.trim()) {
-                  router.push(`/buscar?q=${encodeURIComponent(searchQuery.trim())}`);
-                  setSearchOpen(false);
-                  setSearchQuery('');
-                }
-              }}
-              className="flex-1 bg-transparent text-lg outline-none text-brand-neutral-dark placeholder:text-neutral-400"
-              autoComplete="off"
-            />
-            <button 
-              onClick={() => setSearchOpen(false)}
-              className="text-neutral-400 hover:text-brand-pink min-w-[44px] min-h-[44px] flex items-center justify-center transition-colors"
-              aria-label="Cerrar búsqueda"
-            >
-              ✕
-            </button>
-          </div>
-
-          {/* Sugerencias rápidas */}
-          <div className="px-4 py-6">
-            <p className="text-xs text-neutral-400 uppercase tracking-wider mb-3">
-              Búsquedas populares
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {['Bases', 'Labiales', 'Sombras', 'Shampoo', 'Cremas'].map(s => (
-                <button key={s}
-                  onClick={() => {
-                    router.push(`/buscar?q=${encodeURIComponent(s)}`);
-                    setSearchOpen(false);
-                    setSearchQuery('');
-                  }}
-                  className="px-3 py-1.5 rounded-full bg-brand-pink-light text-brand-pink-dark text-sm hover:bg-brand-pink hover:text-white transition-colors"
-                >
-                  {s}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
 
       <MobileNav 
         isOpen={mobileNavOpen} 
@@ -319,6 +286,6 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
         categories={categoriesTree as any} 
         cartItemCount={cartItemCountFinal} 
       />
-    </>
+    </div>
   );
 }

@@ -48,6 +48,7 @@ model SiteConfig {
   announcementText    String?
   announcementActive  Boolean  @default(false)
   heroUseVideo        Boolean  @default(false)
+  wholesaleCatalogUrl String?
   updatedAt           DateTime @updatedAt
 }
 
@@ -222,4 +223,13 @@ model LoginAttempt {
   email     String
   success   Boolean  @default(false)
   createdAt DateTime @default(now())
+}
+
+model MarqueeMessage {
+  id        String   @id @default(cuid())
+  message   String
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

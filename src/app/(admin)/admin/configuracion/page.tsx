@@ -16,6 +16,7 @@ export default function AdminConfiguracionPage() {
     wholesaleMinOrder: 200000,
     distributorMinOrder: 400000,
     inactivityDays: 30,
+    wholesaleCatalogUrl: '',
   });
 
   const [slides, setSlides] = useState<any[]>([]);
@@ -37,6 +38,14 @@ export default function AdminConfiguracionPage() {
     video: null as File | null,
   });
 
+  const [marquees, setMarquees] = useState<any[]>([]);
+  const [marqueeModalOpen, setMarqueeModalOpen] = useState(false);
+  const [editingMarqueeId, setEditingMarqueeId] = useState<string | null>(null);
+  const [marqueeForm, setMarqueeForm] = useState({
+    message: '',
+    active: true,
+  });
+
   const [popupLoading, setPopupLoading] = useState(false);
   const [popup, setPopup] = useState({
     active: false,
@@ -54,8 +63,9 @@ export default function AdminConfiguracionPage() {
     Promise.all([
       fetch('/api/admin/configuracion').then(r => r.json()),
       fetch('/api/admin/hero-slides').then(r => r.json()),
-      fetch('/api/admin/promo-popup').then(r => r.json())
-    ]).then(([configData, slidesData, popupData]) => {
+      fetch('/api/admin/promo-popup').then(r => r.json()),
+      fetch('/api/admin/marquee').then(r => r.json())
+    ]).then(([configData, slidesData, popupData, marqueeData]) => {
       if (configData && !configData.error) {
         setConfig({
           announcementText: configData.announcementText || '',
@@ -63,6 +73,7 @@ export default function AdminConfiguracionPage() {
           wholesaleMinOrder: parseFloat(configData.wholesaleMinOrder) || 200000,
           distributorMinOrder: parseFloat(configData.distributorMinOrder) || 400000,
           inactivityDays: configData.inactivityDays || 30,
+          wholesaleCatalogUrl: configData.wholesaleCatalogUrl || '',
         });
       }
       if (slidesData && Array.isArray(slidesData)) {
@@ -78,6 +89,9 @@ export default function AdminConfiguracionPage() {
           ctaHref: popupData.ctaHref || '',
           showOnce: popupData.showOnce ?? true,
         });
+      }
+      if (marqueeData && Array.isArray(marqueeData)) {
+        setMarquees(marqueeData);
       }
     }).finally(() => setFetching(false));
   };
@@ -126,6 +140,7 @@ export default function AdminConfiguracionPage() {
       fd.append('inactivityDays', config.inactivityDays.toString());
       fd.append('announcementText', config.announcementText);
       fd.append('announcementActive', config.announcementActive.toString());
+      fd.append('wholesaleCatalogUrl', config.wholesaleCatalogUrl);
 
       const resConfig = await fetch('/api/admin/configuracion', {
         method: 'PATCH',
@@ -252,6 +267,88 @@ export default function AdminConfiguracionPage() {
     });
   };
 
+  const openNewMarqueeModal = () => {
+    setEditingMarqueeId(null);
+    setMarqueeForm({ message: '', active: true });
+    setMarqueeModalOpen(true);
+  };
+
+  const openEditMarqueeModal = (mq: any) => {
+    setEditingMarqueeId(mq.id);
+    setMarqueeForm({ message: mq.message, active: mq.active });
+    setMarqueeModalOpen(true);
+  };
+
+  const handleSaveMarquee = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append('message', marqueeForm.message);
+      fd.append('active', marqueeForm.active.toString());
+
+      const url = editingMarqueeId ? `/api/admin/marquee/${editingMarqueeId}` : '/api/admin/marquee';
+      const method = editingMarqueeId ? 'PATCH' : 'POST';
+
+      const res = await fetch(url, { method, body: fd });
+      if (res.ok) {
+        setMarqueeModalOpen(false);
+        loadData();
+      } else {
+        alert('Error al guardar marquee');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error de conexión');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleMarqueeActive = async (mq: any) => {
+    try {
+      const fd = new FormData();
+      fd.append('active', (!mq.active).toString());
+      const res = await fetch(`/api/admin/marquee/${mq.id}`, { method: 'PATCH', body: fd });
+      if (res.ok) {
+        setMarquees(prev => prev.map(m => m.id === mq.id ? { ...m, active: !mq.active } : m));
+      } else {
+        alert('Error al actualizar el marquee');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error de conexión');
+    }
+  };
+
+  const handleDeleteMarquee = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar este mensaje?')) return;
+    try {
+      const res = await fetch(`/api/admin/marquee/${id}`, { method: 'DELETE' });
+      if (res.ok) loadData();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleReorderMarquee = async (index: number, direction: 'up' | 'down') => {
+    const newMqs = [...marquees];
+    if (direction === 'up' && index > 0) {
+      [newMqs[index - 1], newMqs[index]] = [newMqs[index], newMqs[index - 1]];
+    } else if (direction === 'down' && index < newMqs.length - 1) {
+      [newMqs[index + 1], newMqs[index]] = [newMqs[index], newMqs[index + 1]];
+    } else return;
+    
+    const updated = newMqs.map((m, i) => ({ ...m, order: i }));
+    setMarquees(updated);
+    
+    fetch('/api/admin/marquee/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: updated.map(m => ({ id: m.id, order: m.order })) })
+    });
+  };
+
   if (fetching) return <div className="p-8 text-center text-gray-500">Cargando...</div>;
 
   return (
@@ -291,6 +388,15 @@ export default function AdminConfiguracionPage() {
                 />
                 <span className="text-sm font-medium">Mostrar banner en la tienda</span>
               </label>
+
+              <div className="space-y-2 mt-4 pt-4 border-t border-gray-100">
+                <label className="text-sm font-medium text-brand-pink-dark">URL del Catálogo Mayorista (Canva, PDF, etc)</label>
+                <Input 
+                  value={config.wholesaleCatalogUrl} 
+                  onChange={e => setConfig({...config, wholesaleCatalogUrl: e.target.value})} 
+                  placeholder="Ej: https://www.canva.com/design/..." 
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -381,6 +487,55 @@ export default function AdminConfiguracionPage() {
                     <Button variant="ghost" size="icon" onClick={() => handleReorder(idx, 'down')} disabled={idx === slides.length - 1}><ArrowDown size={16} /></Button>
                     <Button variant="ghost" size="icon" onClick={() => openEditSlideModal(slide)}><Edit size={16} className="text-blue-600" /></Button>
                     <Button variant="ghost" size="icon" onClick={() => handleDeleteSlide(slide.id)}><Trash2 size={16} className="text-red-600" /></Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex justify-between items-center border-b pb-2">
+            <div>
+              <h2 className="text-xl font-bold">Marquee (Cinta de mensajes)</h2>
+              <p className="text-sm text-gray-500">Mensajes de texto que se desplazan infinitamente en la barra de navegación.</p>
+            </div>
+            <Button onClick={openNewMarqueeModal} className="bg-brand-pink hover:bg-brand-pink-dark">
+              <Plus size={16} className="mr-2" /> Nuevo Mensaje
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {marquees.length === 0 ? (
+              <p className="text-gray-500 text-sm py-4">No hay mensajes configurados.</p>
+            ) : (
+              marquees.map((mq, idx) => (
+                <div key={mq.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border">
+                  <div className="flex-1 truncate pr-4 text-sm font-medium">
+                    {mq.message}
+                  </div>
+                  
+                  {mq.active ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Activo</span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactivo</span>
+                  )}
+
+                  <div className="flex items-center gap-2 ml-4">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleToggleMarqueeActive(mq)}
+                      title={mq.active ? 'Ocultar mensaje' : 'Mostrar mensaje'}
+                    >
+                      {mq.active ? <Eye size={16} className="text-green-600" /> : <EyeOff size={16} className="text-gray-400" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleReorderMarquee(idx, 'up')} disabled={idx === 0}><ArrowUp size={16} /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleReorderMarquee(idx, 'down')} disabled={idx === marquees.length - 1}><ArrowDown size={16} /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => openEditMarqueeModal(mq)}><Edit size={16} className="text-blue-600" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteMarquee(mq.id)}><Trash2 size={16} className="text-red-600" /></Button>
                   </div>
                 </div>
               ))
@@ -542,6 +697,37 @@ export default function AdminConfiguracionPage() {
             <Button type="button" variant="ghost" onClick={() => setSlideModalOpen(false)}>Cancelar</Button>
             <Button type="submit" disabled={loading} className="bg-brand-pink hover:bg-brand-pink-dark text-white">
               {loading ? 'Guardando...' : 'Guardar Slide'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={marqueeModalOpen} onClose={() => setMarqueeModalOpen(false)} title={editingMarqueeId ? 'Editar Mensaje' : 'Nuevo Mensaje'}>
+        <form onSubmit={handleSaveMarquee} className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Mensaje</label>
+            <Input 
+              value={marqueeForm.message} 
+              onChange={e => setMarqueeForm({...marqueeForm, message: e.target.value})} 
+              placeholder="Ej: ENVÍO GRATIS POR COMPRAS SUPERIORES A $200.000" 
+              required
+            />
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer pt-2">
+            <input
+              type="checkbox"
+              checked={marqueeForm.active}
+              onChange={e => setMarqueeForm({ ...marqueeForm, active: e.target.checked })}
+              className="rounded text-brand-pink focus:ring-brand-pink"
+            />
+            <span className="text-sm font-medium">Mensaje activo</span>
+          </label>
+
+          <div className="pt-4 flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setMarqueeModalOpen(false)}>Cancelar</Button>
+            <Button type="submit" disabled={loading} className="bg-brand-pink hover:bg-brand-pink-dark text-white">
+              {loading ? 'Guardando...' : 'Guardar Mensaje'}
             </Button>
           </div>
         </form>

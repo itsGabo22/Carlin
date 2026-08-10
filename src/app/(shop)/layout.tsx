@@ -12,10 +12,11 @@ export default async function ShopLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [categoriesTree, brands, config] = await Promise.all([
+  const [categoriesTree, brands, config, marquees] = await Promise.all([
     categoryRepository.getTree(),
     brandRepository.getAll(),
-    prisma.siteConfig.findUnique({ where: { id: 'singleton' } })
+    prisma.siteConfig.findUnique({ where: { id: 'singleton' } }),
+    prisma.marqueeMessage.findMany({ where: { active: true }, orderBy: { order: 'asc' } })
   ]);
   
   const safeConfig = config || {
@@ -26,6 +27,7 @@ export default async function ShopLayout({
     announcementText: null,
     announcementActive: false,
     heroUseVideo: false,
+    wholesaleCatalogUrl: null,
     updatedAt: new Date()
   };
 
@@ -44,6 +46,8 @@ export default async function ShopLayout({
         cartItemCount={0} 
         announcementText={safeConfig.announcementText || undefined}
         announcementActive={safeConfig.announcementActive}
+        marquees={marquees.map(m => m.message)}
+        wholesaleCatalogUrl={safeConfig.wholesaleCatalogUrl || undefined}
       />
       {children}
       <Footer />
