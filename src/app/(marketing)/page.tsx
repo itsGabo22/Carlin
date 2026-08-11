@@ -1,5 +1,5 @@
 import { HeroSection } from '@/components/marketing/HeroSection';
-import { CategoryBar } from '@/components/marketing/CategoryBar';
+import { CategoryTiles } from '@/components/marketing/CategoryTiles';
 import { NovedadesSection } from '@/components/marketing/NovedadesSection';
 import { MasVendidosSection } from '@/components/marketing/MasVendidosSection';
 import { MarcasSection } from '@/components/marketing/MarcasSection';
@@ -66,7 +66,7 @@ export default async function HomePage() {
   return (
     <main className="overflow-hidden">
       <HeroSection slides={slides} />
-      <CategoryBar categories={categories as any} />
+      <CategoryTiles categories={categories as any} />
       <NovedadesSection products={formattedLatestProducts} priceLevel={sessionResult.priceLevel} />
       <WholesaleBanner />
       <MasVendidosSection products={finalPopular} priceLevel={sessionResult.priceLevel} />

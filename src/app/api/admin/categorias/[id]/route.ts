@@ -69,9 +69,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     });
 
     revalidatePath('/');
-    revalidatePath('/catalogo');
-    revalidatePath(`/catalogo/${category.slug}`);
-    if (existing.slug !== category.slug) revalidatePath(`/catalogo/${existing.slug}`);
+    // El catálogo es una ruta catch-all: revalidar como 'layout' cubre
+    // /catalogo y todas sus rutas anidadas a cualquier profundidad.
+    revalidatePath('/catalogo', 'layout');
     revalidatePath('/admin/categorias');
 
     return NextResponse.json(category);
@@ -112,8 +112,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     await prisma.category.delete({ where: { id } });
 
     revalidatePath('/');
-    revalidatePath('/catalogo');
-    revalidatePath(`/catalogo/${categoria.slug}`);
+    revalidatePath('/catalogo', 'layout');
     revalidatePath('/admin/categorias');
 
     return NextResponse.json({ success: true });

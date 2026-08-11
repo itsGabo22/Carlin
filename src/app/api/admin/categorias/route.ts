@@ -54,7 +54,7 @@ export async function POST(req: Request) {
 
     // Dentro del try/catch a propósito.
     revalidatePath('/');
-    revalidatePath('/catalogo');
+    revalidatePath('/catalogo', 'layout');
     revalidatePath('/admin/categorias');
 
     return NextResponse.json(category);

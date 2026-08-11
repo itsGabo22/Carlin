@@ -1,7 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import Link from 'next/link';
 import { m, useReducedMotion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 import { SectionHeader } from './SectionHeader';
 import { ProductGrid } from '@/components/catalog/ProductGrid';
 import type { Product } from '@/types';
@@ -12,6 +14,11 @@ export interface NovedadesSectionProps {
   priceLevel: PriceLevel;
 }
 
+/**
+ * "Nuevos Lanzamientos" — antes se mostraba como "Novedades".
+ * Solo cambia la etiqueta visible: los datos siguen siendo los últimos
+ * productos creados, y la grilla reutiliza la tarjeta compartida.
+ */
 export function NovedadesSection({ products, priceLevel }: NovedadesSectionProps) {
   const prefersReducedMotion = useReducedMotion();
 
@@ -23,10 +30,24 @@ export function NovedadesSection({ products, priceLevel }: NovedadesSectionProps
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: '-80px' }}
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="py-16 px-4 md:px-8 max-w-7xl mx-auto"
+      className="mx-auto max-w-7xl px-4 py-16 md:px-8"
     >
-      <SectionHeader title="Novedades" subtitle="Lo último que ha llegado a nuestro catálogo." />
+      <SectionHeader
+        title="Nuevos Lanzamientos"
+        subtitle="Lo último que ha llegado a nuestro catálogo."
+      />
+
       <ProductGrid products={products.slice(0, 8)} priceLevel={priceLevel} />
+
+      <div className="mt-10 flex justify-center">
+        <Link
+          href="/catalogo"
+          className="group inline-flex items-center gap-2 rounded-xl border border-brand-pink px-6 py-3 text-sm font-bold uppercase tracking-[1px] text-brand-pink-dark transition-colors hover:bg-brand-pink hover:text-white"
+        >
+          Ver todo el catálogo
+          <ArrowRight size={16} className="transition-transform duration-300 group-hover:translate-x-1" />
+        </Link>
+      </div>
     </m.section>
   );
 }

@@ -12,21 +12,30 @@ export interface MasVendidosSectionProps {
   priceLevel: PriceLevel;
 }
 
+/**
+ * "Más Vendidos". Va sobre fondo rosa muy claro para separarla visualmente de
+ * "Nuevos Lanzamientos", que queda sobre blanco. Misma tarjeta compartida.
+ */
 export function MasVendidosSection({ products, priceLevel }: MasVendidosSectionProps) {
   const prefersReducedMotion = useReducedMotion();
 
   if (!products || products.length === 0) return null;
 
   return (
-    <m.section
-      initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, margin: '-80px' }}
-      transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-      className="py-16 px-4 md:px-8 max-w-7xl mx-auto"
-    >
-      <SectionHeader title="Los Más Vendidos" subtitle="Descubre nuestros productos estrella, favoritos de los clientes." />
-      <ProductGrid products={products.slice(0, 4)} priceLevel={priceLevel} />
-    </m.section>
+    <div className="bg-brand-cream/35">
+      <m.section
+        initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-80px' }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className="mx-auto max-w-7xl px-4 py-16 md:px-8"
+      >
+        <SectionHeader
+          title="Más Vendidos"
+          subtitle="Descubre nuestros productos estrella, favoritos de los clientes."
+        />
+        <ProductGrid products={products.slice(0, 8)} priceLevel={priceLevel} />
+      </m.section>
+    </div>
   );
 }

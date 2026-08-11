@@ -15,32 +15,31 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   // 2. Categories — solo activas; las ocultas no deben indexarse.
+  // La URL se arma con la cadena COMPLETA de padres, así que las categorías de
+  // tercer nivel (Maquillaje > Ojos > Sombras) se indexan en su ruta real.
   const categories = await prisma.category.findMany({
     where: { active: true },
-    include: { children: { where: { active: true } } }
+    select: { id: true, slug: true, parentId: true }
   });
-  
-  const categoryRoutes = categories.flatMap(cat => {
-    const routes = [];
-    if (!cat.parentId) {
-      // Root category
-      routes.push({
-        url: `${baseUrl}/catalogo/${cat.slug}`,
-        priority: 0.8,
-        changeFrequency: 'weekly' as const,
-      });
-    } else {
-      // Subcategory
-      const parent = categories.find(p => p.id === cat.parentId);
-      if (parent) {
-        routes.push({
-          url: `${baseUrl}/catalogo/${parent.slug}/${cat.slug}`,
-          priority: 0.7,
-          changeFrequency: 'weekly' as const,
-        });
-      }
+
+  const porId = new Map(categories.map(c => [c.id, c]));
+
+  const categoryRoutes = categories.map(cat => {
+    const slugs: string[] = [];
+    let cursor: typeof cat | undefined = cat;
+    const vistos = new Set<string>();
+    while (cursor) {
+      if (vistos.has(cursor.id)) break; // guarda anti-ciclo
+      vistos.add(cursor.id);
+      slugs.unshift(cursor.slug);
+      cursor = cursor.parentId ? porId.get(cursor.parentId) : undefined;
     }
-    return routes;
+    return {
+      url: `${baseUrl}/catalogo/${slugs.join('/')}`,
+      // Cuanto más profunda, algo menos de prioridad.
+      priority: slugs.length === 1 ? 0.8 : slugs.length === 2 ? 0.7 : 0.6,
+      changeFrequency: 'weekly' as const,
+    };
   });
 
   // 3. Brands

@@ -4,6 +4,12 @@ import { Prisma } from '@prisma/client';
 
 export interface GetProductsOptions {
   categorySlug?: string;
+  /**
+   * Filtra por un conjunto explícito de categorías (la categoría vista y todas
+   * sus descendientes). Se usa en el catálogo para soportar profundidad
+   * arbitraria; `categorySlug` solo baja 3 niveles fijos.
+   */
+  categoryIds?: string[];
   brandSlug?: string;
   tagSlug?: string;
   search?: string;
@@ -12,6 +18,8 @@ export interface GetProductsOptions {
   page?: number;
   pageSize?: number;
   active?: boolean;
+  /** Orden del listado; por defecto destacados primero y luego los más nuevos. */
+  sort?: 'default' | 'latest' | 'price-asc' | 'price-desc' | 'name-asc';
 }
 
 export interface ProductsResult {
@@ -28,6 +36,22 @@ export interface IProductRepository {
   getFeatured(): Promise<Product[]>;
   getByBrand(brandSlug: string, options?: GetProductsOptions): Promise<ProductsResult>;
   search(query: string, options?: GetProductsOptions): Promise<ProductsResult>;
+}
+
+/** Traduce la opción de orden a un orderBy de Prisma. */
+function buildOrderBy(sort: GetProductsOptions['sort']): Prisma.ProductOrderByWithRelationInput[] {
+  switch (sort) {
+    case 'latest':
+      return [{ createdAt: 'desc' }];
+    case 'price-asc':
+      return [{ retailPrice: 'asc' }];
+    case 'price-desc':
+      return [{ retailPrice: 'desc' }];
+    case 'name-asc':
+      return [{ name: 'asc' }];
+    default:
+      return [{ featured: 'desc' }, { createdAt: 'desc' }];
+  }
 }
 
 function mapProduct(p: any): Product {
@@ -53,7 +77,8 @@ class PrismaProductRepository implements IProductRepository {
 
     const where: Prisma.ProductWhereInput = {
       active,
-      ...(options.categorySlug && {
+      ...(options.categoryIds && { categoryId: { in: options.categoryIds } }),
+      ...(!options.categoryIds && options.categorySlug && {
         OR: [
           { category: { slug: options.categorySlug } },
           { category: { parent: { slug: options.categorySlug } } },
@@ -97,10 +122,7 @@ class PrismaProductRepository implements IProductRepository {
           tags: { include: { tag: true } },
           discounts: { where: { active: true } },
         },
-        orderBy: [
-          { featured: 'desc' },
-          { createdAt: 'desc' }
-        ],
+        orderBy: buildOrderBy(options.sort),
         skip: (page - 1) * pageSize,
         take: pageSize
       })
