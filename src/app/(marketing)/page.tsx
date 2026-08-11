@@ -18,10 +18,11 @@ export default async function HomePage() {
   // Fetch required data in parallel
   const [config, categories, brands, latestProducts, popularProducts, slides, promoPopup] = await Promise.all([
     prisma.siteConfig.findUnique({ where: { id: 'singleton' } }),
+    // Solo categorías raíz activas: respeta el interruptor "Visible en la tienda".
     prisma.category.findMany({
-      where: { parentId: null },
-      select: { id: true, name: true, slug: true },
-      orderBy: { name: 'asc' }
+      where: { parentId: null, active: true },
+      select: { id: true, name: true, slug: true, imageUrl: true },
+      orderBy: [{ order: 'asc' }, { name: 'asc' }]
     }),
     prisma.brand.findMany({
       orderBy: { name: 'asc' }

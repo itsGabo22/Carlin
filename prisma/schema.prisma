@@ -67,20 +67,32 @@ model HeroSlide {
   createdAt      DateTime      @default(now())
 }
 
+/// Categorías y subcategorías viven en el MISMO modelo, en árbol vía `parentId`.
+/// Una "subcategoría" es simplemente una Category con parentId != null.
+/// No existe un modelo Subcategory aparte a propósito: duplicaría esta jerarquía
+/// (hoy 4 raíz + 36 hijas en producción) y rompería las rutas
+/// /catalogo/[categoria]/[subcategoria], el CRUD admin, la home y el sitemap.
 model Category {
   id          String     @id @default(cuid())
   name        String     @unique
   slug        String     @unique
   description String?
+  /// Imagen del círculo de subcategoría / mosaico de categoría en la home.
   imageUrl    String?
   parentId    String?
   groupByBrand Boolean @default(false)
+  /// Oculta la categoría del catálogo público sin borrarla ni tocar sus productos.
+  active      Boolean    @default(true)
+  /// Orden manual dentro de su nivel (menor primero); desempata por `name`.
+  order       Int        @default(0)
   parent      Category?  @relation("CategoryTree", fields: [parentId], references: [id])
   children    Category[] @relation("CategoryTree")
   products    Product[]
   discounts   Discount[]
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
+
+  @@index([parentId, active, order])
 }
 
 model Brand {

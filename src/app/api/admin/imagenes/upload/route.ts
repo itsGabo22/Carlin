@@ -22,7 +22,11 @@ export async function POST(req: Request) {
 
     // Create unique filename
     const filename = `${Date.now()}-${safeStorageName(file.name)}.webp`;
-    const path = bucket === 'brand-logos' ? `logos/${filename}` : `bandeja/${filename}`;
+    const folderByBucket: Record<string, string> = {
+      'brand-logos': 'logos',
+      'category-images': 'categorias',
+    };
+    const path = `${folderByBucket[bucket] ?? 'bandeja'}/${filename}`;
 
     // sharp → WebP → Blob-wrap → Supabase Storage (ver src/lib/images.ts)
     const publicUrl = await processAndUploadImage({

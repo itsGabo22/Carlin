@@ -28,11 +28,16 @@ CREATE POLICY "Public can read active products"
   FOR SELECT
   USING (active = true);
 
--- Category, Brand, Tag: lectura pública total
-CREATE POLICY "Public can read categories"
+-- Category: solo categorías/subcategorías activas son públicamente legibles.
+-- (Antes era USING (true); se ajustó al añadir la columna `active` en la fase 5,
+--  para alinearla con el mismo patrón que ya usa Product.)
+DROP POLICY IF EXISTS "Public can read categories" ON "public"."Category";
+CREATE POLICY "Public can read active categories"
   ON "public"."Category"
   FOR SELECT
-  USING (true);
+  USING (active = true);
+
+-- Brand, Tag: lectura pública total
 
 CREATE POLICY "Public can read brands"
   ON "public"."Brand"

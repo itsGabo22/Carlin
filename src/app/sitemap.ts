@@ -14,9 +14,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/legal/terminos`, priority: 0.3, changeFrequency: 'monthly' as const },
   ];
 
-  // 2. Categories
+  // 2. Categories — solo activas; las ocultas no deben indexarse.
   const categories = await prisma.category.findMany({
-    include: { children: true }
+    where: { active: true },
+    include: { children: { where: { active: true } } }
   });
   
   const categoryRoutes = categories.flatMap(cat => {
