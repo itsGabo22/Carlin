@@ -8,14 +8,15 @@ const lato = Lato({ subsets: ['latin'], weight: '400' });
 export function Marquee({ messages }: { messages: string[] }) {
   if (!messages || messages.length === 0) return null;
 
-  // Build a single "block" where every message has a leading bullet,
-  // including the very first one — so the seam between loops is seamless.
-  // e.g.  • MSG1   • MSG2   • MSG3
-  const block = messages.map(m => `•   ${m}`).join('     ');
-
-  // Duplicate twice: the animation scrolls exactly -50%, showing one copy
-  // while the other is off-screen — fully seamless loop.
-  const track = `${block}     ${block}`;
+  // Build one "block" of spans — every message gets a leading bullet.
+  // The block is duplicated once so the animation can scroll -50% seamlessly.
+  // Using elements (not a plain string) lets us apply real CSS padding per item.
+  const block = messages.map((m, i) => (
+    <span key={i} style={{ padding: '0 36px' }}>
+      <span style={{ marginRight: '12px', opacity: 0.8 }}>•</span>
+      {m}
+    </span>
+  ));
 
   return (
     <div
@@ -26,13 +27,21 @@ export function Marquee({ messages }: { messages: string[] }) {
       )}
       style={{ backgroundColor: '#FF80B3' }}
     >
+      {/* Two identical copies side-by-side; animation translates -50% = one full copy */}
       <div
         className="flex shrink-0 whitespace-nowrap"
-        style={{ animation: 'marquee-scroll 15s linear infinite' }}
+        style={{ animation: 'marquee-scroll 20s linear infinite' }}
       >
-        {track}
+        {/* Copy A */}
+        {block}
+        {/* Copy B — identical, butts up against A to form seamless loop */}
+        {messages.map((m, i) => (
+          <span key={`b-${i}`} style={{ padding: '0 36px' }}>
+            <span style={{ marginRight: '12px', opacity: 0.8 }}>•</span>
+            {m}
+          </span>
+        ))}
       </div>
-      {/* Inject keyframes via a style tag — safe in Next.js App Router client components */}
       <style>{`
         @keyframes marquee-scroll {
           0%   { transform: translateX(0); }

@@ -302,9 +302,6 @@ export function Header({
               );
             })}
 
-            {/* Divider between categories and utility links */}
-            <div className="flex-1" />
-
             {/* Catálogo Mayorista — flyout with two options (Purpure HAZTE MAYORISTA pattern) */}
             {hasCatalog && (
               <div
