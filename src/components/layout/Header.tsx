@@ -2,8 +2,9 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
-import { Menu, Search, User, ShoppingCart } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileNav } from '@/components/layout/MobileNav';
 import type { Category, Brand } from '@/types';
@@ -181,7 +182,7 @@ export function Header({
                   type="submit"
                   className="px-6 bg-[#FF80B3] text-white flex items-center justify-center hover:bg-[#E573A1] transition-colors"
                 >
-                  <Search className="w-5 h-5" />
+                  <Image src="/icons/nav/search.png" alt="Buscar" width={20} height={20} className="w-5 h-5 object-contain" />
                 </button>
               </form>
             </div>
@@ -194,7 +195,7 @@ export function Header({
                 onClick={handleSearch as any}
                 className="lg:hidden flex flex-col items-center gap-0.5 text-gray-600 hover:text-[#FF80B3] transition-colors"
               >
-                <Search className="w-6 h-6" />
+                <Image src="/icons/nav/search.png" alt="Buscar" width={24} height={24} className="w-6 h-6 object-contain" />
               </button>
 
               {/* Profile / Account */}
@@ -206,7 +207,7 @@ export function Header({
                   }}
                   className="flex flex-col items-center gap-0.5 text-gray-600 hover:text-[#FF80B3] transition-colors"
                 >
-                  <User className="w-6 h-6" />
+                  <Image src="/icons/nav/account.png" alt="Cuenta" width={24} height={24} className="w-6 h-6 object-contain" />
                   <span className="text-[10px] uppercase hidden sm:block">Mi Cuenta</span>
                 </button>
 
@@ -250,7 +251,7 @@ export function Header({
                 className="flex flex-col items-center gap-0.5 text-gray-600 hover:text-[#FF80B3] transition-colors relative"
               >
                 <div className="relative">
-                  <ShoppingCart className="w-6 h-6" />
+                  <Image src="/icons/nav/cart.png" alt="Carrito" width={24} height={24} className="w-6 h-6 object-contain" />
                   {cartItemCountFinal > 0 && (
                     <span className="absolute -top-2 -right-2 flex items-center justify-center w-5 h-5 bg-[#FF80B3] text-white text-[11px] font-bold rounded-full">
                       {cartItemCountFinal}
