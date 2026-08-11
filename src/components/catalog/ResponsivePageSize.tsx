@@ -2,11 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-
-export const PAGE_SIZE_DESKTOP = 24;
-export const PAGE_SIZE_MOBILE = 12;
-/** Debajo de este ancho se pagina de a 12. Coincide con el breakpoint `md` de Tailwind. */
-export const MOBILE_MAX_WIDTH = 767;
+import { PAGE_SIZE_MOBILE, MOBILE_MAX_WIDTH } from '@/lib/catalog/sort';
 
 /**
  * Ajusta el tamaño de página al ancho de pantalla: 24 en escritorio, 12 en móvil.

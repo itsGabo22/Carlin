@@ -1,16 +1,7 @@
 'use client';
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-
-export const SORT_OPTIONS = [
-  { value: 'default', label: 'Orden predeterminado' },
-  { value: 'latest', label: 'Ordenar por los últimos' },
-  { value: 'price-asc', label: 'Ordenar por precio: bajo a alto' },
-  { value: 'price-desc', label: 'Ordenar por precio: alto a bajo' },
-  { value: 'name-asc', label: 'Ordenar por nombre: A-Z' },
-] as const;
-
-export type SortValue = (typeof SORT_OPTIONS)[number]['value'];
+import { SORT_OPTIONS, type SortValue } from '@/lib/catalog/sort';
 
 /**
  * Línea de resultados: "Mostrando X–Y de Z resultados" + selector de orden.

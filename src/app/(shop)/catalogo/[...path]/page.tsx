@@ -10,12 +10,9 @@ import { ProductGrid } from '@/components/catalog/ProductGrid';
 import { SubcategoryCircles } from '@/components/catalog/SubcategoryCircles';
 import { CategoryTree, type TreeNode } from '@/components/catalog/CategoryTree';
 import { PriceFilter } from '@/components/catalog/PriceFilter';
-import { ResultsHeader, SORT_OPTIONS, type SortValue } from '@/components/catalog/ResultsHeader';
-import {
-  ResponsivePageSize,
-  PAGE_SIZE_DESKTOP,
-  PAGE_SIZE_MOBILE,
-} from '@/components/catalog/ResponsivePageSize';
+import { ResultsHeader } from '@/components/catalog/ResultsHeader';
+import { parseSort, PAGE_SIZE_DESKTOP, PAGE_SIZE_MOBILE, type SortValue } from '@/lib/catalog/sort';
+import { ResponsivePageSize } from '@/components/catalog/ResponsivePageSize';
 import {
   resolveCategoryChain,
   getActiveCategories,
@@ -82,10 +79,7 @@ export default async function CatalogoCategoriaPage({ params, searchParams }: Pa
   const perParam = Number(primerValor(sp.per));
   const pageSize = perParam === PAGE_SIZE_MOBILE ? PAGE_SIZE_MOBILE : PAGE_SIZE_DESKTOP;
 
-  const ordenParam = primerValor(sp.orden);
-  const sort: SortValue = SORT_OPTIONS.some((o) => o.value === ordenParam)
-    ? (ordenParam as SortValue)
-    : 'default';
+  const sort: SortValue = parseSort(primerValor(sp.orden));
 
   const idsCategoria = descendientes(todas, actual.id);
 
