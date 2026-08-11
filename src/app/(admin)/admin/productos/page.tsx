@@ -1,10 +1,11 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
-import { Package, Plus, Search, Edit, Trash2 } from 'lucide-react';
+import { Package, Plus, Search, Edit } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { CsvImportModal } from '@/components/admin/CsvImportModal';
+import { DeleteProductButton } from '@/components/admin/DeleteProductButton';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -121,9 +122,11 @@ export default async function AdminProductosPage({
                           <Edit size={16} />
                         </Button>
                       </Link>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50">
-                        <Trash2 size={16} />
-                      </Button>
+                      <DeleteProductButton
+                        productId={product.id}
+                        productName={product.name}
+                        isActive={product.active}
+                      />
                     </div>
                   </td>
                 </tr>
