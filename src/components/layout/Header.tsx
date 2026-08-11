@@ -180,9 +180,9 @@ export function Header({
                 />
                 <button
                   type="submit"
-                  className="px-6 bg-[#FF80B3] text-white flex items-center justify-center hover:bg-[#E573A1] transition-colors"
+                  className="px-6 bg-[#FF80B3] text-white font-bold tracking-wider text-sm hover:bg-[#E573A1] transition-colors"
                 >
-                  <Image src="/icons/nav/search.png" alt="Buscar" width={20} height={20} className="w-5 h-5 object-contain" />
+                  Buscar
                 </button>
               </form>
             </div>
@@ -191,12 +191,12 @@ export function Header({
             <div className="flex items-center gap-5 shrink-0">
 
               {/* Mobile search trigger */}
-              <button
-                onClick={handleSearch as any}
+              <Link
+                href="/buscar"
                 className="lg:hidden flex flex-col items-center gap-0.5 text-gray-600 hover:text-[#FF80B3] transition-colors"
               >
                 <Image src="/icons/nav/search.png" alt="Buscar" width={24} height={24} className="w-6 h-6 object-contain" />
-              </button>
+              </Link>
 
               {/* Profile / Account */}
               <div className="relative">
@@ -266,7 +266,7 @@ export function Header({
 
         {/* ── ROW 2: Category links (continuous left-aligned, Purpure spacing) ── */}
         <div className="hidden lg:block bg-[#FF80B3]">
-          <nav className="max-w-7xl mx-auto flex items-center h-[50px] px-4">
+          <nav className="max-w-7xl mx-auto flex justify-center items-center h-[50px] px-4">
 
             {/* Category links */}
             {orderedCategories.map((cat) => {
