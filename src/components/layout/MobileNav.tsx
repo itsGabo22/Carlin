@@ -4,7 +4,7 @@ import * as React from 'react';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { m, AnimatePresence, LazyMotion, domAnimation } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronDown, Search, ShoppingBag, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
 import { useSessionStore } from '@/stores/sessionStore';
@@ -67,10 +67,10 @@ export function MobileNav({ isOpen, onClose, categories }: MobileNavProps) {
   }, [isOpen]);
 
   return (
-    <LazyMotion features={domAnimation}>
+    <>
       <AnimatePresence>
         {isOpen && (
-        <m.div
+        <motion.div
           key="overlay"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -82,17 +82,17 @@ export function MobileNav({ isOpen, onClose, categories }: MobileNavProps) {
       )}
 
       {isOpen && (
-        <m.div
+        <motion.div
           key="drawer"
-        initial={{ x: '-100%' }}
-        animate={{ x: 0 }}
-        exit={{ x: '-100%' }}
-        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Menú de navegación"
-        className={cn("fixed top-0 left-0 bottom-0 w-[300px] z-50 bg-white shadow-2xl shadow-brand-pink/20 flex flex-col overflow-y-auto", lato.className)}
-      >
+          initial={{ x: '-100%' }}
+          animate={{ x: 0 }}
+          exit={{ x: '-100%' }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menú de navegación"
+          className={cn("fixed top-0 left-0 bottom-0 w-[300px] z-50 bg-white shadow-2xl shadow-brand-pink/20 flex flex-col overflow-y-auto", lato.className)}
+        >
         {/* CABECERA DEL DRAWER */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-brand-pink/15">
           {/* Logo */}
@@ -170,17 +170,14 @@ export function MobileNav({ isOpen, onClose, categories }: MobileNavProps) {
           <div className="my-3 border-t border-brand-pink/15" />
 
           {/* Links secundarios */}
-          <button
-            type="button"
-            onClick={() => {
-              onClose();
-              window.dispatchEvent(new CustomEvent('carlin:open-search'));
-            }}
+          <Link
+            href="/buscar"
+            onClick={onClose}
             className="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-600 hover:bg-brand-pink-light hover:text-brand-pink-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink text-left"
           >
             <Search className="w-4 h-4 flex-shrink-0" />
             <span className="font-sans text-sm">Buscar</span>
-          </button>
+          </Link>
 
           <Link href="/carrito" onClick={onClose} className="flex items-center gap-3 px-3 py-3 rounded-xl text-neutral-600 hover:bg-brand-pink-light hover:text-brand-pink-dark transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink">
             <ShoppingBag className="w-4 h-4 flex-shrink-0" />
@@ -222,9 +219,9 @@ export function MobileNav({ isOpen, onClose, categories }: MobileNavProps) {
             </Link>
           )}
         </div>
-      </m.div>
+      </motion.div>
       )}
       </AnimatePresence>
-    </LazyMotion>
+    </>
   );
 }

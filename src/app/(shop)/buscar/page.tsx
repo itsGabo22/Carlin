@@ -33,10 +33,22 @@ export default async function BuscarPage({
         <div className="bg-brand-pink-light/20 w-24 h-24 rounded-full flex items-center justify-center mx-auto mb-6">
           <Search className="w-10 h-10 text-brand-pink-dark/50" />
         </div>
-        <h1 className="text-3xl font-serif font-bold text-gray-900 mb-2">Búsqueda</h1>
-        <p className="text-gray-600 max-w-md mx-auto">
-          Escribe algo en la barra superior para buscar productos.
-        </p>
+        <h1 className="text-3xl font-serif font-bold text-gray-900 mb-6">Búsqueda</h1>
+        <form action="/buscar" method="GET" className="max-w-md mx-auto flex items-center gap-2">
+          <input 
+            type="text" 
+            name="q" 
+            placeholder="Buscar productos..." 
+            className="flex-1 px-4 py-3 border border-brand-pink/40 rounded-full focus:outline-none focus:ring-2 focus:ring-brand-pink"
+            autoFocus
+          />
+          <button 
+            type="submit" 
+            className="px-6 py-3 bg-brand-pink text-white rounded-full font-bold uppercase tracking-wider text-sm hover:bg-brand-pink-dark transition-colors"
+          >
+            Buscar
+          </button>
+        </form>
       </div>
     );
   }
