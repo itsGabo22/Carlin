@@ -29,14 +29,14 @@ export async function PATCH(req: Request) {
   try {
     const formData = await req.formData();
     
-    // Parse config fields
     const wholesaleMinOrder = Number(formData.get('wholesaleMinOrder')) || 200000;
     const distributorMinOrder = Number(formData.get('distributorMinOrder')) || 400000;
     const inactivityDays = Number(formData.get('inactivityDays')) || 30;
     const announcementText = (formData.get('announcementText') as string) || '';
     const announcementActive = formData.get('announcementActive') === 'true';
     const heroUseVideo = formData.get('heroUseVideo') === 'true';
-    const wholesaleCatalogUrl = (formData.get('wholesaleCatalogUrl') as string) || '';
+    const catalogMaquillajeUrl = (formData.get('catalogMaquillajeUrl') as string) || '';
+    const catalogCapilarUrl = (formData.get('catalogCapilarUrl') as string) || '';
 
     const config = await prisma.siteConfig.upsert({
       where: { id: 'singleton' },
@@ -47,7 +47,8 @@ export async function PATCH(req: Request) {
         announcementText,
         announcementActive,
         heroUseVideo,
-        wholesaleCatalogUrl,
+        catalogMaquillajeUrl: catalogMaquillajeUrl || null,
+        catalogCapilarUrl: catalogCapilarUrl || null,
       },
       create: {
         id: 'singleton',
@@ -57,7 +58,8 @@ export async function PATCH(req: Request) {
         announcementText,
         announcementActive,
         heroUseVideo,
-        wholesaleCatalogUrl,
+        catalogMaquillajeUrl: catalogMaquillajeUrl || null,
+        catalogCapilarUrl: catalogCapilarUrl || null,
       }
     });
     

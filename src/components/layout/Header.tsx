@@ -3,7 +3,7 @@
 import * as React from 'react';
 import Link from 'next/link';
 import { motion, useScroll, useMotionValueEvent } from 'framer-motion';
-import { Menu, Search, User, ShoppingCart, Heart, X } from 'lucide-react';
+import { Menu, Search, User, ShoppingCart } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { MobileNav } from '@/components/layout/MobileNav';
 import type { Category, Brand } from '@/types';
@@ -13,7 +13,6 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Lato } from 'next/font/google';
-import Image from 'next/image';
 
 import { Marquee } from '@/components/layout/Marquee';
 
@@ -29,38 +28,39 @@ interface HeaderProps {
   sessionResult: SessionResult;
   cartItemCount: number;
   marquees?: string[];
+  /** @deprecated replaced by catalogMaquillajeUrl + catalogCapilarUrl */
   wholesaleCatalogUrl?: string;
+  catalogMaquillajeUrl?: string;
+  catalogCapilarUrl?: string;
 }
 
-// Icon component with fallback to Lucide
-function NavIcon({ src, fallback: FallbackIcon }: { src: string, fallback: any }) {
-  const [error, setError] = React.useState(false);
-  if (error) return <FallbackIcon className="w-6 h-6 text-gray-700" />;
-  return (
-    <img 
-      src={src} 
-      alt="icon" 
-      className="w-6 h-6 object-contain"
-      onError={() => setError(true)} 
-    />
-  );
-}
-
-export function Header({ announcementText = 'Envíos gratis a todo el país', announcementActive = true, categoriesTree, brands, sessionResult, marquees = [], wholesaleCatalogUrl }: HeaderProps) {
+export function Header({
+  announcementText = 'Envíos gratis a todo el país',
+  announcementActive = true,
+  categoriesTree,
+  brands,
+  sessionResult,
+  marquees = [],
+  catalogMaquillajeUrl,
+  catalogCapilarUrl,
+}: HeaderProps) {
   const [scrolled, setScrolled] = React.useState(false);
   const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
+  const [catalogOpen, setCatalogOpen] = React.useState(false);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const headerRef = React.useRef<HTMLElement>(null);
-  
+
   const cartItemCountFinal = useCartStore((state) => state.getItemCount());
   const router = useRouter();
-  
+
   const [searchQuery, setSearchQuery] = React.useState('');
   const [searchCategory, setSearchCategory] = React.useState('');
-  
+
   const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
   const { priceLevel } = useSessionStore();
   const isWholesale = priceLevel === 'wholesale' || priceLevel === 'distributor';
+
+  const hasCatalog = !!(catalogMaquillajeUrl || catalogCapilarUrl);
 
   const { scrollY } = useScroll();
 
@@ -72,15 +72,13 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
     const handleClickOutside = (e: MouseEvent) => {
       if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
         setOpenMenuId(null);
+        setCatalogOpen(false);
+        setProfileDropdownOpen(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const toggleMenu = (id: string) => {
-    setOpenMenuId((prev) => (prev === id ? null : id));
-  };
 
   const orderedCategories = React.useMemo(() => {
     return [...categoriesTree].sort((a, b) => {
@@ -102,17 +100,17 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
 
   return (
     <div className={lato.className}>
-      {/* Announcement Bar */}
+      {/* Announcement Bar — untouched */}
       {announcementActive && announcementText && (
         <div className="w-full py-2 px-4 text-center text-xs sm:text-sm font-semibold tracking-wide bg-brand-pink text-white">
           {announcementText}
         </div>
       )}
 
-      {/* New Marquee */}
+      {/* Marquee */}
       {marquees.length > 0 && <Marquee messages={marquees} />}
 
-      {/* Main Header */}
+      {/* Main Header — sticky */}
       <motion.header
         ref={headerRef}
         animate={
@@ -126,11 +124,11 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
           scrolled && 'shadow-md backdrop-blur-md'
         )}
       >
-        {/* ROW 1: Logo, Search, Icons */}
+        {/* ── ROW 1: Logo · Search · Icons ── */}
         <div className="bg-white border-b border-gray-100">
           <div className="mx-auto flex h-[102px] max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 gap-4">
-            
-            {/* Mobile Hamburger (Left) */}
+
+            {/* Mobile Hamburger */}
             <button
               type="button"
               className="lg:hidden flex items-center justify-center p-2 text-gray-700"
@@ -139,108 +137,156 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
               <Menu className="w-6 h-6" />
             </button>
 
-            {/* Logo */}
-            <Link href="/" className="flex shrink-0 items-center justify-center h-full py-1">
-              {/* Purpure logo sizing constraint: ~98% height, natural aspect ratio */}
-              <div className="flex flex-col items-center justify-center h-[98%] w-auto bg-white px-2">
-                <span className="text-4xl text-brand-pink" style={{ fontFamily: 'var(--font-pacifico, Pacifico, cursive)' }}>Carlin</span>
-                <span className="text-[10px] tracking-[0.3em] uppercase text-brand-pink font-sans -mt-1">Cosméticos</span>
+            {/* Logo — height-bound, natural aspect ratio */}
+            <Link href="/" className="flex shrink-0 items-center justify-center h-full py-2">
+              <div className="flex flex-col items-center justify-center h-full w-auto px-2">
+                <span
+                  className="text-4xl text-brand-pink leading-none"
+                  style={{ fontFamily: 'var(--font-pacifico, Pacifico, cursive)' }}
+                >
+                  Carlin
+                </span>
+                <span className="text-[10px] tracking-[0.3em] uppercase text-brand-pink font-sans mt-0.5">
+                  Cosméticos
+                </span>
               </div>
             </Link>
 
             {/* Desktop Search Bar */}
             <div className="hidden lg:flex flex-1 max-w-2xl mx-8">
-              <form onSubmit={handleSearch} className="flex w-full h-[45px] rounded-full border-[0.8px] border-[#FF80B3] overflow-hidden bg-[#FAFAFA]">
-                <select 
-                  className="px-4 text-sm text-gray-600 bg-[#FAFAFA] border-r border-[#FF80B3] outline-none cursor-pointer"
+              <form
+                onSubmit={handleSearch}
+                className="flex w-full h-[45px] rounded-full border-[0.8px] border-[#FF80B3] overflow-hidden bg-[#FAFAFA]"
+              >
+                <select
+                  className="px-4 text-sm text-gray-600 bg-[#FAFAFA] border-r border-[#FF80B3] outline-none cursor-pointer shrink-0"
                   value={searchCategory}
-                  onChange={e => setSearchCategory(e.target.value)}
+                  onChange={(e) => setSearchCategory(e.target.value)}
                 >
                   <option value="">Todas las categorías</option>
-                  {orderedCategories.map(cat => (
-                    <option key={cat.id} value={cat.slug}>{cat.name}</option>
+                  {orderedCategories.map((cat) => (
+                    <option key={cat.id} value={cat.slug}>
+                      {cat.name}
+                    </option>
                   ))}
                 </select>
-                <input 
+                <input
                   type="text"
                   placeholder="Buscar productos..."
                   className="flex-1 px-4 bg-transparent outline-none text-sm"
                   value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <button type="submit" className="px-6 bg-[#FF80B3] text-white flex items-center justify-center hover:bg-[#E573A1] transition-colors">
-                  <NavIcon src="/icons/nav/search.svg" fallback={Search} />
+                <button
+                  type="submit"
+                  className="px-6 bg-[#FF80B3] text-white flex items-center justify-center hover:bg-[#E573A1] transition-colors"
+                >
+                  <Search className="w-5 h-5" />
                 </button>
               </form>
             </div>
 
-            {/* Action Icons */}
-            <div className="flex items-center gap-6 shrink-0">
-              {/* Desktop search icon (mobile only) */}
-              <button onClick={() => {}} className="lg:hidden p-2 flex flex-col items-center gap-1">
-                <NavIcon src="/icons/nav/search.svg" fallback={Search} />
+            {/* Action Icons — always render Lucide; no <img> / NavIcon until real SVGs exist */}
+            <div className="flex items-center gap-5 shrink-0">
+
+              {/* Mobile search trigger */}
+              <button
+                onClick={handleSearch as any}
+                className="lg:hidden flex flex-col items-center gap-0.5 text-gray-600 hover:text-[#FF80B3] transition-colors"
+              >
+                <Search className="w-6 h-6" />
               </button>
 
-              <Link href="/lista-deseos" className="hidden sm:flex flex-col items-center gap-1 group">
-                <NavIcon src="/icons/nav/wishlist.svg" fallback={Heart} />
-                <span className="text-[10px] uppercase text-gray-500 group-hover:text-[#FF80B3]">Deseos</span>
-              </Link>
-
+              {/* Profile / Account */}
               <div className="relative">
-                <button 
-                  onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                  className="flex flex-col items-center gap-1 group"
+                <button
+                  onClick={() => {
+                    setProfileDropdownOpen((o) => !o);
+                    setCatalogOpen(false);
+                  }}
+                  className="flex flex-col items-center gap-0.5 text-gray-600 hover:text-[#FF80B3] transition-colors"
                 >
-                  <NavIcon src="/icons/nav/user.svg" fallback={User} />
-                  <span className="text-[10px] uppercase text-gray-500 group-hover:text-[#FF80B3]">Mi Cuenta</span>
+                  <User className="w-6 h-6" />
+                  <span className="text-[10px] uppercase hidden sm:block">Mi Cuenta</span>
                 </button>
 
                 {profileDropdownOpen && (
                   <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-lg shadow-xl border border-gray-100 py-2 z-50">
                     {isWholesale ? (
                       <>
-                        <Link href="/mayoristas/perfil" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setProfileDropdownOpen(false)}>Mi Perfil</Link>
-                        <button onClick={async () => { await supabase.auth.signOut(); window.location.reload(); }} className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">Cerrar sesión</button>
+                        <Link
+                          href="/mayoristas/perfil"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                          onClick={() => setProfileDropdownOpen(false)}
+                        >
+                          Mi Perfil
+                        </Link>
+                        <button
+                          onClick={async () => {
+                            await supabase.auth.signOut();
+                            window.location.reload();
+                          }}
+                          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        >
+                          Cerrar sesión
+                        </button>
                       </>
                     ) : (
-                      <Link href="/mayoristas/login" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50" onClick={() => setProfileDropdownOpen(false)}>Ingreso Mayoristas</Link>
+                      <Link
+                        href="/mayoristas/login"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setProfileDropdownOpen(false)}
+                      >
+                        Ingreso Mayoristas
+                      </Link>
                     )}
                   </div>
                 )}
               </div>
 
-              <Link href="/carrito" className="flex flex-col items-center gap-1 group relative">
+              {/* Cart */}
+              <Link
+                href="/carrito"
+                className="flex flex-col items-center gap-0.5 text-gray-600 hover:text-[#FF80B3] transition-colors relative"
+              >
                 <div className="relative">
-                  <NavIcon src="/icons/nav/cart.svg" fallback={ShoppingCart} />
+                  <ShoppingCart className="w-6 h-6" />
                   {cartItemCountFinal > 0 && (
                     <span className="absolute -top-2 -right-2 flex items-center justify-center w-5 h-5 bg-[#FF80B3] text-white text-[11px] font-bold rounded-full">
                       {cartItemCountFinal}
                     </span>
                   )}
                 </div>
-                <span className="text-[10px] uppercase text-gray-500 group-hover:text-[#FF80B3]">Carrito</span>
+                <span className="text-[10px] uppercase hidden sm:block">Carrito</span>
               </Link>
             </div>
           </div>
         </div>
 
-        {/* ROW 2: Categories Menu */}
+        {/* ── ROW 2: Category links (continuous left-aligned, Purpure spacing) ── */}
         <div className="hidden lg:block bg-[#FF80B3]">
-          <nav className="max-w-7xl mx-auto flex items-center justify-center h-[50px] gap-8 px-4">
-            {orderedCategories.map(cat => {
-              const hasChildren = !!cat.children && cat.children.length > 0;
+          <nav className="max-w-7xl mx-auto flex items-center h-[50px] px-4">
 
+            {/* Category links */}
+            {orderedCategories.map((cat) => {
+              const hasChildren = !!cat.children && cat.children.length > 0;
               return (
-                <div key={cat.id} className="relative h-full flex items-center" onMouseEnter={() => setOpenMenuId(cat.id)} onMouseLeave={() => setOpenMenuId(null)}>
+                <div
+                  key={cat.id}
+                  className="relative h-full flex items-center"
+                  onMouseEnter={() => { setOpenMenuId(cat.id); setCatalogOpen(false); }}
+                  onMouseLeave={() => setOpenMenuId(null)}
+                >
                   <Link
                     href={`/catalogo/${cat.slug}`}
                     className="text-white text-[14px] font-bold uppercase tracking-wider hover:text-white/80 transition-colors"
+                    style={{ padding: '5px 17.5px' }}
                   >
                     {cat.name}
                   </Link>
                   {hasChildren && openMenuId === cat.id && (
                     <div className="absolute top-[50px] left-0 w-64 bg-white shadow-xl border-t-2 border-[#FF80B3] py-2 z-50 flex flex-col">
-                      {cat.children!.map(sub => (
+                      {cat.children!.map((sub) => (
                         <Link
                           key={sub.id}
                           href={`/catalogo/${cat.slug}/${sub.slug}`}
@@ -256,23 +302,62 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
               );
             })}
 
-            {wholesaleCatalogUrl && (
-              <a
-                href={wholesaleCatalogUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-white text-[14px] font-bold uppercase tracking-wider hover:text-white/80 transition-colors ml-4"
+            {/* Divider between categories and utility links */}
+            <div className="flex-1" />
+
+            {/* Catálogo Mayorista — flyout with two options (Purpure HAZTE MAYORISTA pattern) */}
+            {hasCatalog && (
+              <div
+                className="relative h-full flex items-center"
+                onMouseEnter={() => setCatalogOpen(true)}
+                onMouseLeave={() => setCatalogOpen(false)}
               >
-                Catálogo Mayorista
-                <span className="bg-[#A99DEA] text-white text-[10px] px-2 py-0.5 rounded uppercase tracking-wider">
-                  VER CATALOGO
-                </span>
-              </a>
+                <button
+                  className="flex items-center gap-2 text-white text-[14px] font-bold uppercase tracking-wider hover:text-white/80 transition-colors"
+                  style={{ padding: '5px 17.5px' }}
+                >
+                  Catálogo Mayorista
+                  <span className="bg-[#A99DEA] text-white text-[10px] px-2 py-0.5 rounded uppercase tracking-[0.05em]">
+                    VER CATALOGO
+                  </span>
+                </button>
+
+                {catalogOpen && (
+                  <div className="absolute top-[50px] right-0 w-64 bg-white shadow-xl border-t-2 border-[#A99DEA] py-2 z-50 flex flex-col">
+                    {catalogMaquillajeUrl && (
+                      <a
+                        href={catalogMaquillajeUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-3 text-sm text-gray-700 hover:bg-[#FF80B3] hover:text-white transition-colors flex items-center gap-2"
+                        onClick={() => setCatalogOpen(false)}
+                      >
+                        <span className="text-[#A99DEA] font-bold text-xs">VER</span>
+                        Catálogo Maquillaje
+                      </a>
+                    )}
+                    {catalogCapilarUrl && (
+                      <a
+                        href={catalogCapilarUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="px-4 py-3 text-sm text-gray-700 hover:bg-[#FF80B3] hover:text-white transition-colors flex items-center gap-2"
+                        onClick={() => setCatalogOpen(false)}
+                      >
+                        <span className="text-[#A99DEA] font-bold text-xs">VER</span>
+                        Catálogo Capilar
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
 
+            {/* Mayoristas login link — distinct, untouched */}
             <Link
               href="/mayoristas/login"
-              className="text-white text-[14px] font-bold uppercase tracking-wider hover:text-white/80 transition-colors ml-auto"
+              className="text-white text-[14px] font-bold uppercase tracking-wider hover:text-white/80 transition-colors"
+              style={{ padding: '5px 17.5px' }}
             >
               Mayoristas
             </Link>
@@ -280,11 +365,11 @@ export function Header({ announcementText = 'Envíos gratis a todo el país', an
         </div>
       </motion.header>
 
-      <MobileNav 
-        isOpen={mobileNavOpen} 
-        onClose={() => setMobileNavOpen(false)} 
-        categories={categoriesTree as any} 
-        cartItemCount={cartItemCountFinal} 
+      <MobileNav
+        isOpen={mobileNavOpen}
+        onClose={() => setMobileNavOpen(false)}
+        categories={categoriesTree as any}
+        cartItemCount={cartItemCountFinal}
       />
     </div>
   );

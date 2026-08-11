@@ -18,7 +18,7 @@ export default async function ShopLayout({
     prisma.siteConfig.findUnique({ where: { id: 'singleton' } }),
     prisma.marqueeMessage.findMany({ where: { active: true }, orderBy: { order: 'asc' } })
   ]);
-  
+
   const safeConfig = config || {
     id: 'singleton',
     wholesaleMinOrder: 200000 as any,
@@ -27,7 +27,8 @@ export default async function ShopLayout({
     announcementText: null,
     announcementActive: false,
     heroUseVideo: false,
-    wholesaleCatalogUrl: null,
+    catalogMaquillajeUrl: null,
+    catalogCapilarUrl: null,
     updatedAt: new Date()
   };
 
@@ -35,19 +36,20 @@ export default async function ShopLayout({
 
   return (
     <>
-      <SessionSetter 
-        priceLevel={sessionResult.priceLevel} 
-        userName={sessionResult.user?.name || sessionResult.user?.email || null} 
+      <SessionSetter
+        priceLevel={sessionResult.priceLevel}
+        userName={sessionResult.user?.name || sessionResult.user?.email || null}
       />
-      <Header 
-        categoriesTree={categoriesTree} 
-        brands={brands} 
-        sessionResult={sessionResult} 
-        cartItemCount={0} 
+      <Header
+        categoriesTree={categoriesTree}
+        brands={brands}
+        sessionResult={sessionResult}
+        cartItemCount={0}
         announcementText={safeConfig.announcementText || undefined}
         announcementActive={safeConfig.announcementActive}
         marquees={marquees.map(m => m.message)}
-        wholesaleCatalogUrl={safeConfig.wholesaleCatalogUrl || undefined}
+        catalogMaquillajeUrl={safeConfig.catalogMaquillajeUrl || undefined}
+        catalogCapilarUrl={safeConfig.catalogCapilarUrl || undefined}
       />
       {children}
       <Footer />

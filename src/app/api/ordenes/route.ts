@@ -35,7 +35,8 @@ export async function POST(request: NextRequest) {
       announcementText: null,
       announcementActive: false,
       heroUseVideo: false,
-      wholesaleCatalogUrl: null,
+      catalogMaquillajeUrl: null,
+      catalogCapilarUrl: null,
       updatedAt: new Date()
     };
     

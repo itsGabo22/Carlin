@@ -14,6 +14,7 @@ const cspHeader = `
   script-src 'self' 'unsafe-eval' 'unsafe-inline';
   style-src 'self' 'unsafe-inline';
   img-src 'self' blob: data: ${SUPABASE_ORIGIN};
+  media-src 'self' ${SUPABASE_ORIGIN};
   font-src 'self' data:;
   connect-src 'self' ${SUPABASE_ORIGIN} ${SUPABASE_WS};
   object-src 'none';

@@ -41,15 +41,16 @@ enum PriceLevel {
 // ── Models ─────────────────────────────────────────────
 
 model SiteConfig {
-  id                  String   @id @default("singleton")
-  wholesaleMinOrder   Decimal  @db.Decimal(10, 2)
-  distributorMinOrder Decimal  @db.Decimal(10, 2)
-  inactivityDays      Int      @default(30)
-  announcementText    String?
-  announcementActive  Boolean  @default(false)
-  heroUseVideo        Boolean  @default(false)
-  wholesaleCatalogUrl String?
-  updatedAt           DateTime @updatedAt
+  id                   String   @id @default("singleton")
+  wholesaleMinOrder    Decimal  @db.Decimal(10, 2)
+  distributorMinOrder  Decimal  @db.Decimal(10, 2)
+  inactivityDays       Int      @default(30)
+  announcementText     String?
+  announcementActive   Boolean  @default(false)
+  heroUseVideo         Boolean  @default(false)
+  catalogMaquillajeUrl String?
+  catalogCapilarUrl    String?
+  updatedAt            DateTime @updatedAt
 }
 
 model HeroSlide {

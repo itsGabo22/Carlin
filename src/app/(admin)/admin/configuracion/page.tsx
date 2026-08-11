@@ -16,7 +16,8 @@ export default function AdminConfiguracionPage() {
     wholesaleMinOrder: 200000,
     distributorMinOrder: 400000,
     inactivityDays: 30,
-    wholesaleCatalogUrl: '',
+    catalogMaquillajeUrl: '',
+    catalogCapilarUrl: '',
   });
 
   const [slides, setSlides] = useState<any[]>([]);
@@ -73,7 +74,8 @@ export default function AdminConfiguracionPage() {
           wholesaleMinOrder: parseFloat(configData.wholesaleMinOrder) || 200000,
           distributorMinOrder: parseFloat(configData.distributorMinOrder) || 400000,
           inactivityDays: configData.inactivityDays || 30,
-          wholesaleCatalogUrl: configData.wholesaleCatalogUrl || '',
+          catalogMaquillajeUrl: configData.catalogMaquillajeUrl || '',
+          catalogCapilarUrl: configData.catalogCapilarUrl || '',
         });
       }
       if (slidesData && Array.isArray(slidesData)) {
@@ -140,7 +142,8 @@ export default function AdminConfiguracionPage() {
       fd.append('inactivityDays', config.inactivityDays.toString());
       fd.append('announcementText', config.announcementText);
       fd.append('announcementActive', config.announcementActive.toString());
-      fd.append('wholesaleCatalogUrl', config.wholesaleCatalogUrl);
+      fd.append('catalogMaquillajeUrl', config.catalogMaquillajeUrl);
+      fd.append('catalogCapilarUrl', config.catalogCapilarUrl);
 
       const resConfig = await fetch('/api/admin/configuracion', {
         method: 'PATCH',
@@ -388,13 +391,29 @@ export default function AdminConfiguracionPage() {
                 />
                 <span className="text-sm font-medium">Mostrar banner en la tienda</span>
               </label>
+            </div>
+          </CardContent>
+        </Card>
 
-              <div className="space-y-2 mt-4 pt-4 border-t border-gray-100">
-                <label className="text-sm font-medium text-brand-pink-dark">URL del Catálogo Mayorista (Canva, PDF, etc)</label>
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <h2 className="text-lg font-semibold border-b pb-2">Catálogos Mayoristas</h2>
+            <p className="text-sm text-gray-500">URLs de los catálogos Canva o PDF que aparecen en el menú de navegación.</p>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Catálogo Maquillaje (URL)</label>
                 <Input 
-                  value={config.wholesaleCatalogUrl} 
-                  onChange={e => setConfig({...config, wholesaleCatalogUrl: e.target.value})} 
-                  placeholder="Ej: https://www.canva.com/design/..." 
+                  value={config.catalogMaquillajeUrl} 
+                  onChange={e => setConfig({...config, catalogMaquillajeUrl: e.target.value})} 
+                  placeholder="https://www.canva.com/design/..." 
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Catálogo Capilar / Cuidado Cabello (URL)</label>
+                <Input 
+                  value={config.catalogCapilarUrl} 
+                  onChange={e => setConfig({...config, catalogCapilarUrl: e.target.value})} 
+                  placeholder="https://www.canva.com/design/..." 
                 />
               </div>
             </div>
