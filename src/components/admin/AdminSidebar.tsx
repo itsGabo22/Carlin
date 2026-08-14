@@ -39,15 +39,16 @@ export function AdminSidebar({ pendingOrdersCount = 0 }: { pendingOrdersCount?: 
   return (
     <aside
       className={cn(
-        "bg-brand-neutral-dark text-white flex flex-col transition-all duration-300 border-r border-white/10 shrink-0",
+        "bg-brand-cream text-gray-900 flex flex-col transition-all duration-300 border-r border-brand-pink-light/30 shrink-0",
         collapsed ? "w-16" : "w-64"
       )}
     >
-      <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 shrink-0">
-        {!collapsed && <span className="font-display text-xl text-brand-pink-light">Carlin Admin</span>}
+      <div className="h-16 flex items-center justify-between px-4 border-b border-brand-pink-light/30 shrink-0">
+        {!collapsed && <span className="font-display text-xl text-brand-pink-dark font-bold">Carlin Admin</span>}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className={cn("p-1 hover:bg-white/10 rounded-md transition-colors", collapsed && "mx-auto")}
+          className={cn("p-1.5 text-gray-500 hover:bg-brand-pink-light/30 hover:text-brand-pink-dark rounded-lg transition-colors", collapsed && "mx-auto")}
+          aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
         >
           {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
         </button>
@@ -61,15 +62,15 @@ export function AdminSidebar({ pendingOrdersCount = 0 }: { pendingOrdersCount?: 
               key={link.href}
               href={link.href}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium text-sm relative",
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors font-medium text-sm relative group",
                 active 
-                  ? "bg-brand-pink text-white" 
-                  : "text-white/70 hover:bg-white/10 hover:text-white",
+                  ? "bg-brand-pink text-white font-bold shadow-sm" 
+                  : "text-gray-700 hover:bg-brand-pink-light/30 hover:text-brand-pink-dark",
                 collapsed && "justify-center px-0"
               )}
               title={collapsed ? link.label : undefined}
             >
-              <link.icon size={20} className="shrink-0" />
+              <link.icon size={20} className={cn("shrink-0", !active && "text-gray-500 group-hover:text-brand-pink-dark")} />
               {!collapsed && (
                 <div className="flex items-center justify-between flex-1">
                   <span>{link.label}</span>
@@ -88,18 +89,18 @@ export function AdminSidebar({ pendingOrdersCount = 0 }: { pendingOrdersCount?: 
         })}
       </nav>
 
-      <div className="p-2 border-t border-white/10 space-y-1">
+      <div className="p-2 border-t border-brand-pink-light/30 space-y-1">
         <a
           href="/"
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium text-sm text-white/70 hover:bg-white/10 hover:text-white",
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors font-medium text-sm text-gray-700 hover:bg-brand-pink-light/30 hover:text-brand-pink-dark",
             collapsed && "justify-center px-0"
           )}
           title={collapsed ? "Ver tienda" : undefined}
         >
-          <ExternalLink size={20} className="shrink-0" />
+          <ExternalLink size={20} className="shrink-0 text-gray-500" />
           {!collapsed && <span>Ver tienda</span>}
         </a>
 
@@ -107,12 +108,12 @@ export function AdminSidebar({ pendingOrdersCount = 0 }: { pendingOrdersCount?: 
           <button
             type="submit"
             className={cn(
-              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium text-sm text-red-400 hover:bg-red-400/10",
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors font-medium text-sm text-red-600 hover:bg-red-50",
               collapsed && "justify-center px-0"
             )}
             title={collapsed ? "Cerrar sesión" : undefined}
           >
-            <LogOut size={20} className="shrink-0" />
+            <LogOut size={20} className="shrink-0 text-red-500" />
             {!collapsed && <span>Cerrar sesión</span>}
           </button>
         </form>
