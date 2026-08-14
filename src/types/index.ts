@@ -32,6 +32,18 @@ export interface Discount {
   startsAt?: Date | null;
   endsAt?: Date | null;
   active: boolean;
+  couponCode?: string | null;
+}
+
+export interface ProductVariant {
+  id: string;
+  productId: string;
+  colorName: string;
+  colorHex?: string | null;
+  imageUrl: string;
+  stock: number;
+  active: boolean;
+  order: number;
 }
 
 export interface Product {
@@ -56,4 +68,5 @@ export interface Product {
   brand?: Brand | null;
   tags: Tag[];
   discounts: Discount[];
+  variants: ProductVariant[];
 }

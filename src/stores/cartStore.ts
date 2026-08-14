@@ -3,6 +3,9 @@ import { persist } from 'zustand/middleware';
 
 export interface CartItem {
   productId: string;
+  variantId?: string | null;
+  colorName?: string | null;
+  colorHex?: string | null;
   name: string;
   price: number;
   quantity: number;
@@ -27,14 +30,18 @@ interface CartState {
   appliedCoupon: AppliedCoupon | null;
   setPriceLevel: (level: CartPriceLevel) => void;
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
-  removeItem: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeItem: (key: string) => void;
+  updateQuantity: (key: string, quantity: number) => void;
   setCoupon: (coupon: AppliedCoupon | null) => void;
   clearCart: () => void;
   getSubtotal: () => number;
   getDiscountAmount: () => number;
   getTotal: () => number;
   getItemCount: () => number;
+}
+
+export function getItemKey(item: { productId: string; variantId?: string | null }): string {
+  return item.variantId ? `${item.productId}-${item.variantId}` : item.productId;
 }
 
 export const useCartStore = create<CartState>()(
@@ -46,28 +53,29 @@ export const useCartStore = create<CartState>()(
       setPriceLevel: (level) => set({ priceLevel: level }),
       addItem: (item) => {
         const { items } = get();
-        const existingItem = items.find((i) => i.productId === item.productId);
+        const targetKey = getItemKey(item);
+        const existingItem = items.find((i) => getItemKey(i) === targetKey);
         const qtyToAdd = item.quantity || 1;
         
         if (existingItem) {
           const newQuantity = Math.min(existingItem.quantity + qtyToAdd, existingItem.maxStock);
           set({
             items: items.map((i) =>
-              i.productId === item.productId ? { ...i, quantity: newQuantity } : i
+              getItemKey(i) === targetKey ? { ...i, quantity: newQuantity } : i
             ),
           });
         } else {
           set({ items: [...items, { ...item, quantity: qtyToAdd }] });
         }
       },
-      removeItem: (productId) =>
+      removeItem: (key) =>
         set((state) => ({
-          items: state.items.filter((i) => i.productId !== productId),
+          items: state.items.filter((i) => getItemKey(i) !== key && i.productId !== key),
         })),
-      updateQuantity: (productId, quantity) =>
+      updateQuantity: (key, quantity) =>
         set((state) => ({
           items: state.items.map((i) =>
-            i.productId === productId ? { ...i, quantity: Math.min(Math.max(1, quantity), i.maxStock) } : i
+            getItemKey(i) === key || i.productId === key ? { ...i, quantity: Math.min(Math.max(1, quantity), i.maxStock) } : i
           ),
         })),
       setCoupon: (coupon) => set({ appliedCoupon: coupon }),

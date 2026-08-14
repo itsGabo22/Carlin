@@ -114,6 +114,9 @@ export default function CarritoPage() {
         body: JSON.stringify({
           items: items.map(item => ({
             productId: item.productId,
+            variantId: item.variantId || null,
+            colorName: item.colorName || null,
+            colorHex: item.colorHex || null,
             name: item.name,
             price: item.price,
             quantity: item.quantity,
@@ -144,7 +147,8 @@ export default function CarritoPage() {
       window.location.href = result.whatsappUrl;
 
     } catch (err: any) {
-      setError(err.message || 'Error desconocido al procesar el pedido.');
+      console.error('Error in checkout submit:', err);
+      setError(err.message || 'Ocurrió un error al procesar el pedido. Por favor intenta de nuevo.');
       setIsSubmitting(false);
     }
   };
@@ -166,58 +170,72 @@ export default function CarritoPage() {
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <div className="lg:col-span-8 space-y-4">
-            {items.map((item) => (
-              <div key={item.productId} className="flex gap-4 p-4 bg-white rounded-2xl shadow-sm border border-brand-pink-light/20 items-center">
-                <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-brand-cream rounded-xl overflow-hidden shrink-0">
-                  {item.imageUrl ? (
-                    <Image src={item.imageUrl} alt={item.name} fill className="object-cover" unoptimized />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-300">Sin img</div>
-                  )}
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-serif font-bold text-brand-text truncate">{item.name}</h3>
-                  <div className="font-sans text-brand-pink-dark font-semibold mt-1">
-                    {formatCOP(item.price)}
+            {items.map((item) => {
+              const key = item.variantId ? `${item.productId}-${item.variantId}` : item.productId;
+              return (
+                <div key={key} className="flex gap-4 p-4 bg-white rounded-2xl shadow-sm border border-brand-pink-light/20 items-center">
+                  <div className="relative w-20 h-20 sm:w-24 sm:h-24 bg-brand-cream rounded-xl overflow-hidden shrink-0">
+                    {item.imageUrl ? (
+                      <Image src={item.imageUrl} alt={item.name} fill className="object-cover" unoptimized />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-gray-300">Sin img</div>
+                    )}
                   </div>
                   
-                  <div className="flex items-center gap-4 mt-3">
-                    <div className="flex items-center gap-2 bg-brand-cream rounded-full p-1 border border-brand-pink-light/30">
-                      <button 
-                        onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                        disabled={item.quantity <= 1}
-                        className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-brand-pink-dark shadow-sm disabled:opacity-50"
-                      >
-                        <Minus className="w-3 h-3" />
-                      </button>
-                      <span className="font-sans text-sm font-semibold w-4 text-center">
-                        {item.quantity}
-                      </span>
-                      <button 
-                        onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                        disabled={item.quantity >= item.maxStock}
-                        className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-brand-pink-dark shadow-sm disabled:opacity-50"
-                      >
-                        <Plus className="w-3 h-3" />
-                      </button>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-serif font-bold text-brand-text truncate">{item.name}</h3>
+                    {item.colorName && (
+                      <div className="flex items-center gap-1.5 mt-0.5 text-xs text-gray-600 font-sans">
+                        {item.colorHex && (
+                          <span
+                            className="w-3.5 h-3.5 rounded-full border border-black/20 shrink-0"
+                            style={{ backgroundColor: item.colorHex }}
+                          />
+                        )}
+                        <span>Color: <strong>{item.colorName}</strong></span>
+                      </div>
+                    )}
+                    <div className="font-sans text-brand-pink-dark font-semibold mt-1">
+                      {formatCOP(item.price)}
+                    </div>
+                    
+                    <div className="flex items-center gap-4 mt-3">
+                      <div className="flex items-center gap-2 bg-brand-cream rounded-full p-1 border border-brand-pink-light/30">
+                        <button 
+                          onClick={() => updateQuantity(key, item.quantity - 1)}
+                          disabled={item.quantity <= 1}
+                          className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-brand-pink-dark shadow-sm disabled:opacity-50"
+                        >
+                          <Minus className="w-3 h-3" />
+                        </button>
+                        <span className="font-sans text-sm font-semibold w-4 text-center">
+                          {item.quantity}
+                        </span>
+                        <button 
+                          onClick={() => updateQuantity(key, item.quantity + 1)}
+                          disabled={item.quantity >= item.maxStock}
+                          className="w-6 h-6 rounded-full bg-white flex items-center justify-center text-brand-pink-dark shadow-sm disabled:opacity-50"
+                        >
+                          <Plus className="w-3 h-3" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col items-end gap-3 shrink-0">
+                    <button 
+                      onClick={() => removeItem(key)}
+                      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                    <div className="font-sans font-bold text-brand-text text-right mt-auto">
+                      {formatCOP(item.price * item.quantity)}
                     </div>
                   </div>
                 </div>
-
-                <div className="flex flex-col items-end gap-3 shrink-0">
-                  <button 
-                    onClick={() => removeItem(item.productId)}
-                    className="p-2 text-gray-400 hover:text-red-500 transition-colors"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                  <div className="font-sans font-bold text-brand-text text-right mt-auto">
-                    {formatCOP(item.price * item.quantity)}
-                  </div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           <div className="lg:col-span-4">

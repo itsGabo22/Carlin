@@ -6,29 +6,22 @@ import { normalizeProductInput, productErrorResponse } from '@/lib/api/productos
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-/**
- * Faltaba este handler: el formulario de edición hace
- * `fetch('/api/admin/productos/[id]')` al montar. Sin GET exportado, Next
- * respondía 405 con body vacío → el `.json()` del cliente reventaba con
- * "Unexpected end of JSON input" y el formulario quedaba en blanco. Al guardar,
- * ese formulario vacío mandaba categoryId: '' y el PATCH devolvía 500 por
- * violación de foreign key.
- */
 export async function GET(_req: Request, { params }: RouteContext) {
   try {
     const { id } = await params;
 
     const product = await prisma.product.findUnique({
       where: { id },
-      include: { tags: { select: { tagId: true } } },
+      include: {
+        tags: { select: { tagId: true } },
+        variants: { orderBy: { order: 'asc' } },
+      },
     });
 
     if (!product) {
       return NextResponse.json({ error: 'Producto no encontrado.' }, { status: 404 });
     }
 
-    // Los Decimal de Prisma se serializan como string; el formulario necesita
-    // números para los <input type="number">.
     return NextResponse.json({
       ...product,
       retailPrice: Number(product.retailPrice),
@@ -40,6 +33,7 @@ export async function GET(_req: Request, { params }: RouteContext) {
       unit: product.unit ?? 'unidad',
       brandId: product.brandId ?? '',
       tags: product.tags.map(t => t.tagId),
+      variants: product.variants || [],
     });
   } catch (error) {
     return productErrorResponse(error, '[ADMIN PRODUCTOS GET BY ID ERROR]');
@@ -69,20 +63,31 @@ export async function PATCH(req: Request, { params }: RouteContext) {
     if (!parsed.ok) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-    const { tagIds, ...data } = parsed.data;
+    const { tagIds, variants, ...data } = parsed.data;
 
-    // Imágenes opcionales: si el body no trae el campo `imageUrls`, se conservan
-    // las del registro existente en vez de borrarlas con un array vacío.
     const imageUrls = 'imageUrls' in body ? data.imageUrls : existing.imageUrls;
 
-    const [, product] = await prisma.$transaction([
+    const [, , product] = await prisma.$transaction([
       prisma.productTag.deleteMany({ where: { productId: id } }),
+      prisma.productVariant.deleteMany({ where: { productId: id } }),
       prisma.product.update({
         where: { id },
         data: {
           ...data,
           imageUrls,
           tags: { create: tagIds.map(tagId => ({ tagId })) },
+          ...(variants.length > 0 && {
+            variants: {
+              create: variants.map((v, idx) => ({
+                colorName: v.colorName,
+                colorHex: v.colorHex,
+                imageUrl: v.imageUrl,
+                stock: v.stock,
+                active: v.active,
+                order: v.order ?? idx,
+              }))
+            }
+          })
         }
       })
     ]);
@@ -95,7 +100,6 @@ export async function PATCH(req: Request, { params }: RouteContext) {
       });
     }
 
-    // Dentro del try/catch a propósito.
     revalidatePath('/');
     revalidatePath('/catalogo');
     revalidatePath('/admin/productos');

@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 export interface ProductGalleryProps {
   images: string[];
   productName: string;
+  activeVariantImage?: string;
   className?: string;
 }
 
@@ -17,10 +18,16 @@ export interface ProductGalleryProps {
 export function ProductGallery({
   images,
   productName,
+  activeVariantImage,
   className,
 }: ProductGalleryProps) {
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [direction, setDirection] = React.useState<1 | -1>(1);
+
+  // Automatically reset active index to 0 when active variant image changes
+  React.useEffect(() => {
+    setActiveIndex(0);
+  }, [activeVariantImage, images]);
 
   const handleSelect = (index: number) => {
     setDirection(index > activeIndex ? 1 : -1);
@@ -32,7 +39,7 @@ export function ProductGallery({
     return (
       <div
         className={cn(
-          'flex items-center justify-center rounded-2xl bg-brand-neutral-100',
+          'flex items-center justify-center rounded-2xl bg-brand-cream border border-brand-pink-light/30',
           'aspect-square w-full',
           className,
         )}
@@ -49,7 +56,7 @@ export function ProductGallery({
           strokeWidth="1.25"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="text-brand-neutral-300"
+          className="text-brand-pink-dark/30"
           aria-hidden="true"
         >
           <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -60,29 +67,32 @@ export function ProductGallery({
     );
   }
 
+  const currentImage = images[activeIndex] || images[0];
+
   return (
-    <div className={cn('flex flex-col gap-3', className)}>
-      {/* ── Main image ──────────────────────────────────── */}
+    <div className={cn('flex flex-col gap-4', className)}>
+      {/* ── Main image container (Bloomshell luxury ratio 4/5 with subtle rounded glass card) ── */}
       <div
-        className="relative w-full overflow-hidden rounded-2xl bg-brand-neutral-100"
+        className="relative w-full overflow-hidden rounded-2xl bg-white border border-brand-pink-light/20 shadow-sm"
         style={{ aspectRatio: '4 / 5' }}
       >
         <AnimatePresence mode="wait" initial={false}>
           <motion.div
-            key={activeIndex}
-            initial={{ opacity: 0, x: direction * 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: direction * -24 }}
-            transition={{ duration: 0.3, ease: 'easeOut' }}
+            key={currentImage}
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 1.02 }}
+            transition={{ duration: 0.25, ease: 'easeOut' }}
             className="absolute inset-0"
           >
             <Image
-              src={images[activeIndex]}
-              alt={`${productName} — imagen ${activeIndex + 1}`}
+              src={currentImage}
+              alt={`${productName} — foto ${activeIndex + 1}`}
               fill
               sizes="(max-width: 768px) 100vw, 50vw"
               className="object-cover"
               priority={activeIndex === 0}
+              unoptimized
             />
           </motion.div>
         </AnimatePresence>
@@ -91,31 +101,32 @@ export function ProductGallery({
       {/* ── Thumbnails ──────────────────────────────────── */}
       {images.length > 1 && (
         <div
-          className="flex gap-2 overflow-x-auto pb-1"
+          className="flex gap-2.5 overflow-x-auto pb-1"
           role="list"
           aria-label={`Imágenes de ${productName}`}
         >
           {images.map((src, index) => (
             <button
-              key={src}
+              key={`${src}-${index}`}
               role="listitem"
               onClick={() => handleSelect(index)}
               aria-label={`Ver imagen ${index + 1}`}
               aria-current={index === activeIndex ? 'true' : undefined}
               className={cn(
-                'relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-lg border-2 transition-all',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-gold focus-visible:ring-offset-2',
+                'relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-xl border-2 transition-all',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink focus-visible:ring-offset-2',
                 index === activeIndex
-                  ? 'border-brand-gold shadow-md'
-                  : 'border-transparent opacity-60 hover:opacity-100 hover:border-brand-neutral-300',
+                  ? 'border-brand-pink shadow-md scale-105 ring-2 ring-brand-pink/20'
+                  : 'border-transparent opacity-70 hover:opacity-100 hover:border-brand-pink-light/60',
               )}
             >
               <Image
                 src={src}
                 alt=""
                 fill
-                sizes="64px"
+                sizes="80px"
                 className="object-cover"
+                unoptimized
               />
             </button>
           ))}

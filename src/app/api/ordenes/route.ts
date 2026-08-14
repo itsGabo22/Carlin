@@ -7,6 +7,9 @@ import { formatCOP } from '@/lib/utils/carlin-pricing';
 const orderSchema = z.object({
   items: z.array(z.object({
     productId: z.string(),
+    variantId: z.string().nullable().optional(),
+    colorName: z.string().nullable().optional(),
+    colorHex: z.string().nullable().optional(),
     name: z.string(),
     price: z.number(),
     quantity: z.number().int().positive(),
@@ -65,7 +68,7 @@ export async function POST(request: NextRequest) {
         items: {
           create: validated.items.map(i => ({
             productId: i.productId,
-            name: i.name,
+            name: i.colorName ? `${i.name} (${i.colorName})` : i.name,
             priceSnapshot: i.price,
             quantity: i.quantity,
             imageUrl: i.imageUrl,
@@ -98,7 +101,8 @@ export async function POST(request: NextRequest) {
     }
     
     validated.items.forEach(item => {
-      msg += `• ${item.name} x${item.quantity} = ${formatCOP(item.price * item.quantity)}\n`;
+      const colorLabel = item.colorName ? ` (Color: ${item.colorName})` : '';
+      msg += `• ${item.name}${colorLabel} x${item.quantity} = ${formatCOP(item.price * item.quantity)}\n`;
     });
     
     msg += `─────────────────────\n`;

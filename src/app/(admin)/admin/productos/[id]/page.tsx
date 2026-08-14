@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { Save, ArrowLeft, Image as ImageIcon, X, Trash2, UploadCloud } from 'lucide-react';
+import { Save, ArrowLeft, Image as ImageIcon, X, Trash2, UploadCloud, Plus, Check, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -31,6 +31,16 @@ const intOrZero = (value: string) => {
   return Number.isFinite(n) ? n : 0;
 };
 
+interface FormVariant {
+  id?: string;
+  colorName: string;
+  colorHex: string;
+  imageUrl: string;
+  stock: number;
+  active: boolean;
+  order: number;
+}
+
 export default function AdminProductEditPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const { id } = use(params);
@@ -38,6 +48,7 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
 
   const [loading, setLoading] = useState(false);
   const [uploadingDirectImage, setUploadingDirectImage] = useState(false);
+  const [uploadingVariantImage, setUploadingVariantImage] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   
@@ -58,6 +69,7 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
     active: true,
     categoryId: '',
     brandId: '',
+    variants: [] as FormVariant[],
   });
 
   const [categories, setCategories] = useState<any[]>([]);
@@ -65,6 +77,17 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
   const [bandejaImages, setBandejaImages] = useState<any[]>([]);
   const [newTone, setNewTone] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const variantFileInputRef = useRef<HTMLInputElement>(null);
+
+  // New variant draft form
+  const [variantDraft, setVariantDraft] = useState<FormVariant>({
+    colorName: '',
+    colorHex: '#F0A0C6',
+    imageUrl: '',
+    stock: 10,
+    active: true,
+    order: 0,
+  });
 
   useEffect(() => {
     Promise.all([
@@ -89,7 +112,19 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
           }
           if (data) {
             setLoadError(null);
-            setFormData(prev => ({ ...prev, ...data }));
+            setFormData(prev => ({
+              ...prev,
+              ...data,
+              variants: data.variants ? data.variants.map((v: any) => ({
+                id: v.id,
+                colorName: v.colorName,
+                colorHex: v.colorHex || '#F0A0C6',
+                imageUrl: v.imageUrl,
+                stock: Number(v.stock),
+                active: v.active !== false,
+                order: Number(v.order || 0),
+              })) : [],
+            }));
           }
         })
         .catch(() => {
@@ -169,13 +204,87 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
     }
   };
 
+  const handleVariantImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingVariantImage(true);
+    setSaveError(null);
+
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('bucket', 'product-images');
+
+      const res = await fetch('/api/admin/imagenes/upload', {
+        method: 'POST',
+        body: fd,
+      });
+
+      const data = await readJson(res);
+      if (!res.ok) {
+        setSaveError(data?.error ?? 'Error al subir la imagen de la variante');
+        return;
+      }
+
+      const uploadedUrl = data.url || data.imageRecord?.url;
+      if (uploadedUrl) {
+        setVariantDraft(prev => ({ ...prev, imageUrl: uploadedUrl }));
+      }
+    } catch {
+      setSaveError('Error de red al subir la imagen de la variante.');
+    } finally {
+      setUploadingVariantImage(false);
+      if (variantFileInputRef.current) variantFileInputRef.current.value = '';
+    }
+  };
+
+  const addVariant = () => {
+    if (!variantDraft.colorName.trim()) {
+      alert('Ingresa el nombre del color para la variante');
+      return;
+    }
+    if (!variantDraft.imageUrl) {
+      alert('Sube una imagen específica para la variante');
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      variants: [
+        ...prev.variants,
+        {
+          ...variantDraft,
+          colorName: variantDraft.colorName.trim(),
+          order: prev.variants.length,
+        }
+      ]
+    }));
+
+    setVariantDraft({
+      colorName: '',
+      colorHex: '#F0A0C6',
+      imageUrl: '',
+      stock: 10,
+      active: true,
+      order: 0,
+    });
+  };
+
+  const removeVariant = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      variants: prev.variants.filter((_, idx) => idx !== index)
+    }));
+  };
+
   const removeImage = (index: number) => {
     setFormData(prev => ({ ...prev, imageUrls: prev.imageUrls.filter((_, idx) => idx !== index) }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loading || uploadingDirectImage) return;
+    if (loading || uploadingDirectImage || uploadingVariantImage) return;
 
     if (loadError && !isNew) {
       setSaveError('No se cargaron los datos del producto. Recarga la página antes de guardar para no sobrescribirlos.');
@@ -211,6 +320,8 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
     }
   };
 
+  const totalVariantStock = formData.variants.reduce((acc, v) => acc + (v.stock || 0), 0);
+
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
@@ -224,9 +335,9 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
             {isNew ? 'Nuevo Producto' : 'Editar Producto'}
           </h1>
         </div>
-        <Button onClick={handleSubmit} disabled={loading || uploadingDirectImage} className="bg-brand-pink hover:bg-brand-pink-dark text-white gap-2">
+        <Button onClick={handleSubmit} disabled={loading || uploadingDirectImage || uploadingVariantImage} className="bg-brand-pink hover:bg-brand-pink-dark text-white gap-2">
           <Save size={16} />
-          {loading ? 'Guardando...' : uploadingDirectImage ? 'Subiendo imagen...' : 'Guardar'}
+          {loading ? 'Guardando...' : (uploadingDirectImage || uploadingVariantImage) ? 'Subiendo imagen...' : 'Guardar'}
         </Button>
       </div>
 
@@ -265,7 +376,7 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
               <div className="space-y-2">
                 <label className="text-sm font-medium">Descripción</label>
                 <textarea 
-                  className="w-full min-h-[100px] p-3 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-pink"
+                  className="w-full min-h-[100px] p-3 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-pink text-sm"
                   value={formData.description} 
                   onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Descripción detallada del producto..."
@@ -325,33 +436,157 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
                   <Input type="number" value={formData.comparePrice} onChange={(e) => setFormData(prev => ({ ...prev, comparePrice: numOrZero(e.target.value) }))} />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Stock</label>
-                  <Input type="number" required value={formData.stock} onChange={(e) => setFormData(prev => ({ ...prev, stock: intOrZero(e.target.value) }))} />
-                  <FieldHint text="Cuando confirmes un pedido desde 'Pedidos', el stock baja automáticamente." type="tip" />
+                  <label className="text-sm font-medium">
+                    Stock {formData.variants.length > 0 ? '(Calculado de variantes)' : 'General'}
+                  </label>
+                  {formData.variants.length > 0 ? (
+                    <div className="h-10 px-3 py-2 bg-gray-100 border border-gray-200 rounded-md text-sm font-bold text-brand-pink-dark flex items-center justify-between">
+                      <span>{totalVariantStock} unidades en total</span>
+                      <span className="text-xs font-normal text-gray-500">({formData.variants.length} variantes)</span>
+                    </div>
+                  ) : (
+                    <Input type="number" required value={formData.stock} onChange={(e) => setFormData(prev => ({ ...prev, stock: intOrZero(e.target.value) }))} />
+                  )}
+                  <FieldHint text={formData.variants.length > 0 ? "El stock se suma automáticamente de cada variante de color." : "Cuando confirmes un pedido desde 'Pedidos', el stock baja automáticamente."} type="tip" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          {/* Variantes de Color con Imagen Propia */}
+          <Card className="border border-brand-pink/20 shadow-sm">
             <CardContent className="p-6 space-y-4">
-              <h2 className="text-lg font-semibold border-b pb-2">Tonos / Variantes</h2>
-              <div className="space-y-2">
-                <Input 
-                  value={newTone} 
-                  onChange={(e) => setNewTone(e.target.value)} 
-                  onKeyDown={handleAddTone}
-                  placeholder="Escribe un tono y presiona Enter" 
-                />
-                <FieldHint text='Escribe cada tono y presiona Enter para agregarlo. Ej: "Natural", "Traslúcido", "Rosa Nude". Aparecerá en la ficha del producto.' />
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {formData.tones.map((tone, idx) => (
-                    <span key={idx} className="px-3 py-1 bg-gray-100 rounded-md text-sm flex items-center gap-2 border">
-                      {tone}
-                      <X size={14} className="cursor-pointer hover:text-red-500" onClick={() => removeTone(idx)} />
-                    </span>
+              <div className="flex items-center justify-between border-b pb-2">
+                <h2 className="text-lg font-semibold flex items-center gap-2 text-gray-900">
+                  <Palette className="w-5 h-5 text-brand-pink" />
+                  Variantes de Color (Tonalidades)
+                </h2>
+                <span className="text-xs bg-brand-pink-light/30 text-brand-pink-dark font-semibold px-2.5 py-1 rounded-full">
+                  {formData.variants.length} variantes
+                </span>
+              </div>
+
+              <p className="text-xs text-gray-500">
+                Agrega variantes de color para productos como labiales, bases o esmaltes. Cada variante tiene su propio swatch de color, imagen dedicada e inventario independiente.
+              </p>
+
+              {/* Existing Variants List */}
+              {formData.variants.length > 0 && (
+                <div className="space-y-2">
+                  {formData.variants.map((v, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-xl">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="w-7 h-7 rounded-full border border-black/20 shadow-inner shrink-0"
+                          style={{ backgroundColor: v.colorHex || '#F0A0C6' }}
+                          title={v.colorHex}
+                        />
+                        <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-200 shrink-0 bg-white">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={v.imageUrl} alt={v.colorName} className="w-full h-full object-cover" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">{v.colorName}</p>
+                          <p className="text-xs text-gray-500">Stock: <strong className="text-brand-pink-dark">{v.stock}</strong> u.</p>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => removeVariant(idx)}
+                        className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                        title="Quitar variante"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
                   ))}
                 </div>
+              )}
+
+              {/* Add Variant Form */}
+              <div className="p-4 bg-brand-pink-light/10 border border-brand-pink/20 rounded-xl space-y-3 mt-4">
+                <h3 className="text-xs font-bold text-brand-pink-dark uppercase tracking-wider">
+                  + Agregar Nueva Variante de Color
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Nombre del Color</label>
+                    <Input
+                      placeholder="Ej. Rosa Nude, Tono 01"
+                      value={variantDraft.colorName}
+                      onChange={(e) => setVariantDraft(prev => ({ ...prev, colorName: e.target.value }))}
+                      className="text-xs rounded-xl"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Color Swatch (Hex)</label>
+                    <div className="flex gap-2 items-center">
+                      <input
+                        type="color"
+                        value={variantDraft.colorHex}
+                        onChange={(e) => setVariantDraft(prev => ({ ...prev, colorHex: e.target.value }))}
+                        className="w-9 h-9 p-0.5 rounded-lg border border-gray-200 cursor-pointer shrink-0"
+                      />
+                      <Input
+                        value={variantDraft.colorHex}
+                        onChange={(e) => setVariantDraft(prev => ({ ...prev, colorHex: e.target.value }))}
+                        placeholder="#F0A0C6"
+                        className="text-xs rounded-xl uppercase font-mono"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Stock de esta variante</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={variantDraft.stock}
+                      onChange={(e) => setVariantDraft(prev => ({ ...prev, stock: intOrZero(e.target.value) }))}
+                      className="text-xs rounded-xl"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1">Foto propia del color</label>
+                    <input
+                      ref={variantFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      disabled={uploadingVariantImage}
+                      onChange={handleVariantImageUpload}
+                      className="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-pink file:text-white hover:file:bg-brand-pink-dark cursor-pointer disabled:opacity-50 w-full"
+                    />
+                    {uploadingVariantImage && (
+                      <p className="text-xs text-brand-pink font-medium mt-1 animate-pulse">Subiendo foto de variante...</p>
+                    )}
+                    {variantDraft.imageUrl && !uploadingVariantImage && (
+                      <div className="flex items-center gap-2 mt-2">
+                        <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-200">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={variantDraft.imageUrl} alt="preview" className="w-full h-full object-cover" />
+                        </div>
+                        <span className="text-xs text-emerald-600 font-medium flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5" /> Imagen lista
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <Button
+                  type="button"
+                  onClick={addVariant}
+                  disabled={!variantDraft.colorName.trim() || !variantDraft.imageUrl || uploadingVariantImage}
+                  className="bg-brand-pink hover:bg-brand-pink-dark text-white text-xs font-bold rounded-xl w-full py-2.5 mt-2"
+                >
+                  <Plus className="w-4 h-4 mr-1" /> Añadir Variante
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -411,7 +646,7 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
           <Card>
             <CardContent className="p-6 space-y-4">
               <h2 className="text-lg font-semibold border-b pb-2 flex justify-between items-center">
-                Imágenes
+                Imágenes Generales
                 <span className="text-xs text-gray-500 font-normal">{formData.imageUrls.length}/3</span>
               </h2>
 

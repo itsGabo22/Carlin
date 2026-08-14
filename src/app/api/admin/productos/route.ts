@@ -10,7 +10,8 @@ export async function GET() {
       include: {
         category: true,
         brand: true,
-        tags: { include: { tag: true } }
+        tags: { include: { tag: true } },
+        variants: { orderBy: { order: 'asc' } },
       },
       orderBy: { createdAt: 'desc' }
     });
@@ -23,7 +24,6 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    // Defense in depth
     const { isAuthenticated } = await checkAdminAuth(req as any);
     if (!isAuthenticated) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
@@ -38,16 +38,27 @@ export async function POST(req: Request) {
     if (!parsed.ok) {
       return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
-    const { tagIds, ...data } = parsed.data;
+    const { tagIds, variants, ...data } = parsed.data;
 
     const product = await prisma.product.create({
       data: {
         ...data,
         tags: { create: tagIds.map(tagId => ({ tagId })) },
+        ...(variants.length > 0 && {
+          variants: {
+            create: variants.map((v, idx) => ({
+              colorName: v.colorName,
+              colorHex: v.colorHex,
+              imageUrl: v.imageUrl,
+              stock: v.stock,
+              active: v.active,
+              order: v.order ?? idx,
+            }))
+          }
+        })
       }
     });
 
-    // Marcar como asignadas las imágenes que se tomaron de la bandeja
     if (data.imageUrls.length > 0) {
       await prisma.imageBandeja.updateMany({
         where: { url: { in: data.imageUrls } },
@@ -55,8 +66,6 @@ export async function POST(req: Request) {
       });
     }
 
-    // revalidatePath SIEMPRE dentro del try/catch: si lanza fuera, la request
-    // devuelve 500 aunque la escritura en la DB haya sido correcta.
     revalidatePath('/');
     revalidatePath('/catalogo');
     revalidatePath('/admin/productos');

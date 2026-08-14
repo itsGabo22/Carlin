@@ -28,6 +28,16 @@ const toNumber = (v: unknown): number | null => {
 const toStringArray = (v: unknown): string[] =>
   Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x.trim() !== '') : [];
 
+export type NormalizedVariant = {
+  id?: string;
+  colorName: string;
+  colorHex: string | null;
+  imageUrl: string;
+  stock: number;
+  active: boolean;
+  order: number;
+};
+
 export type NormalizedProduct = {
   name: string;
   slug: string;
@@ -46,6 +56,7 @@ export type NormalizedProduct = {
   categoryId: string;
   brandId: string | null;
   tagIds: string[];
+  variants: NormalizedVariant[];
 };
 
 export type NormalizeResult =
@@ -93,6 +104,19 @@ export function normalizeProductInput(body: Record<string, unknown>): NormalizeR
     return { ok: false, error: 'Máximo 3 imágenes por producto.' };
   }
 
+  const rawVariants = Array.isArray(body.variants) ? body.variants : [];
+  const variants: NormalizedVariant[] = rawVariants
+    .filter((v: any) => v && typeof v.colorName === 'string' && v.colorName.trim() !== '' && typeof v.imageUrl === 'string' && v.imageUrl.trim() !== '')
+    .map((v: any, index: number) => ({
+      id: typeof v.id === 'string' ? v.id : undefined,
+      colorName: v.colorName.trim(),
+      colorHex: emptyToNull(v.colorHex),
+      imageUrl: v.imageUrl.trim(),
+      stock: toNumber(v.stock) ?? 0,
+      active: v.active !== false,
+      order: typeof v.order === 'number' ? v.order : index,
+    }));
+
   return {
     ok: true,
     data: {
@@ -102,7 +126,6 @@ export function normalizeProductInput(body: Record<string, unknown>): NormalizeR
       retailPrice: retailPrice!,
       wholesalePrice: wholesalePrice!,
       distributorPrice: distributorPrice!,
-      // comparePrice 0 significa "sin precio comparativo": lo guardamos como null
       comparePrice: comparePrice && comparePrice > 0 ? comparePrice : null,
       sku: emptyToNull(body.sku),
       stock: stock === null ? 0 : Math.trunc(stock),
@@ -114,6 +137,7 @@ export function normalizeProductInput(body: Record<string, unknown>): NormalizeR
       categoryId,
       brandId: emptyToNull(body.brandId),
       tagIds: toStringArray(body.tags),
+      variants,
     },
   };
 }

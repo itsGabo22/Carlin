@@ -75,14 +75,21 @@ function mapProduct(p: any): Product {
     }
   });
 
+  const variants = p.variants || [];
+  const effectiveStock = variants.length > 0
+    ? variants.reduce((acc: number, v: any) => acc + (v.stock || 0), 0)
+    : p.stock;
+
   return {
     ...p,
     retailPrice: Number(p.retailPrice),
     wholesalePrice: Number(p.wholesalePrice),
     distributorPrice: Number(p.distributorPrice),
     comparePrice: p.comparePrice ? Number(p.comparePrice) : null,
+    stock: effectiveStock,
     tags: p.tags?.map((pt: any) => pt.tag) || [],
     discounts: allDiscounts,
+    variants,
   };
 }
 
@@ -142,6 +149,10 @@ class PrismaProductRepository implements IProductRepository {
             where: { discount: { active: true } },
             include: { discount: true },
           },
+          variants: {
+            where: { active: true },
+            orderBy: { order: 'asc' },
+          },
         },
         orderBy: buildOrderBy(options.sort),
         skip: (page - 1) * pageSize,
@@ -170,6 +181,10 @@ class PrismaProductRepository implements IProductRepository {
           where: { discount: { active: true } },
           include: { discount: true },
         },
+        variants: {
+          where: { active: true },
+          orderBy: { order: 'asc' },
+        },
       }
     });
     return product ? mapProduct(product) : null;
@@ -187,6 +202,10 @@ class PrismaProductRepository implements IProductRepository {
         discountProducts: {
           where: { discount: { active: true } },
           include: { discount: true },
+        },
+        variants: {
+          where: { active: true },
+          orderBy: { order: 'asc' },
         },
       }
     });
