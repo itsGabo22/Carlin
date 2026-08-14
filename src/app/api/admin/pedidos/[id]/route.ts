@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getSessionResult } from '@/lib/auth/carlin-session';
 
 export async function PATCH(
   request: NextRequest,
@@ -22,10 +21,17 @@ export async function PATCH(
       return NextResponse.json({ error: 'Acción inválida' }, { status: 400 });
     }
 
-    // Fetch order with items
+    // Fetch order with items, product, and variant relations
     const order = await prisma.order.findUnique({
       where: { id },
-      include: { items: { include: { product: true } } }
+      include: {
+        items: {
+          include: {
+            product: true,
+            variant: true,
+          }
+        }
+      }
     });
 
     if (!order) {
@@ -46,24 +52,37 @@ export async function PATCH(
 
     // If confirm, verify stock for all items BEFORE updating anything
     for (const item of order.items) {
-      if (item.product.stock < item.quantity) {
-        return NextResponse.json({ 
-          error: `Stock insuficiente para "${item.name}". Disponible: ${item.product.stock}` 
-        }, { status: 409 });
+      if (item.variantId && item.variant) {
+        if (item.variant.stock < item.quantity) {
+          return NextResponse.json({ 
+            error: `Stock insuficiente para la variante "${item.variant.colorName}" de "${item.product.name}". Disponible: ${item.variant.stock}` 
+          }, { status: 409 });
+        }
+      } else {
+        if (item.product.stock < item.quantity) {
+          return NextResponse.json({ 
+            error: `Stock insuficiente para "${item.name}". Disponible: ${item.product.stock}` 
+          }, { status: 409 });
+        }
       }
     }
 
-    // Atomic transaction to update stock and order status
+    // Atomic transaction to update stock on specific ProductVariant (or Product) and order status
     const transaction = await prisma.$transaction(async (tx) => {
-      // 1. Decrement stock for each product
       for (const item of order.items) {
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } }
-        });
+        if (item.variantId && item.variant) {
+          await tx.productVariant.update({
+            where: { id: item.variantId },
+            data: { stock: { decrement: item.quantity } }
+          });
+        } else {
+          await tx.product.update({
+            where: { id: item.productId },
+            data: { stock: { decrement: item.quantity } }
+          });
+        }
       }
 
-      // 2. Update order status
       const confirmedOrder = await tx.order.update({
         where: { id },
         data: { status: 'CONFIRMED' }

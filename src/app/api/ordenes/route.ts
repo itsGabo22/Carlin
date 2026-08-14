@@ -68,6 +68,7 @@ export async function POST(request: NextRequest) {
         items: {
           create: validated.items.map(i => ({
             productId: i.productId,
+            variantId: i.variantId || null,
             name: i.colorName ? `${i.name} (${i.colorName})` : i.name,
             priceSnapshot: i.price,
             quantity: i.quantity,
