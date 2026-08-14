@@ -11,9 +11,7 @@ import { useSessionStore } from '@/stores/sessionStore';
 import { useCartStore } from '@/stores/cartStore';
 import { cn } from '@/lib/utils';
 
-import { Lato } from 'next/font/google';
-
-const lato = Lato({ subsets: ['latin'], weight: ['400', '700'] });
+import { lato } from '@/lib/fonts';
 
 interface Category {
   id: string;

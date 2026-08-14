@@ -37,6 +37,13 @@ export async function PATCH(req: Request) {
     const heroUseVideo = formData.get('heroUseVideo') === 'true';
     const catalogMaquillajeUrl = (formData.get('catalogMaquillajeUrl') as string) || '';
     const catalogCapilarUrl = (formData.get('catalogCapilarUrl') as string) || '';
+    const welcomeDiscountActive = formData.get('welcomeDiscountActive') === 'true';
+    // Se acota a 0–100: un porcentaje fuera de rango dejaría totales absurdos
+    // (o negativos) en cada primer pedido.
+    const welcomeDiscountPercentage = Math.min(
+      100,
+      Math.max(0, Number(formData.get('welcomeDiscountPercentage')) || 0)
+    );
 
     const config = await prisma.siteConfig.upsert({
       where: { id: 'singleton' },
@@ -49,6 +56,8 @@ export async function PATCH(req: Request) {
         heroUseVideo,
         catalogMaquillajeUrl: catalogMaquillajeUrl || null,
         catalogCapilarUrl: catalogCapilarUrl || null,
+        welcomeDiscountActive,
+        welcomeDiscountPercentage,
       },
       create: {
         id: 'singleton',
@@ -60,6 +69,8 @@ export async function PATCH(req: Request) {
         heroUseVideo,
         catalogMaquillajeUrl: catalogMaquillajeUrl || null,
         catalogCapilarUrl: catalogCapilarUrl || null,
+        welcomeDiscountActive,
+        welcomeDiscountPercentage,
       }
     });
     

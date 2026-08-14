@@ -13,11 +13,8 @@ import { useCartStore } from '@/stores/cartStore';
 import { useSessionStore } from '@/stores/sessionStore';
 import { supabase } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { Lato } from 'next/font/google';
-
+import { lato } from '@/lib/fonts';
 import { Marquee } from '@/components/layout/Marquee';
-
-const lato = Lato({ subsets: ['latin'], weight: ['400', '700'] });
 
 const NAV_ORDER = ['maquillaje', 'accesorios', 'cuidado-facial', 'cuidado-capilar'];
 

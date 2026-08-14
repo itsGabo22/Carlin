@@ -1,6 +1,6 @@
 import { NextResponse as Response } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { z } from 'zod';
 
 const formSchema = z.object({
@@ -19,23 +19,39 @@ export async function POST(req: Request) {
     const body = await req.json();
     const data = formSchema.parse(body);
 
-    const supabase = await createServerSupabaseClient();
-    
-    // 1. Create user in Supabase Auth
-    // Because we just use standard supabase client for sign up:
-    const { data: authData, error: authError } = await supabase.auth.signUp({
+    const supabaseAdmin = getSupabaseAdmin();
+
+    // 1. Crear el usuario en Supabase Auth YA CONFIRMADO.
+    //
+    // Antes se usaba `supabase.auth.signUp()`, que dispara el correo de
+    // confirmación de Supabase. Eso dejaba el registro en un callejón sin
+    // salida: el mayorista quedaba creado pero con `email_confirmed_at = null`,
+    // y al intentar entrar recibía "Email not confirmed" traducido como
+    // "Credenciales incorrectas". Además el SMTP integrado de Supabase está
+    // limitado a ~2 correos/hora, así que a partir del tercer registro en una
+    // misma hora el signup fallaba con "email rate limit exceeded".
+    //
+    // La verificación real de este negocio la hace el admin al aprobar la
+    // cuenta desde /admin/mayoristas, así que el doble opt-in por correo no
+    // aporta nada: se crea confirmado y el acceso sigue cerrado por `approved`.
+    const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
-      options: {
-        data: {
-          name: data.name,
-          role: data.role,
-        }
-      }
+      email_confirm: true,
+      user_metadata: {
+        name: data.name,
+        role: data.role,
+      },
     });
 
     if (authError) {
-      return Response.json({ error: authError.message }, { status: 400 });
+      // Supabase devuelve 422 con este código cuando el correo ya existe en Auth.
+      const alreadyExists =
+        authError.code === 'email_exists' || /already been registered/i.test(authError.message);
+      return Response.json(
+        { error: alreadyExists ? 'El correo ya está registrado' : authError.message },
+        { status: 400 }
+      );
     }
 
     if (!authData.user) {
@@ -43,22 +59,29 @@ export async function POST(req: Request) {
     }
 
     // 2. Create WholesaleUser in Prisma
-    const wholesaleUser = await prisma.wholesaleUser.create({
-      data: {
-        authId: authData.user.id,
-        email: data.email,
-        name: data.name,
-        businessName: data.businessName,
-        taxId: data.taxId,
-        phone: data.phone,
-        role: data.role,
-        approved: false, // Must be approved by admin
-      }
-    });
+    let wholesaleUser;
+    try {
+      wholesaleUser = await prisma.wholesaleUser.create({
+        data: {
+          authId: authData.user.id,
+          email: data.email,
+          name: data.name,
+          businessName: data.businessName,
+          taxId: data.taxId,
+          phone: data.phone,
+          city: data.city,
+          role: data.role,
+          approved: false, // Must be approved by admin
+        }
+      });
+    } catch (err) {
+      // Si Prisma falla dejaríamos un usuario huérfano en Auth que además
+      // bloquearía el correo para siempre. Lo revertimos.
+      await supabaseAdmin.auth.admin.deleteUser(authData.user.id).catch(() => {});
+      throw err;
+    }
 
-    // We do NOT sign in the user, they must be approved. But signUp logs them in automatically if email confirmation is off.
-    // If they are logged in, carlin-session will just say they are pending.
-    
+    // No se inicia sesión: la cuenta queda pendiente de aprobación del admin.
     return Response.json({ success: true, user: wholesaleUser });
 
   } catch (error: any) {

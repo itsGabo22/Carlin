@@ -1,27 +1,6 @@
 import type { Metadata } from 'next';
-import { Cormorant_Garamond, DM_Sans } from 'next/font/google';
+import { dmSans, cormorant, lato } from '@/lib/fonts';
 import './globals.css';
-
-const dmSans = DM_Sans({
-  variable: '--font-sans',
-  subsets: ['latin'],
-  display: 'swap',
-});
-
-const cormorant = Cormorant_Garamond({
-  variable: '--font-serif',
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
-});
-
-// Reuse Cormorant Garamond for display
-const cormorantDisplay = Cormorant_Garamond({
-  variable: '--font-display',
-  subsets: ['latin'],
-  weight: ['400', '600', '700'],
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: {
@@ -39,17 +18,17 @@ export const metadata: Metadata = {
     'distribuidor',
     'Carlin',
   ],
-    icons: {
-      icon: [
-        { url: '/icon.png', type: 'image/png' },
-        { url: '/icon.png', sizes: '32x32', type: 'image/png' },
-        { url: '/icon.png', sizes: '16x16', type: 'image/png' },
-      ],
-      apple: [
-        { url: '/icon.png', sizes: '180x180', type: 'image/png' },
-      ],
-      shortcut: '/icon.png',
-    },
+  icons: {
+    icon: [
+      { url: '/icon.png', type: 'image/png' },
+      { url: '/icon.png', sizes: '32x32', type: 'image/png' },
+      { url: '/icon.png', sizes: '16x16', type: 'image/png' },
+    ],
+    apple: [
+      { url: '/icon.png', sizes: '180x180', type: 'image/png' },
+    ],
+    shortcut: '/icon.png',
+  },
 };
 
 export default async function RootLayout({
@@ -60,7 +39,8 @@ export default async function RootLayout({
   return (
     <html
       lang="es"
-      className={`${dmSans.variable} ${cormorant.variable} ${cormorantDisplay.variable} h-full antialiased overflow-x-hidden`}
+      className={`${dmSans.variable} ${cormorant.variable} ${lato.variable} h-full antialiased overflow-x-hidden`}
+      style={{ '--font-display': 'var(--font-serif)' } as React.CSSProperties}
     >
       <body className="flex min-h-full flex-col bg-white text-brand-text overflow-x-hidden">
         <main className="flex-1">

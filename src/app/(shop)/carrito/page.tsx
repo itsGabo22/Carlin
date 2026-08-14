@@ -5,9 +5,10 @@ import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Trash2, Plus, Minus, ShoppingBag, Tag, CheckCircle2 } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, Tag, CheckCircle2, Gift } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
-import { formatCOP } from '@/lib/utils/carlin-pricing';
+import { useSessionStore } from '@/stores/sessionStore';
+import { formatCOP, computeWelcomeDiscountAmount } from '@/lib/utils/carlin-pricing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -31,6 +32,8 @@ export default function CarritoPage() {
     getTotal,
     clearCart,
   } = useCartStore();
+
+  const welcomeDiscountPercentage = useSessionStore((s) => s.welcomeDiscountPercentage);
 
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -56,7 +59,13 @@ export default function CarritoPage() {
 
   const subtotal = getSubtotal();
   const discountAmount = getDiscountAmount();
-  const total = getTotal();
+  // `getTotal()` sólo conoce el cupón; el descuento de bienvenida se calcula
+  // aquí porque depende de la sesión, no del carrito persistido en localStorage.
+  const totalAfterCoupon = getTotal();
+  const welcomeDiscountAmount = welcomeDiscountPercentage
+    ? computeWelcomeDiscountAmount(totalAfterCoupon, welcomeDiscountPercentage)
+    : 0;
+  const total = Math.max(0, totalAfterCoupon - welcomeDiscountAmount);
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
@@ -126,6 +135,9 @@ export default function CarritoPage() {
           couponCode: appliedCoupon?.couponCode || null,
           couponLabel: appliedCoupon?.label || null,
           couponDiscountAmount: discountAmount,
+          // Informativo: el servidor recalcula el descuento de bienvenida y su
+          // valor es el que manda, tanto en el pedido como en el mensaje.
+          welcomeDiscountAmount,
           total,
           priceLevel,
           customerName: data.customerName,
@@ -262,7 +274,26 @@ export default function CarritoPage() {
                     <span>-{formatCOP(discountAmount)}</span>
                   </div>
                 )}
+
+                {welcomeDiscountAmount > 0 && (
+                  <div className="flex justify-between text-brand-pink-dark font-semibold items-center gap-2">
+                    <span className="flex items-center gap-1 min-w-0">
+                      <Gift className="w-3.5 h-3.5 shrink-0" />
+                      <span className="truncate">Bienvenida ({welcomeDiscountPercentage}%)</span>
+                    </span>
+                    <span className="shrink-0">-{formatCOP(welcomeDiscountAmount)}</span>
+                  </div>
+                )}
               </div>
+
+              {welcomeDiscountAmount > 0 && (
+                <div className="mt-3 rounded-xl bg-brand-cream border border-brand-pink-light/40 px-3 py-2.5">
+                  <p className="text-[11px] leading-snug text-brand-pink-dark font-sans">
+                    <strong className="font-bold">🎁 Tu descuento de primera compra</strong> se aplicó
+                    automáticamente. Sólo válido en este, tu primer pedido.
+                  </p>
+                </div>
+              )}
 
               <div className="flex justify-between py-4 font-sans text-lg font-bold text-brand-text">
                 <span>Total Estimado</span>

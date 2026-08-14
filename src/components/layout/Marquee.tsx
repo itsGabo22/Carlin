@@ -1,9 +1,7 @@
 'use client';
 
-import { Lato } from 'next/font/google';
+import { lato } from '@/lib/fonts';
 import { cn } from '@/lib/utils';
-
-const lato = Lato({ subsets: ['latin'], weight: '400' });
 
 export function Marquee({ messages }: { messages: string[] }) {
   if (!messages || messages.length === 0) return null;

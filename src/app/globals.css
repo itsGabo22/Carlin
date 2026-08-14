@@ -245,4 +245,39 @@
     .carlin-sparkle-star,
     .carlin-cat-circle { animation: none !important; }
   }
+
+  /* ── Panel de bienvenida mayorista ───────────────────────────── */
+  @keyframes carlin-welcome-in {
+    from { opacity: 0; transform: translateY(24px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  }
+
+  @keyframes carlin-welcome-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  /* Brillo que recorre el bloque del descuento */
+  @keyframes carlin-welcome-shine {
+    0%        { transform: translateX(-120%) skewX(-18deg); }
+    55%, 100% { transform: translateX(320%)  skewX(-18deg); }
+  }
+
+  @keyframes carlin-welcome-blob {
+    0%, 100% { transform: translate(0, 0) scale(1);      }
+    33%      { transform: translate(14px, -12px) scale(1.12); }
+    66%      { transform: translate(-10px, 10px) scale(0.94); }
+  }
+
+  .carlin-welcome-overlay { animation: carlin-welcome-fade 0.28s ease-out both; }
+  .carlin-welcome-card    { animation: carlin-welcome-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both; }
+  .carlin-welcome-shine   { animation: carlin-welcome-shine 3.4s ease-in-out infinite; }
+  .carlin-welcome-blob    { animation: carlin-welcome-blob 9s ease-in-out infinite; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .carlin-welcome-overlay,
+    .carlin-welcome-card,
+    .carlin-welcome-shine,
+    .carlin-welcome-blob { animation: none !important; }
+  }
 }

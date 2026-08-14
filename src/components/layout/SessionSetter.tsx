@@ -3,19 +3,22 @@
 import { useEffect } from 'react';
 import { useSessionStore, PriceLevel } from '@/stores/sessionStore';
 
-export function SessionSetter({ 
-  priceLevel, 
-  userName 
-}: { 
-  priceLevel: PriceLevel; 
+export function SessionSetter({
+  priceLevel,
+  userName,
+  welcomeDiscountPercentage = null,
+}: {
+  priceLevel: PriceLevel;
   userName: string | null;
+  welcomeDiscountPercentage?: number | null;
 }) {
-  const { setPriceLevel, setUserName } = useSessionStore();
-  
+  const { setPriceLevel, setUserName, setWelcomeDiscountPercentage } = useSessionStore();
+
   useEffect(() => {
     setPriceLevel(priceLevel);
     setUserName(userName);
-  }, [priceLevel, userName, setPriceLevel, setUserName]);
-  
+    setWelcomeDiscountPercentage(welcomeDiscountPercentage);
+  }, [priceLevel, userName, welcomeDiscountPercentage, setPriceLevel, setUserName, setWelcomeDiscountPercentage]);
+
   return null;
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Save, UploadCloud, Monitor, Smartphone, Video, Plus, ArrowUp, ArrowDown, Trash2, Edit, Image as ImageIcon, Sparkles, Eye, EyeOff } from 'lucide-react';
+import { Settings, Save, UploadCloud, Monitor, Smartphone, Video, Plus, ArrowUp, ArrowDown, Trash2, Edit, Image as ImageIcon, Sparkles, Eye, EyeOff, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -18,6 +18,8 @@ export default function AdminConfiguracionPage() {
     inactivityDays: 30,
     catalogMaquillajeUrl: '',
     catalogCapilarUrl: '',
+    welcomeDiscountActive: false,
+    welcomeDiscountPercentage: 10,
   });
 
   const [slides, setSlides] = useState<any[]>([]);
@@ -76,6 +78,8 @@ export default function AdminConfiguracionPage() {
           inactivityDays: configData.inactivityDays || 30,
           catalogMaquillajeUrl: configData.catalogMaquillajeUrl || '',
           catalogCapilarUrl: configData.catalogCapilarUrl || '',
+          welcomeDiscountActive: configData.welcomeDiscountActive || false,
+          welcomeDiscountPercentage: parseFloat(configData.welcomeDiscountPercentage) || 0,
         });
       }
       if (slidesData && Array.isArray(slidesData)) {
@@ -144,6 +148,8 @@ export default function AdminConfiguracionPage() {
       fd.append('announcementActive', config.announcementActive.toString());
       fd.append('catalogMaquillajeUrl', config.catalogMaquillajeUrl);
       fd.append('catalogCapilarUrl', config.catalogCapilarUrl);
+      fd.append('welcomeDiscountActive', config.welcomeDiscountActive.toString());
+      fd.append('welcomeDiscountPercentage', config.welcomeDiscountPercentage.toString());
 
       const resConfig = await fetch('/api/admin/configuracion', {
         method: 'PATCH',
@@ -444,14 +450,60 @@ export default function AdminConfiguracionPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Días de inactividad</label>
-                <Input 
-                  type="number" 
-                  required 
-                  value={config.inactivityDays} 
-                  onChange={e => setConfig({...config, inactivityDays: parseInt(e.target.value)})} 
+                <Input
+                  type="number"
+                  required
+                  value={config.inactivityDays}
+                  onChange={e => setConfig({...config, inactivityDays: parseInt(e.target.value)})}
                 />
               </div>
             </div>
+            <p className="text-xs text-gray-500">
+              Un mayorista aprobado que aún no ha hecho su primera compra conserva sus precios
+              especiales durante estos mismos días, contados desde su aprobación.
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <h2 className="text-lg font-semibold border-b pb-2 flex items-center gap-2">
+              <Gift size={18} className="text-brand-pink" /> Descuento de Bienvenida
+            </h2>
+            <p className="text-sm text-gray-500">
+              Se aplica solo <strong>una vez</strong> y de forma automática (sin cupón) en el
+              <strong> primer pedido</strong> de un mayorista aprobado. No aplica a distribuidores.
+            </p>
+
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={config.welcomeDiscountActive}
+                onChange={e => setConfig({ ...config, welcomeDiscountActive: e.target.checked })}
+                className="rounded text-brand-pink focus:ring-brand-pink"
+              />
+              <span className="text-sm font-medium">Activar descuento de bienvenida</span>
+            </label>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Porcentaje (%)</label>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step="0.01"
+                  value={config.welcomeDiscountPercentage}
+                  onChange={e => setConfig({ ...config, welcomeDiscountPercentage: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
+            </div>
+
+            {config.welcomeDiscountActive && !(config.welcomeDiscountPercentage > 0) && (
+              <p className="text-xs text-orange-600 font-medium">
+                El descuento está activo pero el porcentaje es 0: no se aplicará nada.
+              </p>
+            )}
           </CardContent>
         </Card>
       </form>

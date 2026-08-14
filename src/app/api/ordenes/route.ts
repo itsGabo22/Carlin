@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
 import { getSessionResult } from '@/lib/auth/carlin-session';
-import { formatCOP } from '@/lib/utils/carlin-pricing';
+import { getSiteConfig } from '@/lib/site-config';
+import { getWelcomeDiscount } from '@/lib/discounts/welcome';
+import { formatCOP, computeWelcomeDiscountAmount } from '@/lib/utils/carlin-pricing';
 
 const orderSchema = z.object({
   items: z.array(z.object({
@@ -19,6 +21,7 @@ const orderSchema = z.object({
   couponCode: z.string().nullable().optional(),
   couponLabel: z.string().nullable().optional(),
   couponDiscountAmount: z.number().optional(),
+  welcomeDiscountAmount: z.number().optional(),
   total: z.number().positive(),
   priceLevel: z.enum(['retail', 'wholesale', 'distributor']),
   customerName: z.string().min(2),
@@ -31,60 +34,72 @@ export async function POST(request: NextRequest) {
     const validated = orderSchema.parse(body);
 
     // Get session to securely determine if this is a wholesale/distributor user
-    const config = await prisma.siteConfig.findUnique({ where: { id: 'singleton' } });
-    
-    // Create a safe default config if it doesn't exist
-    const safeConfig = config || {
-      id: 'singleton',
-      wholesaleMinOrder: 200000 as any,
-      distributorMinOrder: 400000 as any,
-      inactivityDays: 30,
-      announcementText: null,
-      announcementActive: false,
-      heroUseVideo: false,
-      catalogMaquillajeUrl: null,
-      catalogCapilarUrl: null,
-      updatedAt: new Date()
-    };
-    
+    const safeConfig = await getSiteConfig();
+
     const sessionResult = await getSessionResult(safeConfig);
     const wholesaleUserId = sessionResult.user?.id;
-    
+
     // Determine the Prisma enum value for priceLevel
-    const prismaPriceLevel = 
+    const prismaPriceLevel =
       validated.priceLevel === 'distributor' ? 'DISTRIBUTOR' :
       validated.priceLevel === 'wholesale' ? 'WHOLESALE' : 'RETAIL';
 
-    // 1. Create the order
-    const order = await prisma.order.create({
-      data: {
-        total: validated.total,
-        priceLevel: prismaPriceLevel,
-        status: 'PENDING_WHATSAPP',
-        customerName: validated.customerName,
-        customerPhone: validated.customerPhone,
-        wholesaleUserId: wholesaleUserId || null,
-        guestEmail: sessionResult.user?.email || null,
-        items: {
-          create: validated.items.map(i => ({
-            productId: i.productId,
-            variantId: i.variantId || null,
-            name: i.colorName ? `${i.name} (${i.colorName})` : i.name,
-            priceSnapshot: i.price,
-            quantity: i.quantity,
-            imageUrl: i.imageUrl,
-          }))
-        }
-      }
-    });
+    // ── Descuento de bienvenida ────────────────────────────────────────
+    // Se recalcula aquí desde la sesión y la config: lo que mande el cliente
+    // en `welcomeDiscountAmount` es sólo informativo. Si no califica, no se
+    // aplica por más que el carrito lo pida.
+    const subtotal = validated.subtotal ?? validated.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+    const couponDiscountAmount = validated.couponDiscountAmount ?? 0;
+    const totalAfterCoupon = Math.max(0, subtotal - couponDiscountAmount);
 
-    // 2. Update lastOrderAt if applicable
-    if (wholesaleUserId) {
-      await prisma.wholesaleUser.update({
-        where: { id: wholesaleUserId },
-        data: { lastOrderAt: new Date() }
+    const welcomeDiscount = await getWelcomeDiscount(sessionResult.user, safeConfig);
+    const welcomeDiscountAmount = welcomeDiscount
+      ? computeWelcomeDiscountAmount(totalAfterCoupon, welcomeDiscount.percentage)
+      : 0;
+
+    const finalTotal = Math.max(0, totalAfterCoupon - welcomeDiscountAmount);
+
+    // 1. Crear el pedido y consumir el descuento en la MISMA transacción:
+    //    si algo falla, ni se cobra el descuento ni se marca como usado.
+    const order = await prisma.$transaction(async (tx) => {
+      const created = await tx.order.create({
+        data: {
+          total: finalTotal,
+          priceLevel: prismaPriceLevel,
+          status: 'PENDING_WHATSAPP',
+          customerName: validated.customerName,
+          customerPhone: validated.customerPhone,
+          wholesaleUserId: wholesaleUserId || null,
+          guestEmail: sessionResult.user?.email || null,
+          welcomeDiscountPct: welcomeDiscount ? welcomeDiscount.percentage : null,
+          welcomeDiscountAmount: welcomeDiscountAmount > 0 ? welcomeDiscountAmount : null,
+          items: {
+            create: validated.items.map(i => ({
+              productId: i.productId,
+              variantId: i.variantId || null,
+              name: i.colorName ? `${i.name} (${i.colorName})` : i.name,
+              priceSnapshot: i.price,
+              quantity: i.quantity,
+              imageUrl: i.imageUrl,
+            }))
+          }
+        }
       });
-    }
+
+      // 2. Update lastOrderAt if applicable
+      if (wholesaleUserId) {
+        await tx.wholesaleUser.update({
+          where: { id: wholesaleUserId },
+          data: {
+            lastOrderAt: new Date(),
+            // Quema el descuento: a partir de aquí `getWelcomeDiscount` devuelve null.
+            ...(welcomeDiscountAmount > 0 ? { welcomeDiscountUsedAt: new Date() } : {}),
+          }
+        });
+      }
+
+      return created;
+    });
 
     // 3. Construct WhatsApp Message
     let msg = '';
@@ -108,20 +123,26 @@ export async function POST(request: NextRequest) {
     
     msg += `─────────────────────\n`;
 
-    const subtotal = validated.subtotal ?? validated.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
-    const couponDiscountAmount = validated.couponDiscountAmount ?? 0;
+    // El subtotal se muestra si hubo cualquier descuento, para que se entienda
+    // de dónde sale el total final.
+    if (couponDiscountAmount > 0 || welcomeDiscountAmount > 0) {
+      msg += `Subtotal: ${formatCOP(subtotal)}\n`;
+    }
 
     if (couponDiscountAmount > 0 && validated.couponCode) {
-      msg += `Subtotal: ${formatCOP(subtotal)}\n`;
       msg += `🏷️ Cupón aplicado (${validated.couponCode}${validated.couponLabel ? ` - ${validated.couponLabel}` : ''}): -${formatCOP(couponDiscountAmount)}\n`;
     }
-    
+
+    if (welcomeDiscountAmount > 0 && welcomeDiscount) {
+      msg += `🎁 Descuento de bienvenida (${welcomeDiscount.percentage}% primera compra): -${formatCOP(welcomeDiscountAmount)}\n`;
+    }
+
     if (validated.priceLevel === 'retail') {
-      msg += `💰 Total: ${formatCOP(validated.total)}\n\n`;
+      msg += `💰 Total: ${formatCOP(finalTotal)}\n\n`;
     } else if (validated.priceLevel === 'wholesale') {
-      msg += `💰 Total mayorista: ${formatCOP(validated.total)}\n\n`;
+      msg += `💰 Total mayorista: ${formatCOP(finalTotal)}\n\n`;
     } else {
-      msg += `💰 Total distribuidor: ${formatCOP(validated.total)}\n\n`;
+      msg += `💰 Total distribuidor: ${formatCOP(finalTotal)}\n\n`;
     }
 
     msg += `📞 Mis datos:\n`;

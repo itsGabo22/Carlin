@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, XCircle, RefreshCw, UserCog } from 'lucide-react';
+import { CheckCircle2, XCircle, RefreshCw, UserCog, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type WholesaleUser = any; // simplified for this component
@@ -126,6 +126,7 @@ export default function MayoristasClient({ initialUsers }: { initialUsers: Whole
                   <td className="px-4 py-3 text-gray-600">
                     <div>{user.businessName || 'N/A'}</div>
                     <div className="text-xs text-gray-400">NIT: {user.taxId || 'N/A'}</div>
+                    {user.city && <div className="text-xs text-gray-400">{user.city}</div>}
                   </td>
                   <td className="px-4 py-3 text-gray-600">
                     <div>{user.email}</div>
@@ -155,7 +156,23 @@ export default function MayoristasClient({ initialUsers }: { initialUsers: Whole
                     {isPending ? (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Pendiente</span>
                     ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Aprobado</span>
+                      <div className="flex flex-col items-start gap-1">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Aprobado</span>
+                        {user.role === 'MAYORISTA' && (
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${user.welcomeDiscountUsedAt
+                              ? 'bg-gray-100 text-gray-500'
+                              : 'bg-brand-pink/15 text-brand-pink-dark'
+                              }`}
+                            title={user.welcomeDiscountUsedAt
+                              ? `Descuento de bienvenida usado el ${new Date(user.welcomeDiscountUsedAt).toLocaleDateString()}`
+                              : 'Aún no ha usado su descuento de bienvenida'}
+                          >
+                            <Gift size={10} />
+                            {user.welcomeDiscountUsedAt ? 'Bienvenida usada' : 'Bienvenida disponible'}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </td>
                   <td className="px-4 py-3">

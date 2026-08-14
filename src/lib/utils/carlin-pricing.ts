@@ -32,12 +32,40 @@ export function getStrikethroughPrice(
   return product.comparePrice ?? null;
 }
 
-export function isWholesaleActive(lastOrderAt: Date | null, inactivityDays: number = 30): boolean {
-  if (!lastOrderAt) return false;
+/**
+ * ¿La cuenta mayorista sigue "activa" (es decir, conserva su precio especial)?
+ *
+ * La regla de negocio es "si dejas de comprar durante `inactivityDays`, vuelves
+ * a precio de detal". El problema es que un mayorista recién aprobado todavía no
+ * tiene `lastOrderAt`, y devolver `false` ahí lo dejaba en precio RETAIL: no podía
+ * ver los precios mayoristas para poder hacer la primera compra que, precisamente,
+ * era lo único que activaba su cuenta.
+ *
+ * Por eso, mientras no exista `lastOrderAt` se usa `sinceDate` (la fecha de
+ * aprobación) como base: la cuenta nace activa y tiene la misma ventana de
+ * `inactivityDays` para estrenarse.
+ */
+export function isWholesaleActive(
+  lastOrderAt: Date | null,
+  inactivityDays: number = 30,
+  sinceDate?: Date | null
+): boolean {
+  const baseDate = lastOrderAt ?? sinceDate;
+  if (!baseDate) return false;
   const now = new Date();
-  const diffTime = Math.abs(now.getTime() - lastOrderAt.getTime());
+  const diffTime = Math.abs(now.getTime() - new Date(baseDate).getTime());
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   return diffDays <= inactivityDays;
+}
+
+/**
+ * Monto del descuento de bienvenida, en pesos enteros.
+ * `base` ya debe venir con el cupón (si lo hay) descontado: los dos descuentos
+ * se acumulan, el de bienvenida cae sobre el total ya rebajado.
+ */
+export function computeWelcomeDiscountAmount(base: number, percentage: number): number {
+  if (!(base > 0) || !(percentage > 0)) return 0;
+  return Math.round(base * (percentage / 100));
 }
 
 export function checkMinimumOrder(

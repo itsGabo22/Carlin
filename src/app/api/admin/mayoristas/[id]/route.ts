@@ -20,7 +20,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     if (action === 'approve') {
       const updatedUser = await prisma.wholesaleUser.update({
         where: { id },
-        data: { approved: true }
+        data: {
+          approved: true,
+          // Fecha base de actividad mientras no exista un primer pedido.
+          // Se re-sella en cada aprobación para que una cuenta revocada y
+          // vuelta a aprobar arranque con su ventana completa.
+          approvedAt: new Date(),
+        }
       });
 
       // Send email
