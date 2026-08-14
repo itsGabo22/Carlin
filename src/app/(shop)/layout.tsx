@@ -6,6 +6,7 @@ import { categoryRepository, brandRepository } from '@/lib/repositories';
 import { getSessionResult } from '@/lib/auth/carlin-session';
 import { prisma } from '@/lib/prisma';
 import { SessionSetter } from '@/components/layout/SessionSetter';
+import { LazyMotion, domAnimation } from 'framer-motion';
 
 export default async function ShopLayout({
   children,
@@ -51,10 +52,13 @@ export default async function ShopLayout({
         catalogMaquillajeUrl={safeConfig.catalogMaquillajeUrl || undefined}
         catalogCapilarUrl={safeConfig.catalogCapilarUrl || undefined}
       />
-      {children}
+      <LazyMotion features={domAnimation} strict>
+        {children}
+      </LazyMotion>
       <Footer />
       <ScrollToTopButton />
       <WhatsAppButton />
     </>
   );
 }
+
