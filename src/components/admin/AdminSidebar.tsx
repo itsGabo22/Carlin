@@ -39,7 +39,7 @@ export function AdminSidebar({ pendingOrdersCount = 0 }: { pendingOrdersCount?: 
   return (
     <aside
       className={cn(
-        "bg-[#3D1020] text-white flex flex-col transition-all duration-300 border-r border-white/10 shrink-0",
+        "bg-brand-neutral-dark text-white flex flex-col transition-all duration-300 border-r border-white/10 shrink-0",
         collapsed ? "w-16" : "w-64"
       )}
     >

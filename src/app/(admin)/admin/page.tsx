@@ -70,7 +70,7 @@ export default async function AdminDashboardPage() {
 
         <Card>
           <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center text-purple-600">
+            <div className="w-12 h-12 rounded-full bg-brand-distributor/20 flex items-center justify-center text-brand-distributor-dark">
               <Tags size={24} />
             </div>
             <div>

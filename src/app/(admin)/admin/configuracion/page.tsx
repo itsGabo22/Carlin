@@ -481,7 +481,7 @@ export default function AdminConfiguracionPage() {
                   
                   <div className="flex-grow">
                     <p className="font-medium text-sm flex items-center gap-2">
-                      {slide.type === 'IMAGE' ? <ImageIcon size={14} className="text-blue-500" /> : <Video size={14} className="text-purple-500" />}
+                      {slide.type === 'IMAGE' ? <ImageIcon size={14} className="text-blue-500" /> : <Video size={14} className="text-brand-distributor-dark" />}
                       {slide.title || 'Sin Título'}
                     </p>
                     <p className="text-xs text-gray-500 truncate">{slide.subtitle || 'Sin Subtítulo'}</p>
@@ -699,12 +699,12 @@ export default function AdminConfiguracionPage() {
                 </div>
               </div>
             ) : (
-              <div className="relative border-2 border-dashed border-gray-200 hover:border-purple-500 hover:bg-purple-50 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group">
+              <div className="relative border-2 border-dashed border-gray-200 hover:border-brand-distributor hover:bg-brand-distributor/10 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group">
                 <input type="file" accept="video/mp4, video/webm" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={e => {
                   const f = e.target.files?.[0] || null;
                   setSlideUploads(prev => ({ ...prev, video: f }));
                 }} />
-                <Video className="text-gray-400 group-hover:text-purple-500 mb-3 transition-colors" size={48} strokeWidth={1.5} />
+                <Video className="text-gray-400 group-hover:text-brand-distributor mb-3 transition-colors" size={48} strokeWidth={1.5} />
                 <p className="text-sm font-semibold text-gray-700">Subir Video (MP4/WebM)</p>
                 <p className="text-xs text-gray-500 mt-1">{slideUploads.video ? slideUploads.video.name : 'Haz clic o arrastra tu archivo'}</p>
               </div>

@@ -191,7 +191,7 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
                   <td className="px-4 py-3">
                     {d.audience === 'ALL' && <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">Todos</span>}
                     {d.audience === 'WHOLESALE' && <span className="text-xs bg-brand-pink/10 text-brand-pink-dark px-2 py-0.5 rounded-full">Mayoristas</span>}
-                    {d.audience === 'DISTRIBUTOR' && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">Distribuidores</span>}
+                    {d.audience === 'DISTRIBUTOR' && <span className="text-xs bg-brand-distributor/20 text-brand-distributor-dark font-medium px-2 py-0.5 rounded-full">Distribuidores</span>}
                   </td>
                   <td className="px-4 py-3">
                     {d.active ? (
