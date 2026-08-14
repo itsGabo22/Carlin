@@ -12,6 +12,10 @@ const orderSchema = z.object({
     quantity: z.number().int().positive(),
     imageUrl: z.string().optional(),
   })).min(1),
+  subtotal: z.number().optional(),
+  couponCode: z.string().nullable().optional(),
+  couponLabel: z.string().nullable().optional(),
+  couponDiscountAmount: z.number().optional(),
   total: z.number().positive(),
   priceLevel: z.enum(['retail', 'wholesale', 'distributor']),
   customerName: z.string().min(2),
@@ -98,6 +102,14 @@ export async function POST(request: NextRequest) {
     });
     
     msg += `─────────────────────\n`;
+
+    const subtotal = validated.subtotal ?? validated.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+    const couponDiscountAmount = validated.couponDiscountAmount ?? 0;
+
+    if (couponDiscountAmount > 0 && validated.couponCode) {
+      msg += `Subtotal: ${formatCOP(subtotal)}\n`;
+      msg += `🏷️ Cupón aplicado (${validated.couponCode}${validated.couponLabel ? ` - ${validated.couponLabel}` : ''}): -${formatCOP(couponDiscountAmount)}\n`;
+    }
     
     if (validated.priceLevel === 'retail') {
       msg += `💰 Total: ${formatCOP(validated.total)}\n\n`;

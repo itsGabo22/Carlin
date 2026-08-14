@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { PriceLevel } from '@prisma/client';
 
 export interface CartItem {
   productId: string;
@@ -11,19 +10,29 @@ export interface CartItem {
   maxStock: number;
 }
 
-// In the database PriceLevel is uppercase (RETAIL, WHOLESALE, DISTRIBUTOR)
-// In the frontend it might be lowercase, but the schema uses the enum.
-// We'll define a local type for the frontend to match the store.
 export type CartPriceLevel = 'retail' | 'wholesale' | 'distributor';
+
+export interface AppliedCoupon {
+  discountId: string;
+  couponCode: string;
+  label: string;
+  percentage: number;
+  discountAmount: number;
+  applicableProductIds: string[];
+}
 
 interface CartState {
   items: CartItem[];
   priceLevel: CartPriceLevel;
+  appliedCoupon: AppliedCoupon | null;
   setPriceLevel: (level: CartPriceLevel) => void;
   addItem: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
+  setCoupon: (coupon: AppliedCoupon | null) => void;
   clearCart: () => void;
+  getSubtotal: () => number;
+  getDiscountAmount: () => number;
   getTotal: () => number;
   getItemCount: () => number;
 }
@@ -33,6 +42,7 @@ export const useCartStore = create<CartState>()(
     (set, get) => ({
       items: [],
       priceLevel: 'retail',
+      appliedCoupon: null,
       setPriceLevel: (level) => set({ priceLevel: level }),
       addItem: (item) => {
         const { items } = get();
@@ -60,9 +70,29 @@ export const useCartStore = create<CartState>()(
             i.productId === productId ? { ...i, quantity: Math.min(Math.max(1, quantity), i.maxStock) } : i
           ),
         })),
-      clearCart: () => set({ items: [] }),
-      getTotal: () => {
+      setCoupon: (coupon) => set({ appliedCoupon: coupon }),
+      clearCart: () => set({ items: [], appliedCoupon: null }),
+      getSubtotal: () => {
         return get().items.reduce((total, item) => total + item.price * item.quantity, 0);
+      },
+      getDiscountAmount: () => {
+        const { items, appliedCoupon } = get();
+        if (!appliedCoupon) return 0;
+        const percentage = appliedCoupon.percentage / 100;
+        const appSet = new Set(appliedCoupon.applicableProductIds);
+        
+        let discountTotal = 0;
+        for (const item of items) {
+          if (appSet.has(item.productId)) {
+            discountTotal += (item.price * percentage) * item.quantity;
+          }
+        }
+        return Math.round(discountTotal);
+      },
+      getTotal: () => {
+        const subtotal = get().getSubtotal();
+        const discountAmount = get().getDiscountAmount();
+        return Math.max(0, subtotal - discountAmount);
       },
       getItemCount: () => {
         return get().items.reduce((count, item) => count + item.quantity, 0);

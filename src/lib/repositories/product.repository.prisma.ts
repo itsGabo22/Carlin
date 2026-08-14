@@ -55,6 +55,26 @@ function buildOrderBy(sort: GetProductsOptions['sort']): Prisma.ProductOrderByWi
 }
 
 function mapProduct(p: any): Product {
+  const directDiscounts = (p.discounts || []).map((d: any) => ({
+    ...d,
+    percentage: Number(d.percentage),
+  }));
+
+  const m2mDiscounts = (p.discountProducts || [])
+    .map((dp: any) => dp.discount)
+    .filter((d: any) => d && d.active !== false)
+    .map((d: any) => ({
+      ...d,
+      percentage: Number(d.percentage),
+    }));
+
+  const allDiscounts = [...directDiscounts];
+  m2mDiscounts.forEach((d: any) => {
+    if (!allDiscounts.some((existing) => existing.id === d.id)) {
+      allDiscounts.push(d);
+    }
+  });
+
   return {
     ...p,
     retailPrice: Number(p.retailPrice),
@@ -62,10 +82,7 @@ function mapProduct(p: any): Product {
     distributorPrice: Number(p.distributorPrice),
     comparePrice: p.comparePrice ? Number(p.comparePrice) : null,
     tags: p.tags?.map((pt: any) => pt.tag) || [],
-    discounts: (p.discounts || []).map((d: any) => ({
-      ...d,
-      percentage: Number(d.percentage),
-    })),
+    discounts: allDiscounts,
   };
 }
 
@@ -121,6 +138,10 @@ class PrismaProductRepository implements IProductRepository {
           brand: true,
           tags: { include: { tag: true } },
           discounts: { where: { active: true } },
+          discountProducts: {
+            where: { discount: { active: true } },
+            include: { discount: true },
+          },
         },
         orderBy: buildOrderBy(options.sort),
         skip: (page - 1) * pageSize,
@@ -145,6 +166,10 @@ class PrismaProductRepository implements IProductRepository {
         brand: true,
         tags: { include: { tag: true } },
         discounts: { where: { active: true } },
+        discountProducts: {
+          where: { discount: { active: true } },
+          include: { discount: true },
+        },
       }
     });
     return product ? mapProduct(product) : null;
@@ -159,10 +184,15 @@ class PrismaProductRepository implements IProductRepository {
         brand: true,
         tags: { include: { tag: true } },
         discounts: { where: { active: true } },
+        discountProducts: {
+          where: { discount: { active: true } },
+          include: { discount: true },
+        },
       }
     });
     return products.map(mapProduct);
   }
+
 
   async getByBrand(brandSlug: string, options: GetProductsOptions = {}): Promise<ProductsResult> {
     return this.getAll({ ...options, brandSlug });

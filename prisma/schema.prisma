@@ -114,30 +114,31 @@ model Tag {
 }
 
 model Product {
-  id               String       @id @default(cuid())
+  id               String            @id @default(cuid())
   name             String
-  slug             String       @unique
+  slug             String            @unique
   description      String?
-  retailPrice      Decimal      @db.Decimal(10, 2)
-  wholesalePrice   Decimal      @db.Decimal(10, 2)
-  distributorPrice Decimal      @db.Decimal(10, 2)
-  comparePrice     Decimal?     @db.Decimal(10, 2)
-  sku              String?      @unique
-  stock            Int          @default(0)
+  retailPrice      Decimal           @db.Decimal(10, 2)
+  wholesalePrice   Decimal           @db.Decimal(10, 2)
+  distributorPrice Decimal           @db.Decimal(10, 2)
+  comparePrice     Decimal?          @db.Decimal(10, 2)
+  sku              String?           @unique
+  stock            Int               @default(0)
   unit             String?      
   tones            String[]     
   imageUrls        String[]
-  featured         Boolean      @default(false)
-  active           Boolean      @default(true)
+  featured         Boolean           @default(false)
+  active           Boolean           @default(true)
   categoryId       String
-  category         Category     @relation(fields: [categoryId], references: [id])
+  category         Category          @relation(fields: [categoryId], references: [id])
   brandId          String?
-  brand            Brand?       @relation(fields: [brandId], references: [id])
+  brand            Brand?            @relation(fields: [brandId], references: [id])
   tags             ProductTag[]
   discounts        Discount[]
+  discountProducts DiscountProduct[]
   orderItems       OrderItem[]
-  createdAt        DateTime     @default(now())
-  updatedAt        DateTime     @updatedAt
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
 }
 
 model ProductTag {
@@ -150,21 +151,33 @@ model ProductTag {
 }
 
 model Discount {
-  id         String        @id @default(cuid())
-  code       String?       @unique
+  id         String            @id @default(cuid())
+  code       String?           @unique
+  couponCode String?           @unique
   label      String
-  percentage Decimal       @db.Decimal(5, 2)
+  percentage Decimal           @db.Decimal(5, 2)
   scope      DiscountScope
-  audience   DiscountAudience @default(ALL)
+  audience   DiscountAudience  @default(ALL)
   productId  String?
-  product    Product?      @relation(fields: [productId], references: [id])
+  product    Product?          @relation(fields: [productId], references: [id])
   categoryId String?
-  category   Category?     @relation(fields: [categoryId], references: [id])
+  category   Category?         @relation(fields: [categoryId], references: [id])
   startsAt   DateTime?
   endsAt     DateTime?
-  active     Boolean       @default(true)
-  createdAt  DateTime      @default(now())
+  active     Boolean           @default(true)
+  createdAt  DateTime          @default(now())
+  products   DiscountProduct[]
 }
+
+model DiscountProduct {
+  discountId String
+  productId  String
+  discount   Discount @relation(fields: [discountId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@id([discountId, productId])
+}
+
 
 model WholesaleUser {
   id             String    @id @default(cuid())

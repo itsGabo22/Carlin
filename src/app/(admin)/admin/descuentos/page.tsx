@@ -9,6 +9,7 @@ export default async function AdminDescuentosPage() {
   const discountRows = await prisma.discount.findMany({
     include: {
       product: { select: { id: true, name: true } },
+      products: { include: { product: { select: { id: true, name: true } } } },
       category: { select: { id: true, name: true } }
     },
     orderBy: { createdAt: 'desc' }

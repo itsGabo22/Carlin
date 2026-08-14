@@ -68,14 +68,18 @@ export function getApplicableDiscounts(
 ): any[] {
   if (!product.discounts) return [];
   return product.discounts.filter(d => {
-    if (!d.active) return false;
-    const now = new Date();
-    if (d.startsAt && new Date(d.startsAt) > now) return false;
-    if (d.endsAt && new Date(d.endsAt) < now) return false;
+    const discount = d.discount || d;
+    if (!discount.active) return false;
+    if (discount.couponCode && discount.couponCode.trim() !== '') return false;
     
-    if (d.audience === 'WHOLESALE' && priceLevel !== 'wholesale') return false;
-    if (d.audience === 'DISTRIBUTOR' && priceLevel !== 'distributor') return false;
+    const now = new Date();
+    if (discount.startsAt && new Date(discount.startsAt) > now) return false;
+    if (discount.endsAt && new Date(discount.endsAt) < now) return false;
+    
+    if (discount.audience === 'WHOLESALE' && priceLevel !== 'wholesale') return false;
+    if (discount.audience === 'DISTRIBUTOR' && priceLevel !== 'distributor') return false;
     
     return true;
   });
 }
+

@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Trash2, Plus, Minus, ShoppingBag } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, Tag, CheckCircle2 } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
 import { formatCOP } from '@/lib/utils/carlin-pricing';
 import { Button } from '@/components/ui/button';
@@ -19,9 +19,24 @@ const orderSchema = z.object({
 type OrderFormValues = z.infer<typeof orderSchema>;
 
 export default function CarritoPage() {
-  const { items, priceLevel, removeItem, updateQuantity, getTotal, clearCart } = useCartStore();
+  const {
+    items,
+    priceLevel,
+    appliedCoupon,
+    removeItem,
+    updateQuantity,
+    setCoupon,
+    getSubtotal,
+    getDiscountAmount,
+    getTotal,
+    clearCart,
+  } = useCartStore();
+
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [couponInput, setCouponInput] = React.useState('');
+  const [couponError, setCouponError] = React.useState<string | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = React.useState(false);
 
   const {
     register,
@@ -39,7 +54,51 @@ export default function CarritoPage() {
 
   if (!isHydrated) return null;
 
+  const subtotal = getSubtotal();
+  const discountAmount = getDiscountAmount();
   const total = getTotal();
+
+  const handleApplyCoupon = async () => {
+    if (!couponInput.trim()) return;
+    setIsValidatingCoupon(true);
+    setCouponError(null);
+
+    try {
+      const res = await fetch('/api/cupones/validar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: couponInput.trim(),
+          items: items.map((i) => ({ productId: i.productId, price: i.price, quantity: i.quantity })),
+          priceLevel,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al validar el cupón');
+      }
+
+      setCoupon({
+        discountId: data.discountId,
+        couponCode: data.couponCode,
+        label: data.label,
+        percentage: data.percentage,
+        discountAmount: data.discountAmount,
+        applicableProductIds: data.applicableProductIds,
+      });
+      setCouponInput('');
+    } catch (err: any) {
+      setCouponError(err.message || 'Error al validar el cupón');
+    } finally {
+      setIsValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setCoupon(null);
+    setCouponError(null);
+  };
 
   const onSubmit = async (data: OrderFormValues) => {
     if (items.length === 0) return;
@@ -60,6 +119,10 @@ export default function CarritoPage() {
             quantity: item.quantity,
             imageUrl: item.imageUrl,
           })),
+          subtotal,
+          couponCode: appliedCoupon?.couponCode || null,
+          couponLabel: appliedCoupon?.label || null,
+          couponDiscountAmount: discountAmount,
           total,
           priceLevel,
           customerName: data.customerName,
@@ -166,9 +229,73 @@ export default function CarritoPage() {
                 <span className="font-semibold text-brand-pink-dark capitalize">{priceLevel}</span>
               </div>
               
+              <div className="space-y-2 py-3 border-b border-gray-100 font-sans text-sm text-gray-600">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span className="font-semibold text-brand-text">{formatCOP(subtotal)}</span>
+                </div>
+
+                {appliedCoupon && (
+                  <div className="flex justify-between text-emerald-600 font-medium items-center">
+                    <span className="flex items-center gap-1">
+                      <Tag className="w-3.5 h-3.5" />
+                      Cupón ({appliedCoupon.couponCode})
+                    </span>
+                    <span>-{formatCOP(discountAmount)}</span>
+                  </div>
+                )}
+              </div>
+
               <div className="flex justify-between py-4 font-sans text-lg font-bold text-brand-text">
                 <span>Total Estimado</span>
-                <span>{formatCOP(total)}</span>
+                <span className="text-brand-pink-dark">{formatCOP(total)}</span>
+              </div>
+
+              {/* Sección de Cupón de Descuento */}
+              <div className="mt-2 pt-3 border-t border-gray-100">
+                <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide mb-1.5">
+                  ¿Tienes un cupón de descuento?
+                </label>
+                {appliedCoupon ? (
+                  <div className="flex items-center justify-between p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <div>
+                        <p className="font-bold text-emerald-800 uppercase tracking-wider">{appliedCoupon.couponCode}</p>
+                        <p className="text-emerald-600">{appliedCoupon.label} ({appliedCoupon.percentage}% OFF)</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-emerald-700 hover:text-emerald-900 font-semibold underline text-xs ml-2"
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      <Input
+                        value={couponInput}
+                        onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                        placeholder="Ej. VERANO20"
+                        className="rounded-xl border-gray-200 text-sm uppercase"
+                      />
+                      <Button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={isValidatingCoupon || !couponInput.trim()}
+                        className="bg-brand-pink text-white hover:bg-brand-pink-dark rounded-xl px-4 text-xs font-bold uppercase tracking-wider shrink-0"
+                      >
+                        {isValidatingCoupon ? '...' : 'Aplicar'}
+                      </Button>
+                    </div>
+                    {couponError && (
+                      <p className="text-xs text-red-500 font-medium">{couponError}</p>
+                    )}
+                  </div>
+                )}
               </div>
 
               <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
