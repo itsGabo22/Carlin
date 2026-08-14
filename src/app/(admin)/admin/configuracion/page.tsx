@@ -620,7 +620,7 @@ export default function AdminConfiguracionPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Link del botón</label>
-                <Input value={popup.ctaHref} onChange={e => setPopup({ ...popup, ctaHref: e.target.value })} placeholder="Ej: /catalogo/brochas-y-herramientas" />
+                <Input value={popup.ctaHref} onChange={e => setPopup(prev => ({ ...prev, ctaHref: e.target.value }))} placeholder="Ej: /catalogo/brochas-y-herramientas" />
               </div>
             </div>
 
@@ -628,7 +628,7 @@ export default function AdminConfiguracionPage() {
               <input
                 type="checkbox"
                 checked={popup.showOnce}
-                onChange={e => setPopup({ ...popup, showOnce: e.target.checked })}
+                onChange={e => setPopup(prev => ({ ...prev, showOnce: e.target.checked }))}
                 className="rounded text-brand-pink focus:ring-brand-pink"
               />
               <span className="text-sm font-medium">Mostrar solo una vez por sesión (no reaparece tras cerrarlo)</span>
@@ -643,7 +643,7 @@ export default function AdminConfiguracionPage() {
             <label className="text-sm font-medium">Tipo de Medio</label>
             <select 
               value={slideForm.type} 
-              onChange={e => setSlideForm({...slideForm, type: e.target.value})}
+              onChange={e => setSlideForm(prev => ({ ...prev, type: e.target.value }))}
               className="w-full h-10 px-3 rounded-md border border-gray-200"
             >
               <option value="IMAGE">Imagen</option>
@@ -654,11 +654,11 @@ export default function AdminConfiguracionPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Título (Opcional)</label>
-              <Input value={slideForm.title} onChange={e => setSlideForm({...slideForm, title: e.target.value})} placeholder="Texto principal del hero (ej: Nueva Colección de Verano)" />
+              <Input value={slideForm.title} onChange={e => setSlideForm(prev => ({ ...prev, title: e.target.value }))} placeholder="Texto principal del hero (ej: Nueva Colección de Verano)" />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Subtítulo (Opcional)</label>
-              <Input value={slideForm.subtitle} onChange={e => setSlideForm({...slideForm, subtitle: e.target.value})} placeholder="Párrafo descriptivo (ej: Descubre nuestros nuevos productos)" />
+              <Input value={slideForm.subtitle} onChange={e => setSlideForm(prev => ({ ...prev, subtitle: e.target.value }))} placeholder="Párrafo descriptivo (ej: Descubre nuestros nuevos productos)" />
             </div>
           </div>
           <p className="text-xs text-neutral-400 mt-1">
@@ -668,11 +668,11 @@ export default function AdminConfiguracionPage() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Botón (Opcional)</label>
-              <Input value={slideForm.ctaText} onChange={e => setSlideForm({...slideForm, ctaText: e.target.value})} placeholder="Ej: Ver más" />
+              <Input value={slideForm.ctaText} onChange={e => setSlideForm(prev => ({ ...prev, ctaText: e.target.value }))} placeholder="Ej: Ver más" />
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Link Botón (Opcional)</label>
-              <Input value={slideForm.ctaHref} onChange={e => setSlideForm({...slideForm, ctaHref: e.target.value})} placeholder="Ej: /catalogo" />
+              <Input value={slideForm.ctaHref} onChange={e => setSlideForm(prev => ({ ...prev, ctaHref: e.target.value }))} placeholder="Ej: /catalogo" />
             </div>
           </div>
 
@@ -680,13 +680,19 @@ export default function AdminConfiguracionPage() {
             {slideForm.type === 'IMAGE' ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="relative border-2 border-dashed border-gray-200 hover:border-brand-pink hover:bg-brand-pink/5 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group">
-                  <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={e => setSlideUploads({...slideUploads, desktop: e.target.files?.[0] || null})} />
+                  <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={e => {
+                    const f = e.target.files?.[0] || null;
+                    setSlideUploads(prev => ({ ...prev, desktop: f }));
+                  }} />
                   <Monitor className="text-gray-400 group-hover:text-brand-pink mb-3 transition-colors" size={40} strokeWidth={1.5} />
                   <p className="text-sm font-semibold text-gray-700">Desktop (1920x1080)</p>
                   <p className="text-xs text-gray-500 mt-1">{slideUploads.desktop ? slideUploads.desktop.name : 'Haz clic o arrastra'}</p>
                 </div>
                 <div className="relative border-2 border-dashed border-gray-200 hover:border-brand-pink hover:bg-brand-pink/5 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group">
-                  <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={e => setSlideUploads({...slideUploads, mobile: e.target.files?.[0] || null})} />
+                  <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={e => {
+                    const f = e.target.files?.[0] || null;
+                    setSlideUploads(prev => ({ ...prev, mobile: f }));
+                  }} />
                   <Smartphone className="text-gray-400 group-hover:text-brand-pink mb-3 transition-colors" size={40} strokeWidth={1.5} />
                   <p className="text-sm font-semibold text-gray-700">Mobile (1080x1920)</p>
                   <p className="text-xs text-gray-500 mt-1">{slideUploads.mobile ? slideUploads.mobile.name : 'Opcional, haz clic aquí'}</p>
@@ -694,7 +700,10 @@ export default function AdminConfiguracionPage() {
               </div>
             ) : (
               <div className="relative border-2 border-dashed border-gray-200 hover:border-purple-500 hover:bg-purple-50 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group">
-                <input type="file" accept="video/mp4, video/webm" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={e => setSlideUploads({...slideUploads, video: e.target.files?.[0] || null})} />
+                <input type="file" accept="video/mp4, video/webm" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" onChange={e => {
+                  const f = e.target.files?.[0] || null;
+                  setSlideUploads(prev => ({ ...prev, video: f }));
+                }} />
                 <Video className="text-gray-400 group-hover:text-purple-500 mb-3 transition-colors" size={48} strokeWidth={1.5} />
                 <p className="text-sm font-semibold text-gray-700">Subir Video (MP4/WebM)</p>
                 <p className="text-xs text-gray-500 mt-1">{slideUploads.video ? slideUploads.video.name : 'Haz clic o arrastra tu archivo'}</p>
@@ -706,7 +715,7 @@ export default function AdminConfiguracionPage() {
             <input
               type="checkbox"
               checked={slideForm.active}
-              onChange={e => setSlideForm({ ...slideForm, active: e.target.checked })}
+              onChange={e => setSlideForm(prev => ({ ...prev, active: e.target.checked }))}
               className="rounded text-brand-pink focus:ring-brand-pink"
             />
             <span className="text-sm font-medium">Slide activo (visible en la tienda)</span>
@@ -727,7 +736,7 @@ export default function AdminConfiguracionPage() {
             <label className="text-sm font-medium">Mensaje</label>
             <Input 
               value={marqueeForm.message} 
-              onChange={e => setMarqueeForm({...marqueeForm, message: e.target.value})} 
+              onChange={e => setMarqueeForm(prev => ({ ...prev, message: e.target.value }))} 
               placeholder="Ej: ENVÍO GRATIS POR COMPRAS SUPERIORES A $200.000" 
               required
             />
@@ -737,7 +746,7 @@ export default function AdminConfiguracionPage() {
             <input
               type="checkbox"
               checked={marqueeForm.active}
-              onChange={e => setMarqueeForm({ ...marqueeForm, active: e.target.checked })}
+              onChange={e => setMarqueeForm(prev => ({ ...prev, active: e.target.checked }))}
               className="rounded text-brand-pink focus:ring-brand-pink"
             />
             <span className="text-sm font-medium">Mensaje activo</span>

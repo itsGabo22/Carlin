@@ -401,7 +401,7 @@ export function CategoriasClient({ categories }: { categories: CategoryRow[] }) 
                   </p>
                 )}
                 {form.imageUrl && !uploading && (
-                  <button type="button" onClick={() => setForm({ ...form, imageUrl: '' })}
+                  <button type="button" onClick={() => setForm(prev => ({ ...prev, imageUrl: '' }))}
                     className="text-xs text-red-600 hover:underline flex items-center gap-1">
                     <X size={12} /> Quitar imagen
                   </button>
@@ -413,14 +413,14 @@ export function CategoriasClient({ categories }: { categories: CategoryRow[] }) 
 
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={form.active}
-              onChange={e => setForm({ ...form, active: e.target.checked })}
+              onChange={e => setForm(prev => ({ ...prev, active: e.target.checked }))}
               className="rounded text-brand-pink focus:ring-brand-pink" />
             <span className="text-sm font-medium">Visible en la tienda</span>
           </label>
 
           <label className="flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={form.groupByBrand}
-              onChange={e => setForm({ ...form, groupByBrand: e.target.checked })}
+              onChange={e => setForm(prev => ({ ...prev, groupByBrand: e.target.checked }))}
               className="rounded text-brand-pink focus:ring-brand-pink" />
             <span className="text-sm font-medium">Agrupar por marca en el catálogo</span>
           </label>

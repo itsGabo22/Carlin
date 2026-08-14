@@ -1,11 +1,9 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-// Using standard state instead of react-hook-form to simplify implementation since we don't have the schema yet
-import { Save, ArrowLeft, Image as ImageIcon, X, Trash2 } from 'lucide-react';
+import { Save, ArrowLeft, Image as ImageIcon, X, Trash2, UploadCloud } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import slugify from 'slugify';
@@ -13,11 +11,6 @@ import Link from 'next/link';
 import { FieldHint } from '@/components/admin/FieldHint';
 import { Tooltip } from '@/components/admin/Tooltip';
 
-/**
- * Lee el body como JSON sin lanzar si viene vacío o no es JSON.
- * Next devuelve body vacío en varios errores (405, 502...), y un `.json()`
- * directo sobre eso tira "SyntaxError: Unexpected end of JSON input".
- */
 async function readJson(res: Response): Promise<any | null> {
   const text = await res.text().catch(() => '');
   if (!text) return null;
@@ -28,7 +21,6 @@ async function readJson(res: Response): Promise<any | null> {
   }
 }
 
-/** parseFloat('') es NaN y JSON.stringify(NaN) es null → NOT NULL violation. */
 const numOrZero = (value: string) => {
   const n = parseFloat(value);
   return Number.isFinite(n) ? n : 0;
@@ -45,8 +37,10 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
   const isNew = id === 'nuevo';
 
   const [loading, setLoading] = useState(false);
+  const [uploadingDirectImage, setUploadingDirectImage] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  
   const [formData, setFormData] = useState({
     name: '',
     slug: '',
@@ -70,11 +64,9 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
   const [brands, setBrands] = useState<any[]>([]);
   const [bandejaImages, setBandejaImages] = useState<any[]>([]);
   const [newTone, setNewTone] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // We fetch standard relationships. We will use a mock fetch if endpoints aren't ready yet,
-  // but assuming they will be, let's just make the calls or leave it empty for now
   useEffect(() => {
-    // Fetch categories & brands
     Promise.all([
       fetch('/api/admin/categorias').then(r => r.json().catch(() => ({}))),
       fetch('/api/admin/marcas').then(r => r.json().catch(() => ({}))),
@@ -88,8 +80,6 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
     });
 
     if (!isNew) {
-      // fetch product — nunca hacer r.json() a ciegas: si la respuesta es un
-      // error sin body (ej. 405), revienta con "Unexpected end of JSON input".
       fetch(`/api/admin/productos/${id}`)
         .then(async (r) => {
           const data = await readJson(r);
@@ -110,25 +100,23 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const name = e.target.value;
-    setFormData({
-      ...formData,
+    setFormData(prev => ({
+      ...prev,
       name,
       slug: slugify(name, { lower: true, strict: true })
-    });
+    }));
   };
 
   const handleAddTone = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && newTone.trim()) {
       e.preventDefault();
-      setFormData({ ...formData, tones: [...formData.tones, newTone.trim()] });
+      setFormData(prev => ({ ...prev, tones: [...prev.tones, newTone.trim()] }));
       setNewTone('');
     }
   };
 
   const removeTone = (index: number) => {
-    const newTones = [...formData.tones];
-    newTones.splice(index, 1);
-    setFormData({ ...formData, tones: newTones });
+    setFormData(prev => ({ ...prev, tones: prev.tones.filter((_, idx) => idx !== index) }));
   };
 
   const handleSelectImage = (url: string, imageId: string) => {
@@ -136,23 +124,58 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
       alert('Máximo 3 imágenes por producto');
       return;
     }
-    setFormData({ ...formData, imageUrls: [...formData.imageUrls, url] });
-    
-    // Optimistically mark as assigned in UI, actual DB update happens on Save
-    setBandejaImages(bandejaImages.filter(img => img.id !== imageId));
+    setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, url] }));
+    setBandejaImages(prev => prev.filter(img => img.id !== imageId));
+  };
+
+  const handleDirectUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (formData.imageUrls.length >= 3) {
+      alert('Máximo 3 imágenes por producto');
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    setUploadingDirectImage(true);
+    setSaveError(null);
+
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('bucket', 'product-images');
+
+      const res = await fetch('/api/admin/imagenes/upload', {
+        method: 'POST',
+        body: fd,
+      });
+
+      const data = await readJson(res);
+      if (!res.ok) {
+        setSaveError(data?.error ?? 'Error al subir la imagen');
+        return;
+      }
+
+      const uploadedUrl = data.url || data.imageRecord?.url;
+      if (uploadedUrl) {
+        setFormData(prev => ({ ...prev, imageUrls: [...prev.imageUrls, uploadedUrl] }));
+      }
+    } catch {
+      setSaveError('Error de red al subir la imagen.');
+    } finally {
+      setUploadingDirectImage(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   const removeImage = (index: number) => {
-    const newImages = [...formData.imageUrls];
-    newImages.splice(index, 1);
-    setFormData({ ...formData, imageUrls: newImages });
+    setFormData(prev => ({ ...prev, imageUrls: prev.imageUrls.filter((_, idx) => idx !== index) }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Evita el doble envío (doble clic en Guardar): el segundo POST chocaba
-    // contra el índice único de slug y devolvía un 500.
-    if (loading) return;
+    if (loading || uploadingDirectImage) return;
 
     if (loadError && !isNew) {
       setSaveError('No se cargaron los datos del producto. Recarga la página antes de guardar para no sobrescribirlos.');
@@ -201,9 +224,9 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
             {isNew ? 'Nuevo Producto' : 'Editar Producto'}
           </h1>
         </div>
-        <Button onClick={handleSubmit} disabled={loading} className="bg-brand-pink hover:bg-brand-pink-dark text-white gap-2">
+        <Button onClick={handleSubmit} disabled={loading || uploadingDirectImage} className="bg-brand-pink hover:bg-brand-pink-dark text-white gap-2">
           <Save size={16} />
-          {loading ? 'Guardando...' : 'Guardar'}
+          {loading ? 'Guardando...' : uploadingDirectImage ? 'Subiendo imagen...' : 'Guardar'}
         </Button>
       </div>
 
@@ -235,7 +258,7 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
               
               <div className="space-y-2">
                 <label className="text-sm font-medium">Slug</label>
-                <Input required value={formData.slug} onChange={(e) => setFormData({...formData, slug: e.target.value})} placeholder="base-liquida-matte" />
+                <Input required value={formData.slug} onChange={(e) => setFormData(prev => ({ ...prev, slug: e.target.value }))} placeholder="base-liquida-matte" />
                 <FieldHint text="Se genera automáticamente desde el nombre. Es la dirección del producto en la web. No uses espacios ni tildes." type="warning" />
               </div>
               
@@ -244,7 +267,7 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
                 <textarea 
                   className="w-full min-h-[100px] p-3 rounded-md border border-gray-200 focus:outline-none focus:ring-2 focus:ring-brand-pink"
                   value={formData.description} 
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Descripción detallada del producto..."
                 />
                 <FieldHint text="Describe el producto: tipo, uso, beneficios. Una buena descripción ayuda a que los clientes encuentren el producto en el buscador." />
@@ -253,12 +276,12 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">SKU</label>
-                  <Input value={formData.sku} onChange={(e) => setFormData({...formData, sku: e.target.value})} placeholder="Ej: MAQ-001" />
+                  <Input value={formData.sku} onChange={(e) => setFormData(prev => ({ ...prev, sku: e.target.value }))} placeholder="Ej: MAQ-001" />
                   <FieldHint text="Código interno de referencia. Ej: OG-BASE-001. Opcional pero útil para controlar inventario." />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Unidad de venta</label>
-                  <Input value={formData.unit} onChange={(e) => setFormData({...formData, unit: e.target.value})} placeholder="Ej: unidad, caja x12" />
+                  <Input value={formData.unit} onChange={(e) => setFormData(prev => ({ ...prev, unit: e.target.value }))} placeholder="Ej: unidad, caja x12" />
                   <FieldHint text='Cómo se vende la unidad. Ej: "unidad", "kit de 12", "caja x6", "display x24".' />
                 </div>
               </div>
@@ -284,26 +307,26 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Precio Público</label>
-                  <Input type="number" required value={formData.retailPrice} onChange={(e) => setFormData({...formData, retailPrice: numOrZero(e.target.value)})} />
+                  <Input type="number" required value={formData.retailPrice} onChange={(e) => setFormData(prev => ({ ...prev, retailPrice: numOrZero(e.target.value) }))} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Precio Mayorista</label>
-                  <Input type="number" required value={formData.wholesalePrice} onChange={(e) => setFormData({...formData, wholesalePrice: numOrZero(e.target.value)})} />
+                  <Input type="number" required value={formData.wholesalePrice} onChange={(e) => setFormData(prev => ({ ...prev, wholesalePrice: numOrZero(e.target.value) }))} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Precio Distribuidor</label>
-                  <Input type="number" required value={formData.distributorPrice} onChange={(e) => setFormData({...formData, distributorPrice: numOrZero(e.target.value)})} />
+                  <Input type="number" required value={formData.distributorPrice} onChange={(e) => setFormData(prev => ({ ...prev, distributorPrice: numOrZero(e.target.value) }))} />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-gray-500">Precio Comparativo (Opcional)</label>
-                  <Input type="number" value={formData.comparePrice} onChange={(e) => setFormData({...formData, comparePrice: numOrZero(e.target.value)})} />
+                  <Input type="number" value={formData.comparePrice} onChange={(e) => setFormData(prev => ({ ...prev, comparePrice: numOrZero(e.target.value) }))} />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Stock</label>
-                  <Input type="number" required value={formData.stock} onChange={(e) => setFormData({...formData, stock: intOrZero(e.target.value)})} />
+                  <Input type="number" required value={formData.stock} onChange={(e) => setFormData(prev => ({ ...prev, stock: intOrZero(e.target.value) }))} />
                   <FieldHint text="Cuando confirmes un pedido desde 'Pedidos', el stock baja automáticamente." type="tip" />
                 </div>
               </div>
@@ -344,7 +367,7 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
                 <select 
                   className="w-full h-10 px-3 rounded-md border border-gray-200 bg-white"
                   value={formData.categoryId}
-                  onChange={(e) => setFormData({...formData, categoryId: e.target.value})}
+                  onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}
                   required
                 >
                   <option value="">Selecciona una categoría</option>
@@ -359,7 +382,7 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
                 <select 
                   className="w-full h-10 px-3 rounded-md border border-gray-200 bg-white"
                   value={formData.brandId}
-                  onChange={(e) => setFormData({...formData, brandId: e.target.value})}
+                  onChange={(e) => setFormData(prev => ({ ...prev, brandId: e.target.value }))}
                 >
                   <option value="">Sin marca</option>
                   {brands.map((b) => (
@@ -370,12 +393,12 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
 
               <div className="pt-4 space-y-4 border-t">
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={formData.active} onChange={(e) => setFormData({...formData, active: e.target.checked})} className="rounded text-brand-pink focus:ring-brand-pink" />
+                  <input type="checkbox" checked={formData.active} onChange={(e) => setFormData(prev => ({ ...prev, active: e.target.checked }))} className="rounded text-brand-pink focus:ring-brand-pink" />
                   <span className="text-sm font-medium">Producto Activo</span>
                 </label>
                 
                 <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={formData.featured} onChange={(e) => setFormData({...formData, featured: e.target.checked})} className="rounded text-brand-pink focus:ring-brand-pink" />
+                  <input type="checkbox" checked={formData.featured} onChange={(e) => setFormData(prev => ({ ...prev, featured: e.target.checked }))} className="rounded text-brand-pink focus:ring-brand-pink" />
                   <span className="text-sm font-medium">
                     Destacado (Home)
                     <Tooltip text="Los productos destacados aparecen en la sección 'Lo más vendido' de la página de inicio." />
@@ -392,20 +415,42 @@ export default function AdminProductEditPage({ params }: { params: Promise<{ id:
                 <span className="text-xs text-gray-500 font-normal">{formData.imageUrls.length}/3</span>
               </h2>
 
-              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-2">
                 <p className="text-xs font-semibold text-amber-700 mb-1">
                   📸 Cómo agregar imágenes
                 </p>
                 <ol className="text-xs text-amber-700 space-y-0.5 list-decimal list-inside">
-                  <li>Ve a <strong>Imágenes</strong> en el menú izquierdo y sube las fotos.</li>
-                  <li>Vuelve aquí y haz clic en <strong>"Seleccionar de bandeja"</strong>.</li>
+                  <li>Sube una foto directamente desde tu equipo abajo.</li>
+                  <li>O selecciona fotos previamente subidas en <strong>"Bandeja"</strong>.</li>
                   <li>Máximo 3 imágenes por producto.</li>
                 </ol>
               </div>
 
+              {/* Direct File Upload */}
+              <div className="p-3 bg-gray-50 border border-dashed border-gray-200 rounded-xl">
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Subir imagen desde mi equipo
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    disabled={formData.imageUrls.length >= 3 || uploadingDirectImage}
+                    onChange={handleDirectUpload}
+                    className="text-xs text-gray-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-pink-light/40 file:text-brand-pink-dark hover:file:bg-brand-pink-light/70 cursor-pointer disabled:opacity-50 w-full"
+                  />
+                </div>
+                {uploadingDirectImage && (
+                  <p className="text-xs text-brand-pink font-medium mt-1 animate-pulse flex items-center gap-1">
+                    <UploadCloud className="w-3.5 h-3.5" /> Procesando y subiendo imagen...
+                  </p>
+                )}
+              </div>
+
               {/* Current Images */}
               {formData.imageUrls.length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-2 pt-2">
                   {formData.imageUrls.map((url, idx) => (
                     <div key={idx} className="relative aspect-square border rounded-md overflow-hidden group">
                       {/* eslint-disable-next-line @next/next/no-img-element */}

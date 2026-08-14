@@ -230,7 +230,7 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Etiqueta (Ej. Descuento Verano)</label>
-                <Input required value={formData.label} onChange={(e) => setFormData({ ...formData, label: e.target.value })} />
+                <Input required value={formData.label} onChange={(e) => setFormData(prev => ({ ...prev, label: e.target.value }))} />
               </div>
 
               <div>
@@ -240,7 +240,7 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
                 <Input
                   placeholder="Ej. VERANO20 (vacío = aplica automático)"
                   value={formData.couponCode}
-                  onChange={(e) => setFormData({ ...formData, couponCode: e.target.value.toUpperCase() })}
+                  onChange={(e) => setFormData(prev => ({ ...prev, couponCode: e.target.value.toUpperCase() }))}
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Si defines un código, el descuento SOLO aplicará cuando el cliente ingrese el cupón en el carrito.
@@ -249,12 +249,12 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
               
               <div>
                 <label className="block text-sm font-medium mb-1">Porcentaje (%)</label>
-                <Input type="number" min="1" max="100" required value={formData.percentage} onChange={(e) => setFormData({ ...formData, percentage: Number(e.target.value) })} />
+                <Input type="number" min="1" max="100" required value={formData.percentage} onChange={(e) => setFormData(prev => ({ ...prev, percentage: Number(e.target.value) }))} />
               </div>
 
               <div>
                 <label className="block text-sm font-medium mb-1">Alcance</label>
-                <select className="w-full border rounded-md h-10 px-3" value={formData.scope} onChange={(e) => setFormData({ ...formData, scope: e.target.value as DiscountScope })}>
+                <select className="w-full border rounded-md h-10 px-3" value={formData.scope} onChange={(e) => setFormData(prev => ({ ...prev, scope: e.target.value as DiscountScope }))}>
                   <option value="GLOBAL">Global (Toda la tienda)</option>
                   <option value="CATEGORY">Categoría específica</option>
                   <option value="PRODUCT">Productos específicos (Multi-selección)</option>
@@ -264,7 +264,7 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
               {formData.scope === 'CATEGORY' && (
                 <div>
                   <label className="block text-sm font-medium mb-1">Categoría</label>
-                  <select required className="w-full border rounded-md h-10 px-3" value={formData.categoryId} onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}>
+                  <select required className="w-full border rounded-md h-10 px-3" value={formData.categoryId} onChange={(e) => setFormData(prev => ({ ...prev, categoryId: e.target.value }))}>
                     <option value="">Seleccione...</option>
                     {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
@@ -336,15 +336,15 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
                 <legend className="text-sm font-medium px-1 text-gray-700">¿A quién aplica este descuento?</legend>
                 <div className="space-y-2 mt-2">
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="audience" value="ALL" checked={formData.audience === 'ALL'} onChange={() => setFormData({ ...formData, audience: 'ALL' })} /> 
+                    <input type="radio" name="audience" value="ALL" checked={formData.audience === 'ALL'} onChange={() => setFormData(prev => ({ ...prev, audience: 'ALL' }))} /> 
                     <span className="text-sm">Todos los clientes</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="audience" value="WHOLESALE" checked={formData.audience === 'WHOLESALE'} onChange={() => setFormData({ ...formData, audience: 'WHOLESALE' })} />
+                    <input type="radio" name="audience" value="WHOLESALE" checked={formData.audience === 'WHOLESALE'} onChange={() => setFormData(prev => ({ ...prev, audience: 'WHOLESALE' }))} />
                     <span className="text-sm">Solo mayoristas aprobados</span>
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="audience" value="DISTRIBUTOR" checked={formData.audience === 'DISTRIBUTOR'} onChange={() => setFormData({ ...formData, audience: 'DISTRIBUTOR' })} />
+                    <input type="radio" name="audience" value="DISTRIBUTOR" checked={formData.audience === 'DISTRIBUTOR'} onChange={() => setFormData(prev => ({ ...prev, audience: 'DISTRIBUTOR' }))} />
                     <span className="text-sm">Solo distribuidores aprobados</span>
                   </label>
                 </div>
@@ -355,18 +355,18 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
                   <div>
                     <label className="block text-sm font-medium mb-1">Fecha inicio</label>
-                    <Input type="date" value={formData.startsAt} onChange={(e) => setFormData({ ...formData, startsAt: e.target.value })} />
+                    <Input type="date" value={formData.startsAt} onChange={(e) => setFormData(prev => ({ ...prev, startsAt: e.target.value }))} />
                   </div>
                   <div>
                     <label className="block text-sm font-medium mb-1">Fecha fin</label>
-                    <Input type="date" value={formData.endsAt} min={formData.startsAt || undefined} onChange={(e) => setFormData({ ...formData, endsAt: e.target.value })} />
+                    <Input type="date" value={formData.endsAt} min={formData.startsAt || undefined} onChange={(e) => setFormData(prev => ({ ...prev, endsAt: e.target.value }))} />
                   </div>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">Sin fechas = siempre activo. Borra el valor para quitar el límite.</p>
               </fieldset>
 
               <label className="flex items-center gap-2 mt-4 cursor-pointer">
-                <input type="checkbox" checked={formData.active} onChange={(e) => setFormData({ ...formData, active: e.target.checked })} />
+                <input type="checkbox" checked={formData.active} onChange={(e) => setFormData(prev => ({ ...prev, active: e.target.checked }))} />
                 <span className="text-sm font-medium">Activo</span>
               </label>
 

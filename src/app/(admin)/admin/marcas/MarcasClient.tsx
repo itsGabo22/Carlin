@@ -185,17 +185,17 @@ export function MarcasClient({ brands }: { brands: BrandRow[] }) {
         <form onSubmit={handleSave} className="space-y-4 mt-2">
           <div className="space-y-2">
             <label className="text-sm font-medium">Nombre</label>
-            <Input required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Ej: Vogue" />
+            <Input required value={form.name} onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))} placeholder="Ej: Vogue" />
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium">Slug (opcional)</label>
-            <Input value={form.slug} onChange={e => setForm({ ...form, slug: e.target.value })} placeholder="Se genera automático desde el nombre" />
+            <Input value={form.slug} onChange={e => setForm(prev => ({ ...prev, slug: e.target.value }))} placeholder="Se genera automático desde el nombre" />
           </div>
 
           <div className="space-y-2">
             <label className="text-sm font-medium">URL del logo (opcional)</label>
-            <Input value={form.logoUrl} onChange={e => setForm({ ...form, logoUrl: e.target.value })} placeholder="https://..." />
+            <Input value={form.logoUrl} onChange={e => setForm(prev => ({ ...prev, logoUrl: e.target.value }))} placeholder="https://..." />
           </div>
 
           <div className="pt-4 flex justify-end gap-2">
