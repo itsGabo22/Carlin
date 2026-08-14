@@ -95,7 +95,7 @@ export function ProductCard({ product, priceLevel, isPriority, className }: Prod
                 unoptimized
                 sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
                 className={cn(
-                  'object-cover p-0 transition-all duration-500 ease-out',
+                  'object-contain p-0 transition-all duration-500 ease-out',
                   !reduceMotion && 'group-hover:scale-[1.06]',
                   // Si hay segunda imagen, la primera se desvanece al pasar el mouse.
                   hoverImageUrl && !reduceMotion && 'group-hover:opacity-0',
@@ -109,7 +109,7 @@ export function ProductCard({ product, priceLevel, isPriority, className }: Prod
                   fill
                   unoptimized
                   sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                  className="object-cover p-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100"
+                  className="object-contain p-0 opacity-0 transition-opacity duration-500 ease-out group-hover:opacity-100"
                 />
               )}
             </>
