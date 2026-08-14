@@ -1,11 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
-import { Package, Plus, Search, Edit } from 'lucide-react';
+import { Package, Plus, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { CsvImportModal } from '@/components/admin/CsvImportModal';
-import { DeleteProductButton } from '@/components/admin/DeleteProductButton';
+import { AdminProductosClient } from './AdminProductosClient';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -25,6 +24,10 @@ export default async function AdminProductosPage({
       include: {
         category: true,
         brand: true,
+        variants: {
+          where: { active: true },
+          orderBy: { order: 'asc' },
+        },
       },
       orderBy: { createdAt: 'desc' },
       skip,
@@ -42,7 +45,7 @@ export default async function AdminProductosPage({
           <h1 className="text-2xl font-bold font-serif text-gray-900 flex items-center gap-2">
             <Package className="text-brand-pink" /> Productos
           </h1>
-          <p className="text-gray-500">Administra el catálogo y los precios.</p>
+          <p className="text-gray-500">Administra el catálogo, los precios y las variantes de color.</p>
         </div>
         <div className="flex gap-2">
           <CsvImportModal />
@@ -66,74 +69,7 @@ export default async function AdminProductosPage({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left">
-            <thead className="bg-gray-50 text-gray-600 font-medium border-b border-gray-200">
-              <tr>
-                <th className="px-4 py-3">Imagen</th>
-                <th className="px-4 py-3">Nombre</th>
-                <th className="px-4 py-3">Categoría / Marca</th>
-                <th className="px-4 py-3">Público</th>
-                <th className="px-4 py-3">Mayorista</th>
-                <th className="px-4 py-3">Distribuidor</th>
-                <th className="px-4 py-3">Stock</th>
-                <th className="px-4 py-3">Estado</th>
-                <th className="px-4 py-3">Acciones</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {products.map((product) => (
-                <tr key={product.id} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3">
-                    <div className="w-12 h-12 rounded-md bg-gray-100 border border-gray-200 overflow-hidden">
-                      {product.imageUrls[0] ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={product.imageUrls[0]} alt={product.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-gray-400">
-                          <Package size={20} />
-                        </div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 font-medium text-gray-900">
-                    {product.name}
-                    {product.sku && <div className="text-xs text-gray-500 font-normal">SKU: {product.sku}</div>}
-                  </td>
-                  <td className="px-4 py-3 text-gray-600">
-                    <div>{product.category.name}</div>
-                    {product.brand && <div className="text-xs text-gray-400">{product.brand.name}</div>}
-                  </td>
-                  <td className="px-4 py-3">${Number(product.retailPrice).toLocaleString()}</td>
-                  <td className="px-4 py-3 font-medium text-brand-wholesale-dark">${Number(product.wholesalePrice).toLocaleString()}</td>
-                  <td className="px-4 py-3 font-medium text-brand-distributor-dark">${Number(product.distributorPrice).toLocaleString()}</td>
-                  <td className="px-4 py-3">{product.stock}</td>
-                  <td className="px-4 py-3">
-                    {product.active ? (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Activo</span>
-                    ) : (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactivo</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <Link href={`/admin/productos/${product.id}`}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
-                          <Edit size={16} />
-                        </Button>
-                      </Link>
-                      <DeleteProductButton
-                        productId={product.id}
-                        productName={product.name}
-                        isActive={product.active}
-                      />
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <AdminProductosClient products={products as any} />
         
         {totalPages > 1 && (
           <div className="p-4 border-t border-gray-200 flex items-center justify-between">
