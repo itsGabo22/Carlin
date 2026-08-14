@@ -100,7 +100,7 @@ export function Header({
   };
 
   return (
-    <div className={lato.className}>
+    <div className={cn(lato.className, "sticky top-0 z-50 w-full")}>
       {/* Announcement Bar — untouched */}
       {announcementActive && announcementText && (
         <div className="w-full py-2 px-4 text-center text-xs sm:text-sm font-semibold tracking-wide bg-brand-pink text-white">
@@ -121,7 +121,7 @@ export function Header({
         }
         transition={{ duration: 0.3, ease: 'easeOut' }}
         className={cn(
-          'sticky top-0 z-30 w-full transition-shadow',
+          'w-full transition-shadow',
           scrolled && 'shadow-md backdrop-blur-md'
         )}
       >

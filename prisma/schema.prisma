@@ -45,6 +45,10 @@ model SiteConfig {
   wholesaleMinOrder    Decimal  @db.Decimal(10, 2)
   distributorMinOrder  Decimal  @db.Decimal(10, 2)
   inactivityDays       Int      @default(30)
+  /// Descuento de bienvenida: se aplica automáticamente (sin cupón) en el
+  /// PRIMER pedido de un mayorista aprobado. Ver `getWelcomeDiscount()`.
+  welcomeDiscountActive     Boolean @default(false)
+  welcomeDiscountPercentage Decimal @default(0) @db.Decimal(5, 2)
   announcementText     String?
   announcementActive   Boolean  @default(false)
   heroUseVideo         Boolean  @default(false)
@@ -206,8 +210,17 @@ model WholesaleUser {
   businessName   String?
   taxId          String?
   phone          String?
+  city           String?
   approved       Boolean   @default(false)
+  /// Momento en que el admin aprobó la cuenta. Sirve de fecha base para
+  /// `isWholesaleActive()` mientras el mayorista aún no ha hecho su primer
+  /// pedido: sin esto, una cuenta recién aprobada caía a precio RETAIL.
+  approvedAt     DateTime?
   lastOrderAt    DateTime?
+  /// Se sella al crear el pedido que consume el descuento de bienvenida.
+  welcomeDiscountUsedAt DateTime?
+  /// Se sella cuando el usuario cierra el panel de bienvenida (se muestra 1 vez).
+  welcomeSeenAt  DateTime?
   orders         Order[]
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -222,6 +235,9 @@ model Order {
   customerPhone   String?
   priceLevel      PriceLevel     @default(RETAIL)
   total           Decimal        @db.Decimal(10, 2)
+  /// Snapshot del descuento de bienvenida aplicado a ESTE pedido (si aplicó).
+  welcomeDiscountPct    Decimal? @db.Decimal(5, 2)
+  welcomeDiscountAmount Decimal? @db.Decimal(10, 2)
   status          String         @default("PENDING")
   items           OrderItem[]
   createdAt       DateTime       @default(now())

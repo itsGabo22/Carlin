@@ -4,7 +4,7 @@ import React from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { motion, useReducedMotion } from 'framer-motion';
-import { ImageIcon, Check, ShoppingBag } from 'lucide-react';
+import { ImageIcon, Check } from 'lucide-react';
 import { PriceDisplay } from './PriceDisplay';
 import { cn } from '@/lib/utils';
 import { useCartStore } from '@/stores/cartStore';
@@ -189,7 +189,7 @@ export function ProductCard({ product, priceLevel, isPriority, className }: Prod
                 </>
               ) : (
                 <>
-                  <ShoppingBag size={15} /> Añadir al Carrito
+                  <Image src="/icons/nav/cart.png" alt="" width={18} height={18} className="w-4.5 h-4.5 object-contain brightness-0 invert" /> Añadir al Carrito
                 </>
               )}
             </button>
