@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
+import { processAndUploadImage } from '@/lib/images';
 
 export async function GET() {
   try {
@@ -45,6 +46,35 @@ export async function PATCH(req: Request) {
       Math.max(0, Number(formData.get('welcomeDiscountPercentage')) || 0)
     );
 
+    // ── Panel de bienvenida ──────────────────────────────────────────
+    // Texto plano a propósito: se pinta como texto, nunca como HTML.
+    const welcomeTitle = ((formData.get('welcomeTitle') as string) || '').trim() || null;
+    const welcomeMessage = ((formData.get('welcomeMessage') as string) || '').trim() || null;
+
+    // `welcomeImageUrl` sólo se toca si el admin subió una imagen nueva o pidió
+    // quitarla; si no viene nada en el form, se deja la que ya estaba.
+    let welcomeImageUrl: string | null | undefined;
+    const welcomeImageFile = formData.get('welcomeImage') as File | null;
+    const removeWelcomeImage = formData.get('removeWelcomeImage') === 'true';
+
+    if (welcomeImageFile && welcomeImageFile.size > 0) {
+      // `fit: inside` + sin ampliar: respeta la proporción del diseño que
+      // subieron, no lo recorta. La imagen se muestra sin texto encima.
+      const publicUrl = await processAndUploadImage({
+        file: welcomeImageFile,
+        bucket: 'hero-media',
+        path: 'mayoristas/bienvenida.webp',
+        resize: { width: 1200, height: 800, fit: 'inside', withoutEnlargement: true },
+        quality: 88,
+        upsert: true,
+      });
+      // Cache-bust: la ruta es fija, así que sin esto el navegador seguiría
+      // mostrando la imagen anterior.
+      welcomeImageUrl = `${publicUrl}?t=${Date.now()}`;
+    } else if (removeWelcomeImage) {
+      welcomeImageUrl = null;
+    }
+
     const config = await prisma.siteConfig.upsert({
       where: { id: 'singleton' },
       update: {
@@ -58,6 +88,9 @@ export async function PATCH(req: Request) {
         catalogCapilarUrl: catalogCapilarUrl || null,
         welcomeDiscountActive,
         welcomeDiscountPercentage,
+        welcomeTitle,
+        welcomeMessage,
+        ...(welcomeImageUrl !== undefined && { welcomeImageUrl }),
       },
       create: {
         id: 'singleton',
@@ -71,6 +104,9 @@ export async function PATCH(req: Request) {
         catalogCapilarUrl: catalogCapilarUrl || null,
         welcomeDiscountActive,
         welcomeDiscountPercentage,
+        welcomeTitle,
+        welcomeMessage,
+        ...(welcomeImageUrl !== undefined && { welcomeImageUrl }),
       }
     });
     

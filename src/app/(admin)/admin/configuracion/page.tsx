@@ -20,7 +20,12 @@ export default function AdminConfiguracionPage() {
     catalogCapilarUrl: '',
     welcomeDiscountActive: false,
     welcomeDiscountPercentage: 10,
+    welcomeTitle: '',
+    welcomeMessage: '',
+    welcomeImageUrl: '',
   });
+  const [welcomeImage, setWelcomeImage] = useState<File | null>(null);
+  const [removeWelcomeImage, setRemoveWelcomeImage] = useState(false);
 
   const [slides, setSlides] = useState<any[]>([]);
   const [slideModalOpen, setSlideModalOpen] = useState(false);
@@ -80,7 +85,12 @@ export default function AdminConfiguracionPage() {
           catalogCapilarUrl: configData.catalogCapilarUrl || '',
           welcomeDiscountActive: configData.welcomeDiscountActive || false,
           welcomeDiscountPercentage: parseFloat(configData.welcomeDiscountPercentage) || 0,
+          welcomeTitle: configData.welcomeTitle || '',
+          welcomeMessage: configData.welcomeMessage || '',
+          welcomeImageUrl: configData.welcomeImageUrl || '',
         });
+        setWelcomeImage(null);
+        setRemoveWelcomeImage(false);
       }
       if (slidesData && Array.isArray(slidesData)) {
         setSlides(slidesData);
@@ -150,14 +160,25 @@ export default function AdminConfiguracionPage() {
       fd.append('catalogCapilarUrl', config.catalogCapilarUrl);
       fd.append('welcomeDiscountActive', config.welcomeDiscountActive.toString());
       fd.append('welcomeDiscountPercentage', config.welcomeDiscountPercentage.toString());
+      fd.append('welcomeTitle', config.welcomeTitle);
+      fd.append('welcomeMessage', config.welcomeMessage);
+      if (welcomeImage) fd.append('welcomeImage', welcomeImage);
+      if (removeWelcomeImage) fd.append('removeWelcomeImage', 'true');
 
       const resConfig = await fetch('/api/admin/configuracion', {
         method: 'PATCH',
         body: fd
       });
 
-      if (resConfig.ok) alert('Configuración guardada exitosamente');
-      else alert('Error al guardar la configuración');
+      if (resConfig.ok) {
+        const updated = await resConfig.json();
+        setConfig(prev => ({ ...prev, welcomeImageUrl: updated.welcomeImageUrl || '' }));
+        setWelcomeImage(null);
+        setRemoveWelcomeImage(false);
+        alert('Configuración guardada exitosamente');
+      } else {
+        alert('Error al guardar la configuración');
+      }
     } catch (error) {
       console.error(error);
       alert('Error de conexión');
@@ -504,6 +525,93 @@ export default function AdminConfiguracionPage() {
                 El descuento está activo pero el porcentaje es 0: no se aplicará nada.
               </p>
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-6 space-y-4">
+            <h2 className="text-lg font-semibold border-b pb-2 flex items-center gap-2">
+              <Sparkles size={18} className="text-brand-pink" /> Panel de Bienvenida
+            </h2>
+            <p className="text-sm text-gray-500">
+              Es la pantalla que ve el mayorista <strong>una sola vez</strong>, la primera vez que
+              entra después de que apruebes su cuenta. Si dejas los campos vacíos se usan los
+              textos por defecto.
+            </p>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Título</label>
+              <Input
+                value={config.welcomeTitle}
+                onChange={e => setConfig({ ...config, welcomeTitle: e.target.value })}
+                placeholder="Ej: ¡Bienvenida, {nombre}!"
+              />
+              <p className="text-xs text-gray-500">
+                Escribe <code className="bg-gray-100 px-1 rounded">{'{nombre}'}</code> donde quieras
+                que aparezca el nombre del cliente. Si la cuenta no tiene nombre, se quita solo.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Mensaje</label>
+              <textarea
+                value={config.welcomeMessage}
+                onChange={e => setConfig({ ...config, welcomeMessage: e.target.value })}
+                placeholder="Ej: Gracias por unirte a nuestra familia de mayoristas. Estamos felices de tenerte."
+                rows={3}
+                className="w-full rounded-md border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-pink"
+              />
+              <p className="text-xs text-gray-500">
+                Se muestra debajo del saludo. Los saltos de línea se respetan.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Imagen de bienvenida (opcional)</label>
+              <p className="text-xs text-gray-500">
+                Si subes un diseño propio, <strong>reemplaza la cabecera rosada</strong> y se muestra
+                sin ningún texto encima, para que no se cruce con tu diseño. El saludo y el resto
+                pasan debajo. Recomendado 1200×600.
+              </p>
+
+              <div className="relative border-2 border-dashed border-gray-200 hover:border-brand-pink hover:bg-brand-pink/5 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group max-w-sm">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  onChange={e => {
+                    setWelcomeImage(e.target.files?.[0] || null);
+                    setRemoveWelcomeImage(false);
+                  }}
+                />
+                {config.welcomeImageUrl && !welcomeImage && !removeWelcomeImage ? (
+                  <img src={config.welcomeImageUrl} alt="Bienvenida" className="w-full rounded-lg mb-3" />
+                ) : (
+                  <UploadCloud className="text-gray-400 group-hover:text-brand-pink mb-3 transition-colors" size={40} strokeWidth={1.5} />
+                )}
+                <p className="text-sm font-semibold text-gray-700">
+                  {removeWelcomeImage ? 'Se quitará al guardar' : 'Imagen del panel'}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {welcomeImage ? welcomeImage.name : 'Haz clic o arrastra tu archivo'}
+                </p>
+              </div>
+
+              {(config.welcomeImageUrl || welcomeImage) && !removeWelcomeImage && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-red-600 border-red-200 hover:bg-red-50"
+                  onClick={() => {
+                    setWelcomeImage(null);
+                    setRemoveWelcomeImage(true);
+                  }}
+                >
+                  Quitar imagen y volver al diseño rosado
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       </form>

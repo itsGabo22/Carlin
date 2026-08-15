@@ -49,6 +49,13 @@ model SiteConfig {
   /// PRIMER pedido de un mayorista aprobado. Ver `getWelcomeDiscount()`.
   welcomeDiscountActive     Boolean @default(false)
   welcomeDiscountPercentage Decimal @default(0) @db.Decimal(5, 2)
+  /// Textos e imagen del panel de bienvenida, editables desde /admin.
+  /// Si están vacíos, el panel usa su copy por defecto. `welcomeTitle` admite
+  /// el token {nombre}. Si hay `welcomeImageUrl`, la imagen sustituye a la
+  /// cabecera degradada y NO se le superpone texto (ver WelcomePanel).
+  welcomeTitle              String?
+  welcomeMessage            String?
+  welcomeImageUrl           String?
   announcementText     String?
   announcementActive   Boolean  @default(false)
   heroUseVideo         Boolean  @default(false)

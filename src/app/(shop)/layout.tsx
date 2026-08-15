@@ -45,6 +45,9 @@ export default async function ShopLayout({
               : safeConfig.wholesaleMinOrder
           )}
           welcomeDiscountPercentage={sessionResult.welcomeDiscount?.percentage ?? null}
+          title={safeConfig.welcomeTitle}
+          message={safeConfig.welcomeMessage}
+          imageUrl={safeConfig.welcomeImageUrl}
         />
       )}
       <Header

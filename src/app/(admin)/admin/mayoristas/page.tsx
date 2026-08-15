@@ -4,6 +4,12 @@ import MayoristasClient from './MayoristasClient';
 import { FieldHint } from '@/components/admin/FieldHint';
 import { getSiteConfig } from '@/lib/site-config';
 
+// Sin esto la página se prerenderiza en el build (no usa cookies ni headers) y
+// la lista queda congelada: en Vercel las solicitudes nuevas de mayoristas no
+// aparecían hasta el siguiente deploy. El resto de páginas del admin ya lo tenía.
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export default async function AdminMayoristasPage() {
   const [users, config] = await Promise.all([
     prisma.wholesaleUser.findMany({ orderBy: { createdAt: 'desc' } }),

@@ -46,6 +46,9 @@ export default async function MarketingLayout({
               : safeConfig.wholesaleMinOrder
           )}
           welcomeDiscountPercentage={sessionResult.welcomeDiscount?.percentage ?? null}
+          title={safeConfig.welcomeTitle}
+          message={safeConfig.welcomeMessage}
+          imageUrl={safeConfig.welcomeImageUrl}
         />
       )}
       <Header

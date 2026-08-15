@@ -12,22 +12,52 @@ interface WelcomePanelProps {
   minOrder: number;
   /** % de bienvenida real leído de la config; null si esta cuenta no lo tiene. */
   welcomeDiscountPercentage: number | null;
+  /** Título editable desde /admin. Admite el token {nombre}. */
+  title?: string | null;
+  /** Mensaje editable desde /admin. Texto plano: nunca se interpreta como HTML. */
+  message?: string | null;
+  /**
+   * Imagen diseñada por la tienda. Cuando existe, SUSTITUYE a la cabecera
+   * degradada y no se le superpone ningún texto: el diseño suele traer el suyo
+   * propio y se pisarían. El saludo baja al cuerpo blanco.
+   */
+  imageUrl?: string | null;
 }
 
 const TIER_COPY = {
   MAYORISTA: {
     label: 'Mayorista',
-    // Rosa Bloomshell
+    // Rosa Bloomshell. `ring` va sobre el degradado; `onWhite`, sobre el cuerpo.
     ring: 'text-brand-pink-dark bg-white/85',
+    onWhite: 'text-brand-pink-dark bg-brand-cream',
   },
   DISTRIBUIDOR: {
     label: 'Distribuidor',
     // Lavanda de distribuidor, ya usada en el registro y el admin
     ring: 'text-brand-distributor-dark bg-white/85',
+    onWhite: 'text-brand-distributor-dark bg-brand-distributor/10',
   },
 } as const;
 
-export function WelcomePanel({ name, tier, minOrder, welcomeDiscountPercentage }: WelcomePanelProps) {
+/** Sustituye {nombre} por el nombre de pila; si no hay, limpia el hueco. */
+function renderTitle(template: string, firstName: string | null): string {
+  return template
+    .replace(/\{nombre\}/gi, firstName ?? '')
+    .replace(/\s{2,}/g, ' ')
+    // Deja "¡Bienvenida, !" o "Hola ," presentables cuando no hay nombre.
+    .replace(/[,\s]+([!?.]|$)/g, '$1')
+    .trim();
+}
+
+export function WelcomePanel({
+  name,
+  tier,
+  minOrder,
+  welcomeDiscountPercentage,
+  title,
+  message,
+  imageUrl,
+}: WelcomePanelProps) {
   const [visible, setVisible] = React.useState(true);
   const closeRef = React.useRef<HTMLButtonElement>(null);
 
@@ -62,6 +92,43 @@ export function WelcomePanel({ name, tier, minOrder, welcomeDiscountPercentage }
   const copy = TIER_COPY[tier];
   const hasDiscount = !!welcomeDiscountPercentage && welcomeDiscountPercentage > 0;
 
+  const headingText = title?.trim()
+    ? renderTitle(title, firstName)
+    : firstName
+      ? `¡Bienvenida, ${firstName}!`
+      : '¡Bienvenida a CARLIN!';
+
+  /**
+   * Ojo / eyebrow + título + badge de tier. Se pinta en blanco sobre el
+   * degradado, o en oscuro sobre el cuerpo blanco cuando hay imagen propia.
+   */
+  const identity = (onImage: boolean) => (
+    <>
+      <p
+        className={`relative mb-2 flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] ${onImage ? 'text-brand-pink-dark' : 'text-white/95'
+          }`}
+      >
+        <BadgeCheck className="h-3.5 w-3.5" />
+        Cuenta aprobada
+      </p>
+
+      <h2
+        id="carlin-welcome-title"
+        className={`relative font-serif text-3xl font-bold leading-tight sm:text-4xl ${onImage ? 'text-brand-neutral-dark' : 'text-white drop-shadow-sm'
+          }`}
+      >
+        {headingText}
+      </h2>
+
+      <span
+        className={`relative mt-4 inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider shadow-sm ${onImage ? copy.onWhite : copy.ring
+          }`}
+      >
+        Cuenta {copy.label}
+      </span>
+    </>
+  );
+
   return (
     <div
       className="carlin-welcome-overlay fixed inset-0 z-[120] flex items-center justify-center overflow-y-auto bg-brand-neutral-900/45 p-4 backdrop-blur-sm sm:p-6"
@@ -85,33 +152,37 @@ export function WelcomePanel({ name, tier, minOrder, welcomeDiscountPercentage }
         </button>
 
         {/* ── Cabecera ─────────────────────────────────────────── */}
-        <div className="relative overflow-hidden bg-gradient-to-br from-brand-pink-light via-brand-pink to-brand-distributor px-6 pb-8 pt-10 text-center sm:px-10">
-          <span aria-hidden className="carlin-welcome-blob absolute -left-8 -top-10 h-32 w-32 rounded-full bg-white/25 blur-2xl" />
-          <span aria-hidden className="carlin-welcome-blob absolute -bottom-12 -right-6 h-36 w-36 rounded-full bg-white/20 blur-2xl [animation-delay:-3s]" />
+        {imageUrl ? (
+          // Diseño propio de la tienda: se muestra tal cual, a su proporción y
+          // SIN nada superpuesto, porque suele traer texto incrustado.
+          <img
+            src={imageUrl}
+            alt=""
+            className="block w-full"
+          />
+        ) : (
+          <div className="relative overflow-hidden bg-gradient-to-br from-brand-pink-light via-brand-pink to-brand-distributor px-6 pb-8 pt-10 text-center sm:px-10">
+            <span aria-hidden className="carlin-welcome-blob absolute -left-8 -top-10 h-32 w-32 rounded-full bg-white/25 blur-2xl" />
+            <span aria-hidden className="carlin-welcome-blob absolute -bottom-12 -right-6 h-36 w-36 rounded-full bg-white/20 blur-2xl [animation-delay:-3s]" />
 
-          <div className="relative mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-lg shadow-brand-pink-dark/20">
-            <Sparkles className="h-8 w-8 text-brand-pink-dark" strokeWidth={1.75} />
+            <div className="relative mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-white/90 shadow-lg shadow-brand-pink-dark/20">
+              <Sparkles className="h-8 w-8 text-brand-pink-dark" strokeWidth={1.75} />
+            </div>
+
+            {identity(false)}
           </div>
-
-          <p className="relative mb-2 flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-white/95">
-            <BadgeCheck className="h-3.5 w-3.5" />
-            Cuenta aprobada
-          </p>
-
-          <h2
-            id="carlin-welcome-title"
-            className="relative font-serif text-3xl font-bold leading-tight text-white drop-shadow-sm sm:text-4xl"
-          >
-            {firstName ? `¡Bienvenida, ${firstName}!` : '¡Bienvenida a CARLIN!'}
-          </h2>
-
-          <span className={`relative mt-4 inline-flex items-center gap-1.5 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider shadow-sm ${copy.ring}`}>
-            Cuenta {copy.label}
-          </span>
-        </div>
+        )}
 
         {/* ── Cuerpo ───────────────────────────────────────────── */}
         <div className="space-y-5 px-6 py-6 sm:px-8">
+          {imageUrl && <div className="text-center">{identity(true)}</div>}
+
+          {message?.trim() && (
+            <p className="whitespace-pre-line text-center text-sm leading-relaxed text-brand-text">
+              {message.trim()}
+            </p>
+          )}
+
           {hasDiscount && (
             <div className="relative overflow-hidden rounded-2xl border-2 border-dashed border-brand-pink bg-brand-cream px-5 py-5 text-center">
               <span
