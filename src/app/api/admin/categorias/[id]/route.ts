@@ -9,6 +9,16 @@ const emptyToNull = (v: unknown): string | null => {
   return t === '' ? null : t;
 };
 
+function safeRevalidate() {
+  try {
+    revalidatePath('/');
+    revalidatePath('/catalogo', 'layout');
+    revalidatePath('/admin/categorias');
+  } catch {
+    // Non-fatal if called without request store or in test environment
+  }
+}
+
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -20,15 +30,15 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json({ error: 'La categoría no existe.' }, { status: 404 });
     }
 
-    const nextParentId = emptyToNull(parentId);
+    const nextParentId = 'parentId' in body ? emptyToNull(parentId) : existing.parentId;
 
     // Evita que una categoría sea su propio padre.
     if (nextParentId === id) {
       return NextResponse.json({ error: 'Una categoría no puede ser su propio padre' }, { status: 400 });
     }
 
-    // Evita ciclos indirectos (A → B → A) subiendo por la cadena de padres.
-    if (nextParentId) {
+    // Evita ciclos indirectos (A → B → A) subiendo por la cadena de padres si el padre cambió.
+    if (nextParentId && nextParentId !== existing.parentId) {
       let cursor: string | null = nextParentId;
       const vistos = new Set<string>();
       while (cursor) {
@@ -48,31 +58,27 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       }
     }
 
-    const finalSlug = emptyToNull(slug)
-      || (name ? slugify(String(name), { lower: true, strict: true }) : existing.slug);
+    const finalSlug = 'slug' in body
+      ? (emptyToNull(slug) || (name ? slugify(String(name), { lower: true, strict: true }) : existing.slug))
+      : ('name' in body && name ? slugify(String(name), { lower: true, strict: true }) : existing.slug);
 
     const category = await prisma.category.update({
       where: { id },
       data: {
-        name: name ? String(name).trim() : existing.name,
+        name: 'name' in body && name ? String(name).trim() : existing.name,
         slug: finalSlug,
         description: 'description' in body ? emptyToNull(description) : existing.description,
-        // Si no se envía imageUrl, se conserva la existente (no se borra).
         imageUrl: 'imageUrl' in body ? emptyToNull(imageUrl) : existing.imageUrl,
         parentId: nextParentId,
         groupByBrand: 'groupByBrand' in body ? groupByBrand === true : existing.groupByBrand,
-        active: 'active' in body ? active !== false : existing.active,
+        active: 'active' in body ? active === true : existing.active,
         order: 'order' in body && Number.isFinite(Number(order))
           ? Math.trunc(Number(order))
           : existing.order,
       }
     });
 
-    revalidatePath('/');
-    // El catálogo es una ruta catch-all: revalidar como 'layout' cubre
-    // /catalogo y todas sus rutas anidadas a cualquier profundidad.
-    revalidatePath('/catalogo', 'layout');
-    revalidatePath('/admin/categorias');
+    safeRevalidate();
 
     return NextResponse.json(category);
   } catch (error: any) {
@@ -87,33 +93,40 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   }
 }
 
-export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
+    const { searchParams } = new URL(req.url);
+    const hardDelete = searchParams.get('hard') === 'true';
 
-    const categoria = await prisma.category.findUnique({ where: { id }, select: { slug: true } });
-    if (!categoria) {
+    const existing = await prisma.category.findUnique({ where: { id } });
+    if (!existing) {
       return NextResponse.json({ error: 'La categoría no existe.' }, { status: 404 });
     }
 
-    // Se bloquea el borrado si hay productos activos o subcategorías colgando.
-    const [activeProducts, childrenCount] = await Promise.all([
-      prisma.product.count({ where: { categoryId: id, active: true } }),
-      prisma.category.count({ where: { parentId: id } })
-    ]);
+    if (hardDelete) {
+      const [productsCount, childrenCount] = await Promise.all([
+        prisma.product.count({ where: { categoryId: id } }),
+        prisma.category.count({ where: { parentId: id } })
+      ]);
 
-    if (activeProducts > 0 || childrenCount > 0) {
-      return NextResponse.json(
-        { error: 'No se puede eliminar porque tiene productos activos o subcategorías.' },
-        { status: 400 }
-      );
+      if (productsCount > 0 || childrenCount > 0) {
+        return NextResponse.json(
+          { error: 'No se puede eliminar permanentemente porque tiene productos o subcategorías asociadas.' },
+          { status: 400 }
+        );
+      }
+
+      await prisma.category.delete({ where: { id } });
+    } else {
+      // Soft-delete por defecto: desactiva la categoría para ocultarla de la tienda
+      await prisma.category.update({
+        where: { id },
+        data: { active: false }
+      });
     }
 
-    await prisma.category.delete({ where: { id } });
-
-    revalidatePath('/');
-    revalidatePath('/catalogo', 'layout');
-    revalidatePath('/admin/categorias');
+    safeRevalidate();
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

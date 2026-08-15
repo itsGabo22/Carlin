@@ -129,16 +129,35 @@ export function CategoriasClient({ categories }: { categories: CategoryRow[] }) 
   };
 
   const handleDelete = async (category: CategoryRow) => {
-    if (!confirm(`¿Eliminar la categoría "${category.name}"?`)) return;
-    setBusyId(category.id);
-    try {
-      const res = await fetch(`/api/admin/categorias/${category.id}`, { method: 'DELETE' });
-      const data = await readJson(res);
-      if (res.ok) window.location.reload();
-      else { alert(data?.error ?? 'Error eliminando la categoría'); setBusyId(null); }
-    } catch {
-      alert('Error de conexión');
-      setBusyId(null);
+    if (category.active) {
+      if (!confirm(`¿Desactivar la categoría "${category.name}"?\n\nQuedará oculta en la tienda. Sus productos asociados se conservarán.`)) return;
+      setBusyId(category.id);
+      try {
+        const res = await fetch(`/api/admin/categorias/${category.id}`, { method: 'DELETE' });
+        const data = await readJson(res);
+        if (res.ok) window.location.reload();
+        else { alert(data?.error ?? 'Error al desactivar la categoría'); setBusyId(null); }
+      } catch {
+        alert('Error de conexión');
+        setBusyId(null);
+      }
+    } else {
+      const canHardDelete = category._count.products === 0 && category._count.children === 0;
+      if (canHardDelete) {
+        if (!confirm(`¿Eliminar permanentemente la categoría "${category.name}"?\n\nEsta acción no se puede deshacer.`)) return;
+        setBusyId(category.id);
+        try {
+          const res = await fetch(`/api/admin/categorias/${category.id}?hard=true`, { method: 'DELETE' });
+          const data = await readJson(res);
+          if (res.ok) window.location.reload();
+          else { alert(data?.error ?? 'Error al eliminar la categoría'); setBusyId(null); }
+        } catch {
+          alert('Error de conexión');
+          setBusyId(null);
+        }
+      } else {
+        alert(`La categoría ya está oculta. No se puede eliminar permanentemente porque tiene ${category._count.products} productos o subcategorías asociadas.`);
+      }
     }
   };
 
@@ -203,10 +222,11 @@ export function CategoriasClient({ categories }: { categories: CategoryRow[] }) 
     </div>
   );
 
-  const Acciones = ({ category, deleteDisabled }: { category: CategoryRow; deleteDisabled: boolean }) => {
+  const Acciones = ({ category }: { category: CategoryRow }) => {
     const hermanos = category.parentId ? hijasDe(category.parentId) : rootCategories;
     const i = hermanos.findIndex(c => c.id === category.id);
     const ocupado = busyId === category.id;
+    const canHardDelete = category._count.products === 0 && category._count.children === 0;
 
     return (
       <div className="col-span-3 flex items-center justify-end gap-0.5">
@@ -229,8 +249,8 @@ export function CategoriasClient({ categories }: { categories: CategoryRow[] }) 
           <Edit size={15} />
         </Button>
         <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-          disabled={ocupado || deleteDisabled} onClick={() => handleDelete(category)}
-          title={deleteDisabled ? 'No se puede eliminar: tiene productos o subcategorías' : 'Eliminar categoría'}>
+          disabled={ocupado} onClick={() => handleDelete(category)}
+          title={category.active ? 'Desactivar / ocultar categoría' : (canHardDelete ? 'Eliminar permanentemente' : 'Categoría oculta con productos')}>
           <Trash2 size={15} />
         </Button>
       </div>
@@ -297,7 +317,7 @@ export function CategoriasClient({ categories }: { categories: CategoryRow[] }) 
                         {category._count.products} prod
                       </span>
                     </div>
-                    <Acciones category={category} deleteDisabled={category._count.products > 0 || category._count.children > 0} />
+                    <Acciones category={category} />
                   </div>
 
                   {children.map(child => (
@@ -319,7 +339,7 @@ export function CategoriasClient({ categories }: { categories: CategoryRow[] }) 
                           {child._count.products} prod
                         </span>
                       </div>
-                      <Acciones category={child} deleteDisabled={child._count.products > 0} />
+                      <Acciones category={child} />
                     </div>
                   ))}
                 </div>
