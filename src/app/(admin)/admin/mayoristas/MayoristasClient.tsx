@@ -6,7 +6,27 @@ import { Button } from '@/components/ui/button';
 
 type WholesaleUser = any; // simplified for this component
 
-export default function MayoristasClient({ initialUsers }: { initialUsers: WholesaleUser[] }) {
+/**
+ * Misma regla que `isWholesaleActive()` en el servidor: mientras no exista un
+ * primer pedido, la cuenta se mide desde su aprobación. Sin esto, un mayorista
+ * recién aprobado no aparecía en "Activos" sino listado como "Inactivo".
+ */
+function isUserActive(user: WholesaleUser, inactivityDays: number): boolean {
+  if (!user.approved) return false;
+  const baseDate = user.lastOrderAt ?? user.approvedAt ?? user.createdAt;
+  if (!baseDate) return false;
+  const limit = new Date();
+  limit.setDate(limit.getDate() - inactivityDays);
+  return new Date(baseDate) >= limit;
+}
+
+export default function MayoristasClient({
+  initialUsers,
+  inactivityDays,
+}: {
+  initialUsers: WholesaleUser[];
+  inactivityDays: number;
+}) {
   const [users, setUsers] = useState<WholesaleUser[]>(initialUsers);
   const [tab, setTab] = useState<'PENDING' | 'MAYORISTA' | 'DISTRIBUIDOR' | 'INACTIVE' | 'ALL'>('PENDING');
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
@@ -42,15 +62,12 @@ export default function MayoristasClient({ initialUsers }: { initialUsers: Whole
   };
 
   const getFilteredUsers = () => {
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-
     return users.filter(u => {
       if (tab === 'ALL') return true;
       if (tab === 'PENDING') return !u.approved;
-      if (tab === 'INACTIVE') return u.approved && (!u.lastOrderAt || new Date(u.lastOrderAt) < thirtyDaysAgo);
 
-      const isActive = u.approved && u.lastOrderAt && new Date(u.lastOrderAt) >= thirtyDaysAgo;
+      const isActive = isUserActive(u, inactivityDays);
+      if (tab === 'INACTIVE') return u.approved && !isActive;
       if (tab === 'MAYORISTA') return isActive && u.role === 'MAYORISTA';
       if (tab === 'DISTRIBUIDOR') return isActive && u.role === 'DISTRIBUIDOR';
 
@@ -116,9 +133,7 @@ export default function MayoristasClient({ initialUsers }: { initialUsers: Whole
           <tbody className="divide-y divide-gray-100">
             {filteredUsers.map((user) => {
               const isPending = !user.approved;
-              const thirtyDaysAgo = new Date();
-              thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-              const isActive = user.lastOrderAt && new Date(user.lastOrderAt) >= thirtyDaysAgo;
+              const isActive = isUserActive(user, inactivityDays);
 
               return (
                 <tr key={user.id} className="hover:bg-gray-50 transition-colors">
@@ -139,18 +154,18 @@ export default function MayoristasClient({ initialUsers }: { initialUsers: Whole
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {user.lastOrderAt ? (
-                      <div className="flex flex-col gap-1">
-                        <span className="text-gray-600">{new Date(user.lastOrderAt).toLocaleDateString()}</span>
-                        {isActive ? (
+                    <div className="flex flex-col gap-1">
+                      <span className={user.lastOrderAt ? 'text-gray-600' : 'text-xs text-gray-400 font-medium'}>
+                        {user.lastOrderAt ? new Date(user.lastOrderAt).toLocaleDateString() : 'Sin compras'}
+                      </span>
+                      {!isPending && (
+                        isActive ? (
                           <span className="text-[10px] font-bold text-green-600 flex items-center gap-1"><CheckCircle2 size={12} /> ACTIVO</span>
                         ) : (
                           <span className="text-[10px] font-bold text-red-600 flex items-center gap-1"><XCircle size={12} /> INACTIVO</span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-400 font-medium">Sin compras</span>
-                    )}
+                        )
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     {isPending ? (

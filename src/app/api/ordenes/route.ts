@@ -39,10 +39,15 @@ export async function POST(request: NextRequest) {
     const sessionResult = await getSessionResult(safeConfig);
     const wholesaleUserId = sessionResult.user?.id;
 
+    // El nivel de precio lo decide la SESIÓN, no el cliente: `validated.priceLevel`
+    // llega del carrito y podría venir manipulado o, como pasaba, congelado en
+    // 'retail' aunque el usuario sea mayorista.
+    const priceLevel = sessionResult.priceLevel;
+
     // Determine the Prisma enum value for priceLevel
     const prismaPriceLevel =
-      validated.priceLevel === 'distributor' ? 'DISTRIBUTOR' :
-      validated.priceLevel === 'wholesale' ? 'WHOLESALE' : 'RETAIL';
+      priceLevel === 'distributor' ? 'DISTRIBUTOR' :
+      priceLevel === 'wholesale' ? 'WHOLESALE' : 'RETAIL';
 
     // ── Descuento de bienvenida ────────────────────────────────────────
     // Se recalcula aquí desde la sesión y la config: lo que mande el cliente
@@ -105,10 +110,10 @@ export async function POST(request: NextRequest) {
     let msg = '';
     const orderNumber = order.id.slice(-6).toUpperCase();
 
-    if (validated.priceLevel === 'retail') {
+    if (priceLevel === 'retail') {
       msg += `¡Hola Carlin! 💄 Me gustaría hacer el siguiente pedido:\n\n`;
       msg += `📋 Pedido #${orderNumber}\n`;
-    } else if (validated.priceLevel === 'wholesale') {
+    } else if (priceLevel === 'wholesale') {
       msg += `¡Hola Carlin! Soy mayorista y quiero hacer el siguiente pedido:\n\n`;
       msg += `🏷️ Pedido MAYORISTA #${orderNumber}\n`;
     } else {
@@ -137,9 +142,9 @@ export async function POST(request: NextRequest) {
       msg += `🎁 Descuento de bienvenida (${welcomeDiscount.percentage}% primera compra): -${formatCOP(welcomeDiscountAmount)}\n`;
     }
 
-    if (validated.priceLevel === 'retail') {
+    if (priceLevel === 'retail') {
       msg += `💰 Total: ${formatCOP(finalTotal)}\n\n`;
-    } else if (validated.priceLevel === 'wholesale') {
+    } else if (priceLevel === 'wholesale') {
       msg += `💰 Total mayorista: ${formatCOP(finalTotal)}\n\n`;
     } else {
       msg += `💰 Total distribuidor: ${formatCOP(finalTotal)}\n\n`;
