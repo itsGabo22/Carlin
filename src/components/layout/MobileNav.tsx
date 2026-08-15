@@ -7,8 +7,6 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronDown, Search, ShoppingBag, User } from 'lucide-react';
 import { supabase } from '@/lib/supabase/client';
-import { useSessionStore } from '@/stores/sessionStore';
-import { useCartStore } from '@/stores/cartStore';
 import { cn } from '@/lib/utils';
 
 import { lato } from '@/lib/fonts';
@@ -25,15 +23,21 @@ interface MobileNavProps {
   onClose: () => void;
   categories: Category[];
   cartItemCount: number;
+  isWholesale?: boolean;
+  onLogout?: () => void;
 }
 
-export function MobileNav({ isOpen, onClose, categories }: MobileNavProps) {
+export function MobileNav({
+  isOpen,
+  onClose,
+  categories,
+  cartItemCount,
+  isWholesale = false,
+  onLogout,
+}: MobileNavProps) {
   const router = useRouter();
   const [openCategories, setOpenCategories] = useState<string[]>([]);
-  
-  const { priceLevel } = useSessionStore();
-  const isWholesale = priceLevel === 'wholesale' || priceLevel === 'distributor';
-  const itemCount = useCartStore(s => s.getItemCount());
+  const itemCount = cartItemCount;
 
   const toggleCategory = (id: string) => {
     setOpenCategories(prev =>
@@ -202,10 +206,17 @@ export function MobileNav({ isOpen, onClose, categories }: MobileNavProps) {
         <div className="px-4 py-5 border-t border-brand-pink/15 bg-brand-pink-light/40 mt-auto">
           {isWholesale ? (
             <button
-              onClick={async () => {
-                await supabase.auth.signOut();
+              type="button"
+              onClick={() => {
                 onClose();
-                router.refresh();
+                if (onLogout) {
+                  onLogout();
+                } else {
+                  void (async () => {
+                    await supabase.auth.signOut();
+                    window.location.href = '/';
+                  })();
+                }
               }}
               className="w-full py-2.5 rounded-xl border border-brand-pink/40 text-brand-pink text-sm font-semibold hover:bg-brand-pink hover:text-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink"
             >

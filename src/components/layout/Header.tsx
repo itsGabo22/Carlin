@@ -42,21 +42,46 @@ export function Header({
   catalogMaquillajeUrl,
   catalogCapilarUrl,
 }: HeaderProps) {
+  const [mounted, setMounted] = React.useState(false);
   const [scrolled, setScrolled] = React.useState(false);
   const [openMenuId, setOpenMenuId] = React.useState<string | null>(null);
   const [catalogOpen, setCatalogOpen] = React.useState(false);
   const [mobileNavOpen, setMobileNavOpen] = React.useState(false);
   const headerRef = React.useRef<HTMLElement>(null);
 
-  const cartItemCountFinal = useCartStore((state) => state.getItemCount());
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const cartStoreCount = useCartStore((state) => state.getItemCount());
+  const cartItemCountFinal = mounted ? cartStoreCount : 0;
   const router = useRouter();
 
   const [searchQuery, setSearchQuery] = React.useState('');
   const [searchCategory, setSearchCategory] = React.useState('');
 
   const [profileDropdownOpen, setProfileDropdownOpen] = React.useState(false);
-  const { priceLevel } = useSessionStore();
-  const isWholesale = priceLevel === 'wholesale' || priceLevel === 'distributor';
+  const isWholesale = Boolean(
+    sessionResult?.isActive &&
+    (sessionResult.priceLevel === 'wholesale' || sessionResult.priceLevel === 'distributor')
+  );
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error('Client signOut error:', e);
+    }
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Server signOut error:', e);
+    }
+    useSessionStore.getState().setPriceLevel('retail');
+    useSessionStore.getState().setUserName(null);
+    useCartStore.getState().setPriceLevel('retail');
+    window.location.href = '/';
+  };
 
   const hasCatalog = !!(catalogMaquillajeUrl || catalogCapilarUrl);
 
@@ -220,10 +245,8 @@ export function Header({
                           Mi Perfil
                         </Link>
                         <button
-                          onClick={async () => {
-                            await supabase.auth.signOut();
-                            window.location.reload();
-                          }}
+                          type="button"
+                          onClick={handleLogout}
                           className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         >
                           Cerrar sesión
@@ -365,6 +388,8 @@ export function Header({
         onClose={() => setMobileNavOpen(false)}
         categories={categoriesTree as any}
         cartItemCount={cartItemCountFinal}
+        isWholesale={isWholesale}
+        onLogout={handleLogout}
       />
     </div>
   );
