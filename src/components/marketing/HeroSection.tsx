@@ -180,28 +180,34 @@ export function HeroSection({ slides = [] }: { slides?: any[] }) {
       </div>
 
       {/* LAYER 4 — Slide navigation controls */}
-      {hasSlides && slides.length > 1 && !prefersReducedMotion && (
+      {hasSlides && slides.length > 1 && (
         <>
           <button
+            type="button"
             onClick={prevSlide}
-            className="absolute left-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/20 text-white hover:bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Slide anterior"
+            className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-black/30 text-white hover:bg-black/60 active:scale-95 backdrop-blur-md opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-all border border-white/20 shadow-lg cursor-pointer"
           >
-            <ChevronLeft size={32} />
+            <ChevronLeft size={28} className="sm:w-8 sm:h-8" />
           </button>
 
           <button
+            type="button"
             onClick={nextSlide}
-            className="absolute right-4 top-1/2 -translate-y-1/2 z-30 p-2 rounded-full bg-black/20 text-white hover:bg-black/40 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label="Siguiente slide"
+            className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-30 p-2 sm:p-3 rounded-full bg-black/30 text-white hover:bg-black/60 active:scale-95 backdrop-blur-md opacity-80 sm:opacity-0 sm:group-hover:opacity-100 transition-all border border-white/20 shadow-lg cursor-pointer"
           >
-            <ChevronRight size={32} />
+            <ChevronRight size={28} className="sm:w-8 sm:h-8" />
           </button>
 
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-30 flex gap-2">
             {slides.map((_, idx) => (
               <button
                 key={idx}
+                type="button"
+                aria-label={`Ir al slide ${idx + 1}`}
                 onClick={() => setCurrentSlide(idx)}
-                className={`w-2.5 h-2.5 rounded-full transition-all ${idx === currentSlide ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/80'}`}
+                className={`h-2.5 rounded-full transition-all cursor-pointer ${idx === currentSlide ? 'bg-white w-6' : 'bg-white/50 hover:bg-white/80 w-2.5'}`}
               />
             ))}
           </div>

@@ -168,7 +168,7 @@ export function ProductInfo({
       {/* Add to Cart Controls */}
       <div className="pt-4 border-t border-gray-100 space-y-3">
         {isOutOfStock ? (
-          <div className="w-full py-3.5 bg-red-50 border border-red-200 text-red-600 rounded-xl text-center font-bold text-sm">
+          <div className="w-full py-3.5 border border-gray-200 bg-gray-50/50 text-gray-400 rounded-xl text-center font-medium text-sm">
             {hasVariants ? `Agotado en tono ${selectedVariant?.colorName || ''}` : 'Producto Agotado'}
           </div>
         ) : (

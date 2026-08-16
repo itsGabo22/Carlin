@@ -142,7 +142,7 @@ export function ProductCard({ product, priceLevel, isPriority, className }: Prod
 
           {isOutOfStock && (
             <div className="absolute inset-0 z-20 flex items-center justify-center bg-white/65 backdrop-blur-[1px]">
-              <span className="rounded-full bg-brand-neutral-dark px-3 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg">
+              <span className="rounded-full bg-white/95 border border-gray-200 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gray-500 shadow-sm">
                 Agotado
               </span>
             </div>
@@ -172,13 +172,13 @@ export function ProductCard({ product, priceLevel, isPriority, className }: Prod
               aria-label={`Añadir ${product.name} al carrito`}
               className={cn(
                 'flex w-full items-center justify-center gap-1.5 rounded-xl px-3 py-2.5',
-                'text-[13px] font-bold uppercase tracking-[1px] text-white',
+                'text-[13px] font-bold uppercase tracking-[1px]',
                 'transition-all duration-200 active:scale-[0.98]',
                 isOutOfStock
-                  ? 'cursor-not-allowed bg-brand-neutral-200 text-brand-neutral-500'
+                  ? 'cursor-not-allowed border border-gray-200 bg-transparent text-gray-400 font-medium hover:bg-transparent'
                   : added
-                    ? 'bg-emerald-500'
-                    : 'bg-brand-pink hover:bg-brand-pink-dark',
+                    ? 'bg-emerald-500 text-white'
+                    : 'bg-brand-pink hover:bg-brand-pink-dark text-white',
               )}
             >
               {isOutOfStock ? (
@@ -189,7 +189,7 @@ export function ProductCard({ product, priceLevel, isPriority, className }: Prod
                 </>
               ) : (
                 <>
-                  <Image src="/icons/nav/cart.png" alt="" width={18} height={18} className="w-4.5 h-4.5 object-contain brightness-0 invert" /> Añadir al Carrito
+                  <Image src="/icons/nav/cart.webp" alt="" width={18} height={18} className="w-4.5 h-4.5 object-contain brightness-0 invert" /> Añadir al Carrito
                 </>
               )}
             </button>

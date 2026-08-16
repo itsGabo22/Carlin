@@ -217,7 +217,7 @@ export function Header({
                 href="/buscar"
                 className="lg:hidden flex flex-col items-center gap-0.5 text-gray-600 hover:text-[#FF80B3] transition-colors"
               >
-                <Image src="/icons/nav/search.png" alt="Buscar" width={24} height={24} className="w-6 h-6 object-contain" />
+                <Image src="/icons/nav/search.webp" alt="Buscar" width={24} height={24} className="w-6 h-6 object-contain" />
               </Link>
 
               {/* Profile / Account */}
@@ -229,7 +229,7 @@ export function Header({
                   }}
                   className="flex flex-col items-center gap-0.5 text-gray-600 hover:text-[#FF80B3] transition-colors"
                 >
-                  <Image src="/icons/nav/account.png" alt="Cuenta" width={24} height={24} className="w-6 h-6 object-contain" />
+                  <Image src="/icons/nav/account.webp" alt="Cuenta" width={24} height={24} className="w-6 h-6 object-contain" />
                   <span className="text-[10px] uppercase hidden sm:block">Mi Cuenta</span>
                 </button>
 
@@ -271,7 +271,7 @@ export function Header({
                 className="flex flex-col items-center gap-0.5 text-gray-600 hover:text-[#FF80B3] transition-colors relative"
               >
                 <div className="relative">
-                  <Image src="/icons/nav/cart.png" alt="Carrito" width={24} height={24} className="w-6 h-6 object-contain" />
+                  <Image src="/icons/nav/cart.webp" alt="Carrito" width={24} height={24} className="w-6 h-6 object-contain" />
                   {cartItemCountFinal > 0 && (
                     <span className="absolute -top-2 -right-2 flex items-center justify-center w-5 h-5 bg-[#FF80B3] text-white text-[11px] font-bold rounded-full">
                       {cartItemCountFinal}
