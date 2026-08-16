@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Package, Edit, ChevronDown, ChevronRight, Tags } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Package, Edit, ChevronDown, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DeleteProductButton } from '@/components/admin/DeleteProductButton';
 import { formatCOP } from '@/lib/utils/carlin-pricing';
@@ -36,11 +37,83 @@ interface AdminProductosClientProps {
 }
 
 export function AdminProductosClient({ products }: AdminProductosClientProps) {
-  // Map of expanded product IDs for variant quick preview
+  const router = useRouter();
   const [expandedIds, setExpandedIds] = useState<Record<string, boolean>>({});
+  const [togglingId, setTogglingId] = useState<string | null>(null);
 
   const toggleExpand = (id: string) => {
     setExpandedIds(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const handleToggleActive = async (product: AdminProductRow, e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+    if (togglingId === product.id) return;
+
+    const ok = confirm(
+      product.active
+        ? `¿Desactivar "${product.name}"?\n\n` +
+          'El producto dejará de verse en la tienda pública y catálogo.\n' +
+          'Podrás reactivarlo en cualquier momento haciendo clic en "Inactivo" o editándolo.'
+        : `¿Activar "${product.name}"?\n\n` +
+          'El producto volverá a mostrarse en la tienda pública y en el catálogo para todos tus clientes.'
+    );
+    if (!ok) return;
+
+    setTogglingId(product.id);
+    try {
+      const res = await fetch(`/api/admin/productos/${product.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ active: !product.active }),
+      });
+
+      if (res.ok) {
+        router.refresh();
+        return;
+      }
+
+      const data = await res.json().catch(() => null);
+      alert(data?.error ?? `No se pudo cambiar el estado del producto (error ${res.status}).`);
+    } catch {
+      alert('Error de conexión al cambiar el estado del producto.');
+    } finally {
+      setTogglingId(null);
+    }
+  };
+
+  const StatusPill = ({ product }: { product: AdminProductRow }) => {
+    const isBusy = togglingId === product.id;
+
+    if (product.active) {
+      return (
+        <button
+          type="button"
+          onClick={(e) => handleToggleActive(product, e)}
+          disabled={isBusy}
+          title="Producto activo en la tienda. Haz clic para desactivarlo."
+          className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-green-100 text-green-800 hover:bg-green-200 transition-colors cursor-pointer disabled:opacity-50"
+        >
+          {isBusy ? <Loader2 size={10} className="animate-spin" /> : <span className="w-1.5 h-1.5 rounded-full bg-green-600" />}
+          Activo
+        </button>
+      );
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={(e) => handleToggleActive(product, e)}
+        disabled={isBusy}
+        title="Producto inactivo (oculto en tienda). Haz clic para activarlo."
+        className="shrink-0 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors cursor-pointer border border-gray-300 disabled:opacity-50"
+      >
+        {isBusy ? <Loader2 size={10} className="animate-spin" /> : <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />}
+        Inactivo
+      </button>
+    );
   };
 
   return (
@@ -57,7 +130,7 @@ export function AdminProductosClient({ products }: AdminProductosClientProps) {
           return (
             <div
               key={product.id}
-              className="bg-white rounded-2xl p-4 border border-gray-200 shadow-xs space-y-3"
+              className={`bg-white rounded-2xl p-4 border border-gray-200 shadow-xs space-y-3 transition-opacity ${product.active ? '' : 'opacity-70 bg-gray-50/50'}`}
             >
               {/* Top row: Image + Info + Status */}
               <div className="flex gap-3 items-start">
@@ -77,15 +150,7 @@ export function AdminProductosClient({ products }: AdminProductosClientProps) {
                     <h3 className="font-bold text-gray-900 text-sm leading-snug line-clamp-2">
                       {product.name}
                     </h3>
-                    {product.active ? (
-                      <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-800">
-                        Activo
-                      </span>
-                    ) : (
-                      <span className="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-gray-100 text-gray-800">
-                        Inactivo
-                      </span>
-                    )}
+                    <StatusPill product={product} />
                   </div>
 
                   <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs text-gray-500">
@@ -213,7 +278,7 @@ export function AdminProductosClient({ products }: AdminProductosClientProps) {
                 return (
                   <React.Fragment key={product.id}>
                     <tr
-                      className={`hover:bg-gray-50/80 transition-colors ${hasVariants ? 'cursor-pointer' : ''}`}
+                      className={`hover:bg-gray-50/80 transition-colors ${hasVariants ? 'cursor-pointer' : ''} ${product.active ? '' : 'opacity-70 bg-gray-50/40'}`}
                       onClick={() => hasVariants && toggleExpand(product.id)}
                     >
                       <td className="px-2 py-3 text-center">
@@ -265,17 +330,13 @@ export function AdminProductosClient({ products }: AdminProductosClientProps) {
                         <span className="font-bold text-gray-900">{totalVariantStock}</span>
                         {hasVariants && <span className="text-xs text-gray-500 block">(en variantes)</span>}
                       </td>
-                      <td className="px-4 py-3">
-                        {product.active ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Activo</span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactivo</span>
-                        )}
+                      <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
+                        <StatusPill product={product} />
                       </td>
                       <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-2">
                           <Link href={`/admin/productos/${product.id}`}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50" title="Editar producto">
                               <Edit size={16} />
                             </Button>
                           </Link>
