@@ -294,6 +294,22 @@ model LoginAttempt {
   createdAt DateTime @default(now())
 }
 
+/// Franja "Síguenos en Instagram" de la home.
+/// A propósito NO se conecta con la API de Instagram: eso exige revisión de app
+/// de Meta y refrescar tokens, demasiado frágil para una sección decorativa.
+/// Se administra como el resto del contenido: imagen subida + enlace al post.
+model InstagramPost {
+  id        String   @id @default(cuid())
+  imageUrl  String
+  linkUrl   String
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active, order])
+}
+
 model MarqueeMessage {
   id        String   @id @default(cuid())
   message   String

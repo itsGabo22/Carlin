@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { m, useReducedMotion } from 'framer-motion';
 import { SectionHeader } from './SectionHeader';
-import { ProductGrid } from '@/components/catalog/ProductGrid';
+import { ProductCarousel } from '@/components/catalog/ProductCarousel';
 import type { Product } from '@/types';
 import type { PriceLevel } from '@/lib/auth/carlin-session';
 
@@ -14,7 +14,11 @@ export interface MasVendidosSectionProps {
 
 /**
  * "Más Vendidos". Va sobre fondo rosa muy claro para separarla visualmente de
- * "Nuevos Lanzamientos", que queda sobre blanco. Misma tarjeta compartida.
+ * "Nuevos Lanzamientos", que queda sobre blanco.
+ *
+ * A diferencia de "Nuevos Lanzamientos" (grilla vertical, estilo catálogo),
+ * ésta es una **fila horizontal que avanza sola**. La tarjeta es la misma
+ * compartida; lo único que cambia es la disposición y el movimiento.
  */
 export function MasVendidosSection({ products, priceLevel }: MasVendidosSectionProps) {
   const prefersReducedMotion = useReducedMotion();
@@ -34,7 +38,7 @@ export function MasVendidosSection({ products, priceLevel }: MasVendidosSectionP
           title="Más Vendidos"
           subtitle="Descubre nuestros productos estrella, favoritos de los clientes."
         />
-        <ProductGrid products={products.slice(0, 8)} priceLevel={priceLevel} />
+        <ProductCarousel products={products.slice(0, 12)} priceLevel={priceLevel} />
       </m.section>
     </div>
   );

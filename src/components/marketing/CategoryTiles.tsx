@@ -1,8 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { motion, useReducedMotion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { ImageIcon } from 'lucide-react';
+import { HorizontalCarousel } from '@/components/shared/HorizontalCarousel';
 
 export interface CategoryTile {
   id: string;
@@ -12,38 +13,50 @@ export interface CategoryTile {
 }
 
 /**
- * Mosaicos de categoría de la home: rectangulares, 4 por fila en escritorio.
+ * Franja de categorías de la home.
+ *
+ * Sigue la referencia de Bloomshell: fotos verticales grandes a **ancho
+ * completo, sin separación ni bordes redondeados**, con el nombre en mayúsculas
+ * blancas abajo. La diferencia es que aquí la franja **se desplaza sola** hacia
+ * la derecha (petición de Gabo; en la referencia es estática).
  *
  * Los círculos son SOLO para subcategorías dentro de una página de categoría
- * (ver SubcategoryCircles); en la home la referencia usa mosaicos a sangre con
- * el nombre en blanco abajo.
+ * (ver SubcategoryCircles).
  *
  * Sin imagen cargada, el mosaico cae a un degradado de marca en vez de dejar un
- * hueco — hoy las 40 categorías tienen imageUrl vacío.
+ * hueco. Ojo: hoy casi ninguna categoría raíz tiene `imageUrl`.
  */
 export function CategoryTiles({ categories }: { categories: CategoryTile[] }) {
   const reduceMotion = useReducedMotion();
 
   if (!categories.length) return null;
 
+  // En escritorio se ven 4 a la vez. Con pocas categorías la franja dejaría un
+  // hueco a la derecha y el ciclo del auto-scroll se agotaría enseguida, así
+  // que la lista se repite hasta llenar la fila con margen para desplazarse.
+  const MIN_TILES = 8;
+  const repeats = Math.max(1, Math.ceil(MIN_TILES / categories.length));
+  const tiles = Array.from({ length: repeats }, () => categories).flat();
+
   return (
-    <section className="mx-auto max-w-7xl px-4 py-12 md:px-8">
-      <h2 className="mb-8 text-center font-serif text-3xl font-bold text-brand-neutral-dark">
+    <section className="py-12">
+      <h2 className="mb-8 text-center font-serif text-3xl font-bold uppercase tracking-[0.08em] text-brand-pink-dark md:text-4xl">
         Categorías
       </h2>
 
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
-        {categories.map((cat, i) => (
-          <motion.div
-            key={cat.id}
-            initial={reduceMotion ? false : { opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-60px' }}
-            transition={{ duration: 0.5, delay: reduceMotion ? 0 : i * 0.08, ease: [0.22, 1, 0.36, 1] }}
-          >
+      <m.div
+        initial={reduceMotion ? false : { opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-60px' }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+      >
+        <HorizontalCarousel autoScrollMs={3500} ariaLabel="Categorías">
+          {tiles.map((cat, i) => (
             <Link
+              // La lista va duplicada: el índice desempata las claves repetidas.
+              key={`${cat.id}-${i}`}
               href={`/catalogo/${cat.slug}`}
-              className="group relative flex aspect-[4/5] w-full items-end overflow-hidden rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-pink focus-visible:ring-offset-2"
+              className="group relative flex aspect-[3/4] w-[62%] shrink-0 snap-start items-end overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white sm:w-1/3 lg:w-1/4"
               aria-label={`Ver categoría ${cat.name}`}
             >
               {cat.imageUrl ? (
@@ -66,18 +79,15 @@ export function CategoryTiles({ categories }: { categories: CategoryTile[] }) {
               )}
 
               {/* Degradado para que el texto se lea sobre cualquier foto */}
-              <div className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/65 to-transparent" />
+              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/55 to-transparent" />
 
-              <h3 className="relative z-10 w-full px-4 pb-4 text-center text-base font-bold uppercase tracking-[0.12em] text-white drop-shadow-sm sm:text-lg">
+              <h3 className="relative z-10 w-full px-4 pb-6 text-center text-lg font-bold uppercase tracking-[0.1em] text-white drop-shadow-md sm:text-2xl">
                 {cat.name}
               </h3>
-
-              {/* Subrayado que aparece al pasar el mouse */}
-              <span className="absolute bottom-3 left-1/2 z-10 h-0.5 w-0 -translate-x-1/2 bg-white transition-all duration-300 group-hover:w-12" />
             </Link>
-          </motion.div>
-        ))}
-      </div>
+          ))}
+        </HorizontalCarousel>
+      </m.div>
     </section>
   );
 }

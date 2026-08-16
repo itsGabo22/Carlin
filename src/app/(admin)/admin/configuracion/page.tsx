@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Settings, Save, UploadCloud, Monitor, Smartphone, Video, Plus, ArrowUp, ArrowDown, Trash2, Edit, Image as ImageIcon, Sparkles, Eye, EyeOff, Gift } from 'lucide-react';
+// Nota: esta versión de lucide ya no trae iconos de marca (no existe `Instagram`).
+import { Settings, Save, UploadCloud, Monitor, Smartphone, Video, Plus, ArrowUp, ArrowDown, Trash2, Edit, Image as ImageIcon, Sparkles, Eye, EyeOff, Gift, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -54,6 +55,12 @@ export default function AdminConfiguracionPage() {
     active: true,
   });
 
+  const [igPosts, setIgPosts] = useState<any[]>([]);
+  const [igModalOpen, setIgModalOpen] = useState(false);
+  const [editingIgId, setEditingIgId] = useState<string | null>(null);
+  const [igForm, setIgForm] = useState({ linkUrl: '', active: true });
+  const [igImage, setIgImage] = useState<File | null>(null);
+
   const [popupLoading, setPopupLoading] = useState(false);
   const [popup, setPopup] = useState({
     active: false,
@@ -72,8 +79,9 @@ export default function AdminConfiguracionPage() {
       fetch('/api/admin/configuracion').then(r => r.json()),
       fetch('/api/admin/hero-slides').then(r => r.json()),
       fetch('/api/admin/promo-popup').then(r => r.json()),
-      fetch('/api/admin/marquee').then(r => r.json())
-    ]).then(([configData, slidesData, popupData, marqueeData]) => {
+      fetch('/api/admin/marquee').then(r => r.json()),
+      fetch('/api/admin/instagram').then(r => r.json())
+    ]).then(([configData, slidesData, popupData, marqueeData, igData]) => {
       if (configData && !configData.error) {
         setConfig({
           announcementText: configData.announcementText || '',
@@ -108,6 +116,9 @@ export default function AdminConfiguracionPage() {
       }
       if (marqueeData && Array.isArray(marqueeData)) {
         setMarquees(marqueeData);
+      }
+      if (igData && Array.isArray(igData)) {
+        setIgPosts(igData);
       }
     }).finally(() => setFetching(false));
   };
@@ -376,6 +387,96 @@ export default function AdminConfiguracionPage() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages: updated.map(m => ({ id: m.id, order: m.order })) })
+    });
+  };
+
+  // ── Instagram ──────────────────────────────────────────────────
+  const openNewIgModal = () => {
+    setEditingIgId(null);
+    setIgForm({ linkUrl: '', active: true });
+    setIgImage(null);
+    setIgModalOpen(true);
+  };
+
+  const openEditIgModal = (post: any) => {
+    setEditingIgId(post.id);
+    setIgForm({ linkUrl: post.linkUrl || '', active: post.active });
+    setIgImage(null);
+    setIgModalOpen(true);
+  };
+
+  const handleSaveIg = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingIgId && !igImage) {
+      alert('Debes subir una imagen');
+      return;
+    }
+    setLoading(true);
+    try {
+      const fd = new FormData();
+      fd.append('linkUrl', igForm.linkUrl);
+      fd.append('active', igForm.active.toString());
+      if (igImage) fd.append('image', igImage);
+
+      const url = editingIgId ? `/api/admin/instagram/${editingIgId}` : '/api/admin/instagram';
+      const res = await fetch(url, { method: editingIgId ? 'PATCH' : 'POST', body: fd });
+
+      if (res.ok) {
+        setIgModalOpen(false);
+        loadData();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        alert(err.error || 'Error al guardar la publicación');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error de conexión');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleToggleIgActive = async (post: any) => {
+    try {
+      const fd = new FormData();
+      fd.append('active', (!post.active).toString());
+      const res = await fetch(`/api/admin/instagram/${post.id}`, { method: 'PATCH', body: fd });
+      if (res.ok) {
+        setIgPosts(prev => prev.map(p => p.id === post.id ? { ...p, active: !post.active } : p));
+      } else {
+        alert('Error al actualizar la publicación');
+      }
+    } catch (error) {
+      console.error(error);
+      alert('Error de conexión');
+    }
+  };
+
+  const handleDeleteIg = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta publicación?')) return;
+    try {
+      const res = await fetch(`/api/admin/instagram/${id}`, { method: 'DELETE' });
+      if (res.ok) loadData();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleReorderIg = async (index: number, direction: 'up' | 'down') => {
+    const next = [...igPosts];
+    if (direction === 'up' && index > 0) {
+      [next[index - 1], next[index]] = [next[index], next[index - 1]];
+    } else if (direction === 'down' && index < next.length - 1) {
+      [next[index + 1], next[index]] = [next[index], next[index + 1]];
+    } else return;
+
+    const updated = next.map((p, i) => ({ ...p, order: i }));
+    setIgPosts(updated);
+
+    fetch('/api/admin/instagram/reorder', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ posts: updated.map(p => ({ id: p.id, order: p.order })) })
     });
   };
 
@@ -734,6 +835,70 @@ export default function AdminConfiguracionPage() {
       <Card>
         <CardContent className="p-6 space-y-4">
           <div className="flex justify-between items-center border-b pb-2">
+            <div>
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Camera size={18} className="text-brand-pink" /> Síguenos en Instagram
+              </h2>
+              <p className="text-sm text-gray-500">
+                Fotos de la franja al final de la home. Cada una lleva a su publicación en Instagram.
+              </p>
+            </div>
+            <Button onClick={openNewIgModal} className="bg-brand-pink hover:bg-brand-pink-dark shrink-0">
+              <Plus size={16} className="mr-2" /> Nueva Foto
+            </Button>
+          </div>
+
+          <div className="space-y-2">
+            {igPosts.length === 0 ? (
+              <p className="text-gray-500 text-sm py-4">
+                No hay fotos configuradas. La sección no se muestra en la tienda hasta que agregues al menos una.
+              </p>
+            ) : (
+              igPosts.map((post, idx) => (
+                <div key={post.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded border">
+                  <div className="w-12 h-16 bg-gray-200 rounded overflow-hidden shrink-0">
+                    <img src={post.imageUrl} alt="" className="w-full h-full object-cover" />
+                  </div>
+
+                  <a
+                    href={post.linkUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 truncate text-sm text-blue-600 hover:underline"
+                  >
+                    {post.linkUrl}
+                  </a>
+
+                  {post.active ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Activo</span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactivo</span>
+                  )}
+
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleToggleIgActive(post)}
+                      title={post.active ? 'Ocultar foto' : 'Mostrar foto'}
+                    >
+                      {post.active ? <Eye size={16} className="text-green-600" /> : <EyeOff size={16} className="text-gray-400" />}
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleReorderIg(idx, 'up')} disabled={idx === 0}><ArrowUp size={16} /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleReorderIg(idx, 'down')} disabled={idx === igPosts.length - 1}><ArrowDown size={16} /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => openEditIgModal(post)}><Edit size={16} className="text-blue-600" /></Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDeleteIg(post.id)}><Trash2 size={16} className="text-red-600" /></Button>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardContent className="p-6 space-y-4">
+          <div className="flex justify-between items-center border-b pb-2">
             <h2 className="text-lg font-semibold flex items-center gap-2">
               <Sparkles size={18} className="text-brand-pink" /> Popup Promocional
             </h2>
@@ -893,6 +1058,57 @@ export default function AdminConfiguracionPage() {
             <Button type="button" variant="ghost" onClick={() => setSlideModalOpen(false)}>Cancelar</Button>
             <Button type="submit" disabled={loading} className="bg-brand-pink hover:bg-brand-pink-dark text-white">
               {loading ? 'Guardando...' : 'Guardar Slide'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      <Modal isOpen={igModalOpen} onClose={() => setIgModalOpen(false)} title={editingIgId ? 'Editar Foto de Instagram' : 'Nueva Foto de Instagram'}>
+        <form onSubmit={handleSaveIg} className="space-y-4 pt-4">
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Enlace a la publicación</label>
+            <Input
+              value={igForm.linkUrl}
+              onChange={e => setIgForm(prev => ({ ...prev, linkUrl: e.target.value }))}
+              placeholder="https://www.instagram.com/p/..."
+              required
+            />
+            <p className="text-xs text-gray-500">
+              Se abre en una pestaña nueva. Si no tienes el enlace del post, puedes usar el de tu perfil.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium">
+              Imagen {editingIgId && <span className="text-gray-400 font-normal">(opcional: solo si quieres reemplazarla)</span>}
+            </label>
+            <div className="relative border-2 border-dashed border-gray-200 hover:border-brand-pink hover:bg-brand-pink/5 rounded-xl p-6 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group">
+              <input
+                type="file"
+                accept="image/*"
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                onChange={e => setIgImage(e.target.files?.[0] || null)}
+              />
+              <UploadCloud className="text-gray-400 group-hover:text-brand-pink mb-3 transition-colors" size={40} strokeWidth={1.5} />
+              <p className="text-sm font-semibold text-gray-700">Foto vertical (recomendado 1080×1350)</p>
+              <p className="text-xs text-gray-500 mt-1">{igImage ? igImage.name : 'Haz clic o arrastra tu archivo'}</p>
+            </div>
+          </div>
+
+          <label className="flex items-center gap-2 cursor-pointer pt-2">
+            <input
+              type="checkbox"
+              checked={igForm.active}
+              onChange={e => setIgForm(prev => ({ ...prev, active: e.target.checked }))}
+              className="rounded text-brand-pink focus:ring-brand-pink"
+            />
+            <span className="text-sm font-medium">Visible en la tienda</span>
+          </label>
+
+          <div className="pt-4 flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={() => setIgModalOpen(false)}>Cancelar</Button>
+            <Button type="submit" disabled={loading} className="bg-brand-pink hover:bg-brand-pink-dark text-white">
+              {loading ? 'Guardando...' : 'Guardar Foto'}
             </Button>
           </div>
         </form>

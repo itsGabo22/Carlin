@@ -126,6 +126,14 @@ CREATE POLICY "Public can read active promo popup"
   FOR SELECT
   USING (active = true);
 
+-- ── Franja de Instagram de la home (añadida 2026-08-16) ──────────
+ALTER TABLE "public"."InstagramPost" ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Public can read active instagram posts"
+  ON "public"."InstagramPost"
+  FOR SELECT
+  USING (active = true);
+
 -- ═══════════════════════════════════════════
 -- NOTA IMPORTANTE SOBRE ESCRITURA
 -- ═══════════════════════════════════════════

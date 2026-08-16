@@ -3,6 +3,7 @@ import { CategoryTiles } from '@/components/marketing/CategoryTiles';
 import { NovedadesSection } from '@/components/marketing/NovedadesSection';
 import { MasVendidosSection } from '@/components/marketing/MasVendidosSection';
 import { MarcasSection } from '@/components/marketing/MarcasSection';
+import { InstagramSection } from '@/components/marketing/InstagramSection';
 import { WholesaleBanner } from '@/components/marketing/WholesaleBanner';
 import { PromoPopup } from '@/components/marketing/PromoPopup';
 import { prisma } from '@/lib/prisma';
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   // Fetch required data in parallel
-  const [config, categories, brands, latestProducts, popularProducts, slides, promoPopup] = await Promise.all([
+  const [config, categories, brands, latestProducts, popularProducts, slides, promoPopup, instagramPosts] = await Promise.all([
     prisma.siteConfig.findUnique({ where: { id: 'singleton' } }),
     // Solo categorías raíz activas: respeta el interruptor "Visible en la tienda".
     prisma.category.findMany({
@@ -36,13 +37,19 @@ export default async function HomePage() {
     prisma.product.findMany({
       where: { active: true, tags: { some: { tag: { name: 'Top' } } } },
       include: { brand: true, category: true, tags: { include: { tag: true } }, discounts: true },
-      take: 4
+      // Ahora es un carrusel horizontal: con 4 no habría nada que desplazar.
+      take: 12
     }),
     prisma.heroSlide.findMany({
       where: { active: true },
       orderBy: { order: 'asc' }
     }),
-    prisma.promoPopup.findUnique({ where: { id: 'singleton' } })
+    prisma.promoPopup.findUnique({ where: { id: 'singleton' } }),
+    prisma.instagramPost.findMany({
+      where: { active: true },
+      orderBy: { order: 'asc' },
+      select: { id: true, imageUrl: true, linkUrl: true }
+    })
   ]);
 
   const sessionResult = await getSessionResult(config!);
@@ -61,7 +68,7 @@ export default async function HomePage() {
   const formattedPopularProducts = popularProducts.map(mapProduct);
 
   // If no popular products labeled 'Top', just grab random 4
-  const finalPopular = formattedPopularProducts.length > 0 ? formattedPopularProducts : formattedLatestProducts.slice(0, 4);
+  const finalPopular = formattedPopularProducts.length > 0 ? formattedPopularProducts : formattedLatestProducts;
 
   return (
     <main className="overflow-hidden">
@@ -71,6 +78,7 @@ export default async function HomePage() {
       <WholesaleBanner />
       <MasVendidosSection products={finalPopular} priceLevel={sessionResult.priceLevel} />
       <MarcasSection brands={brands as any} />
+      <InstagramSection posts={instagramPosts} />
       <PromoPopup popup={promoPopup} />
     </main>
   );
