@@ -3,32 +3,37 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
 export async function POST() {
-  const cookieStore = await cookies();
-  const response = NextResponse.redirect(new URL('/admin-login', process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'));
-  
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() { return cookieStore.getAll() },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
-            response.cookies.set(name, value, options);
-          });
+  try {
+    const cookieStore = await cookies();
+    const response = NextResponse.json({ success: true });
+    
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() { return cookieStore.getAll() },
+          setAll(cookiesToSet) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+              response.cookies.set(name, value, options);
+            });
+          },
         },
-      },
-    }
-  );
+      }
+    );
 
-  await supabase.auth.signOut();
+    await supabase.auth.signOut();
 
-  // Clear legacy cookie just in case
-  response.cookies.delete('admin_session');
+    // Clear legacy cookie just in case
+    response.cookies.delete('admin_session');
 
-  // Prevent BFCache on redirect
-  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate');
+    // Prevent BFCache on redirect
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
 
-  return response;
+    return response;
+  } catch (error) {
+    console.error('Error in admin logout:', error);
+    return NextResponse.json({ success: false, error: 'Logout failed' }, { status: 500 });
+  }
 }

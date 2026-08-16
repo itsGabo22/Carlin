@@ -1,6 +1,5 @@
 import React from 'react';
-import { AdminSidebar } from '@/components/admin/AdminSidebar';
-import { AdminTopBar } from '@/components/admin/AdminTopBar';
+import { AdminLayoutClient } from '@/components/admin/AdminLayoutClient';
 import { prisma } from '@/lib/prisma';
 
 export const metadata = {
@@ -18,14 +17,8 @@ export default async function AdminLayout({
   });
 
   return (
-    <div className="flex h-screen overflow-hidden bg-neutral-50">
-      <AdminSidebar pendingOrdersCount={pendingOrdersCount} />
-      <main className="flex-1 overflow-y-auto flex flex-col">
-        <AdminTopBar />
-        <div className="flex-1 p-6">
-          {children}
-        </div>
-      </main>
-    </div>
+    <AdminLayoutClient pendingOrdersCount={pendingOrdersCount}>
+      {children}
+    </AdminLayoutClient>
   );
 }

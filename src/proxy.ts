@@ -70,7 +70,10 @@ export async function proxy(request: NextRequest) {
 
   // ── RUTAS DEL ADMIN (UI y API) ───────────────────────────────────────────────
   const isAdminUI = normalizedPath.startsWith('/admin') && normalizedPath !== '/admin-login';
-  const isAdminAPI = normalizedPath.startsWith('/api/admin') && normalizedPath !== '/api/admin/auth/login';
+  const isAdminAPI =
+    normalizedPath.startsWith('/api/admin') &&
+    normalizedPath !== '/api/admin/auth/login' &&
+    normalizedPath !== '/api/admin/auth/logout';
 
   if (isAdminUI || isAdminAPI) {
     const { isAuthenticated, response } = await checkAdminAuth(request);

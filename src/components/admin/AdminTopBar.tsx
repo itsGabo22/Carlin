@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Bell, User } from 'lucide-react';
+import { Bell, User, Menu } from 'lucide-react';
 import Link from 'next/link';
 
 type Notification = {
@@ -12,7 +12,11 @@ type Notification = {
   count: number;
 };
 
-export function AdminTopBar() {
+interface AdminTopBarProps {
+  onMenuClick?: () => void;
+}
+
+export function AdminTopBar({ onMenuClick }: AdminTopBarProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [total, setTotal] = useState(0);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -48,27 +52,37 @@ export function AdminTopBar() {
   }, []);
 
   return (
-    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shrink-0 sticky top-0 z-10">
-      <div className="flex items-center text-sm text-gray-500 font-medium">
-        Gestión de Tienda
+    <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-3 sm:px-6 shrink-0 sticky top-0 z-20">
+      <div className="flex items-center gap-2 sm:gap-3">
+        <button
+          onClick={onMenuClick}
+          className="md:hidden p-2 text-gray-600 hover:text-brand-pink-dark hover:bg-brand-pink-light/20 rounded-lg transition-colors min-h-[44px] min-w-[44px] flex items-center justify-center -ml-1"
+          aria-label="Abrir menú"
+        >
+          <Menu size={22} />
+        </button>
+        <span className="text-sm text-gray-700 font-semibold truncate">
+          Panel de Administración
+        </span>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4">
         <div className="relative" ref={dropdownRef}>
           <button 
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="p-2 text-gray-400 hover:text-gray-600 transition-colors relative"
+            className="p-2 text-gray-400 hover:text-gray-600 transition-colors relative min-h-[44px] min-w-[44px] flex items-center justify-center"
+            aria-label="Notificaciones"
           >
             <Bell size={20} />
             {total > 0 && (
-              <span className="absolute top-1 right-1 w-4 h-4 bg-brand-pink text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-brand-pink text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                 {total > 9 ? '9+' : total}
               </span>
             )}
           </button>
           
           {dropdownOpen && (
-            <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-2xl shadow-xl shadow-brand-pink/10 border border-brand-pink/10 overflow-hidden z-50">
+            <div className="absolute right-0 top-full mt-2 w-72 sm:w-80 bg-white rounded-2xl shadow-xl shadow-brand-pink/10 border border-brand-pink/10 overflow-hidden z-50">
               <div className="px-4 py-3 border-b border-brand-pink/10 flex justify-between items-center">
                 <p className="font-semibold text-sm text-brand-neutral-dark">
                   Notificaciones
@@ -104,7 +118,7 @@ export function AdminTopBar() {
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 pl-4 border-l border-gray-200">
+        <div className="flex items-center gap-2 pl-2 sm:pl-4 border-l border-gray-200">
           <div className="w-8 h-8 rounded-full bg-brand-pink-light/20 flex items-center justify-center text-brand-pink-dark">
             <User size={16} />
           </div>

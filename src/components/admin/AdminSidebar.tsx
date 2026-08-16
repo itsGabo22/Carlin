@@ -15,10 +15,13 @@ import {
   ExternalLink,
   LogOut,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  X,
+  Loader2,
 } from 'lucide-react';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/lib/supabase/client';
 
 const links = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
@@ -32,26 +35,63 @@ const links = [
   { href: '/admin/configuracion', label: 'Configuración', icon: Settings },
 ];
 
-export function AdminSidebar({ pendingOrdersCount = 0 }: { pendingOrdersCount?: number }) {
+interface AdminSidebarProps {
+  pendingOrdersCount?: number;
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+export function AdminSidebar({
+  pendingOrdersCount = 0,
+  mobileOpen = false,
+  onMobileClose,
+}: AdminSidebarProps) {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
-  return (
-    <aside
-      className={cn(
-        "bg-brand-cream text-gray-900 flex flex-col transition-all duration-300 border-r border-brand-pink-light/30 shrink-0",
-        collapsed ? "w-16" : "w-64"
-      )}
-    >
+  const handleLogout = async () => {
+    if (loggingOut) return;
+    setLoggingOut(true);
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error('Client signOut error:', e);
+    }
+    try {
+      await fetch('/api/admin/auth/logout', { method: 'POST' });
+    } catch (e) {
+      console.error('Server signOut error:', e);
+    }
+    window.location.href = '/admin-login';
+  };
+
+  const navContent = (isMobile: boolean) => (
+    <>
       <div className="h-16 flex items-center justify-between px-4 border-b border-brand-pink-light/30 shrink-0">
-        {!collapsed && <span className="font-display text-xl text-brand-pink-dark font-bold">Carlin Admin</span>}
-        <button
-          onClick={() => setCollapsed(!collapsed)}
-          className={cn("p-1.5 text-gray-500 hover:bg-brand-pink-light/30 hover:text-brand-pink-dark rounded-lg transition-colors", collapsed && "mx-auto")}
-          aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
-        >
-          {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
-        </button>
+        {(!collapsed || isMobile) && (
+          <span className="font-display text-xl text-brand-pink-dark font-bold">Carlin Admin</span>
+        )}
+        {isMobile ? (
+          <button
+            onClick={onMobileClose}
+            className="p-1.5 text-gray-500 hover:bg-brand-pink-light/30 hover:text-brand-pink-dark rounded-lg transition-colors"
+            aria-label="Cerrar menú"
+          >
+            <X size={20} />
+          </button>
+        ) : (
+          <button
+            onClick={() => setCollapsed(!collapsed)}
+            className={cn(
+              "p-1.5 text-gray-500 hover:bg-brand-pink-light/30 hover:text-brand-pink-dark rounded-lg transition-colors",
+              collapsed && "mx-auto"
+            )}
+            aria-label={collapsed ? "Expandir menú" : "Colapsar menú"}
+          >
+            {collapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+          </button>
+        )}
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4 px-2 space-y-1">
@@ -61,17 +101,23 @@ export function AdminSidebar({ pendingOrdersCount = 0 }: { pendingOrdersCount?: 
             <Link
               key={link.href}
               href={link.href}
+              onClick={() => {
+                if (isMobile && onMobileClose) onMobileClose();
+              }}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors font-medium text-sm relative group",
-                active 
-                  ? "bg-brand-pink text-white font-bold shadow-sm" 
+                "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors font-medium text-sm relative group min-h-[44px]",
+                active
+                  ? "bg-brand-pink text-white font-bold shadow-sm"
                   : "text-gray-700 hover:bg-brand-pink-light/30 hover:text-brand-pink-dark",
-                collapsed && "justify-center px-0"
+                collapsed && !isMobile && "justify-center px-0"
               )}
-              title={collapsed ? link.label : undefined}
+              title={collapsed && !isMobile ? link.label : undefined}
             >
-              <link.icon size={20} className={cn("shrink-0", !active && "text-gray-500 group-hover:text-brand-pink-dark")} />
-              {!collapsed && (
+              <link.icon
+                size={20}
+                className={cn("shrink-0", !active && "text-gray-500 group-hover:text-brand-pink-dark")}
+              />
+              {(!collapsed || isMobile) && (
                 <div className="flex items-center justify-between flex-1">
                   <span>{link.label}</span>
                   {link.href === '/admin/pedidos' && pendingOrdersCount > 0 && (
@@ -81,7 +127,7 @@ export function AdminSidebar({ pendingOrdersCount = 0 }: { pendingOrdersCount?: 
                   )}
                 </div>
               )}
-              {collapsed && link.href === '/admin/pedidos' && pendingOrdersCount > 0 && (
+              {collapsed && !isMobile && link.href === '/admin/pedidos' && pendingOrdersCount > 0 && (
                 <div className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full" />
               )}
             </Link>
@@ -95,29 +141,64 @@ export function AdminSidebar({ pendingOrdersCount = 0 }: { pendingOrdersCount?: 
           target="_blank"
           rel="noopener noreferrer"
           className={cn(
-            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors font-medium text-sm text-gray-700 hover:bg-brand-pink-light/30 hover:text-brand-pink-dark",
-            collapsed && "justify-center px-0"
+            "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors font-medium text-sm text-gray-700 hover:bg-brand-pink-light/30 hover:text-brand-pink-dark min-h-[44px]",
+            collapsed && !isMobile && "justify-center px-0"
           )}
-          title={collapsed ? "Ver tienda" : undefined}
+          title={collapsed && !isMobile ? "Ver tienda" : undefined}
         >
           <ExternalLink size={20} className="shrink-0 text-gray-500" />
-          {!collapsed && <span>Ver tienda</span>}
+          {(!collapsed || isMobile) && <span>Ver tienda pública</span>}
         </a>
 
-        <form action="/api/admin/auth/logout" method="POST">
-          <button
-            type="submit"
-            className={cn(
-              "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors font-medium text-sm text-red-600 hover:bg-red-50",
-              collapsed && "justify-center px-0"
-            )}
-            title={collapsed ? "Cerrar sesión" : undefined}
-          >
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={loggingOut}
+          className={cn(
+            "w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors font-medium text-sm text-red-600 hover:bg-red-50 min-h-[44px] disabled:opacity-50",
+            collapsed && !isMobile && "justify-center px-0"
+          )}
+          title={collapsed && !isMobile ? "Cerrar sesión" : undefined}
+        >
+          {loggingOut ? (
+            <Loader2 size={20} className="shrink-0 text-red-500 animate-spin" />
+          ) : (
             <LogOut size={20} className="shrink-0 text-red-500" />
-            {!collapsed && <span>Cerrar sesión</span>}
-          </button>
-        </form>
+          )}
+          {(!collapsed || isMobile) && (
+            <span>{loggingOut ? 'Cerrando sesión...' : 'Cerrar sesión'}</span>
+          )}
+        </button>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Desktop Sidebar */}
+      <aside
+        className={cn(
+          "bg-brand-cream text-gray-900 hidden md:flex flex-col transition-all duration-300 border-r border-brand-pink-light/30 shrink-0",
+          collapsed ? "w-16" : "w-64"
+        )}
+      >
+        {navContent(false)}
+      </aside>
+
+      {/* Mobile Drawer */}
+      {mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+            onClick={onMobileClose}
+          />
+          {/* Drawer panel */}
+          <aside className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-brand-cream text-gray-900 flex flex-col shadow-2xl z-10 animate-in slide-in-from-left duration-200">
+            {navContent(true)}
+          </aside>
+        </div>
+      )}
+    </>
   );
 }

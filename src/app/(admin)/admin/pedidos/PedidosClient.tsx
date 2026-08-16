@@ -4,7 +4,7 @@ import * as React from 'react';
 import Image from 'next/image';
 import { formatCOP } from '@/lib/utils/carlin-pricing';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, XCircle, ChevronDown, ChevronUp, AlertCircle } from 'lucide-react';
+import { CheckCircle2, XCircle, ChevronDown, ChevronUp, AlertCircle, Phone, User, Calendar, ShoppingBag } from 'lucide-react';
 
 type OrderItem = {
   id: string;
@@ -82,37 +82,159 @@ export default function PedidosClient({ initialOrders }: { initialOrders: Order[
   };
 
   return (
-    <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+    <div className="bg-white p-4 sm:p-6 rounded-2xl shadow-sm border border-gray-100 space-y-4">
       
       {/* Tabs */}
-      <div className="flex gap-4 border-b border-gray-100 pb-4 mb-6">
+      <div className="flex gap-2 sm:gap-4 border-b border-gray-100 pb-3 overflow-x-auto no-scrollbar flex-nowrap">
         <button
           onClick={() => setActiveTab('PENDING_WHATSAPP')}
-          className={`font-semibold pb-1 border-b-2 transition-colors ${activeTab === 'PENDING_WHATSAPP' ? 'border-brand-pink text-brand-pink-dark' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+          className={`shrink-0 font-semibold pb-1 border-b-2 text-sm transition-colors ${activeTab === 'PENDING_WHATSAPP' ? 'border-brand-pink text-brand-pink-dark' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
         >
           Pendientes ({pendingCount})
         </button>
         <button
           onClick={() => setActiveTab('CONFIRMED')}
-          className={`font-semibold pb-1 border-b-2 transition-colors ${activeTab === 'CONFIRMED' ? 'border-brand-pink text-brand-pink-dark' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+          className={`shrink-0 font-semibold pb-1 border-b-2 text-sm transition-colors ${activeTab === 'CONFIRMED' ? 'border-brand-pink text-brand-pink-dark' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
         >
           Confirmados
         </button>
         <button
           onClick={() => setActiveTab('REJECTED')}
-          className={`font-semibold pb-1 border-b-2 transition-colors ${activeTab === 'REJECTED' ? 'border-brand-pink text-brand-pink-dark' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+          className={`shrink-0 font-semibold pb-1 border-b-2 text-sm transition-colors ${activeTab === 'REJECTED' ? 'border-brand-pink text-brand-pink-dark' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
         >
           Rechazados
         </button>
         <button
           onClick={() => setActiveTab('ALL')}
-          className={`font-semibold pb-1 border-b-2 transition-colors ${activeTab === 'ALL' ? 'border-brand-pink text-brand-pink-dark' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
+          className={`shrink-0 font-semibold pb-1 border-b-2 text-sm transition-colors ${activeTab === 'ALL' ? 'border-brand-pink text-brand-pink-dark' : 'border-transparent text-gray-500 hover:text-gray-900'}`}
         >
-          Todos
+          Todos ({orders.length})
         </button>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Mobile Card List (visible < md) */}
+      <div className="block md:hidden space-y-3">
+        {filteredOrders.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 text-sm">
+            No hay pedidos en esta categoría.
+          </div>
+        ) : (
+          filteredOrders.map(order => {
+            const isExpanded = expandedId === order.id;
+            const itemCount = order.items.reduce((acc, i) => acc + i.quantity, 0);
+
+            return (
+              <div key={order.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3 shadow-xs">
+                {/* Header: ID + Status + Level */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-xs font-bold text-gray-700 bg-gray-100 px-2 py-0.5 rounded-md">
+                      #{order.id.slice(-6).toUpperCase()}
+                    </span>
+                    {renderBadge(order.priceLevel)}
+                  </div>
+                  {renderStatus(order.status)}
+                </div>
+
+                {/* Customer Details */}
+                <div className="space-y-1 text-xs">
+                  <div className="flex items-center gap-1.5 font-semibold text-gray-900">
+                    <User size={13} className="text-gray-400 shrink-0" />
+                    <span className="truncate">{order.customerName || 'Cliente no identificado'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-gray-500">
+                    <Phone size={13} className="text-gray-400 shrink-0" />
+                    <span>{order.customerPhone || '-'}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-gray-400 text-[11px]">
+                    <Calendar size={13} className="text-gray-400 shrink-0" />
+                    <span>{new Date(order.createdAt).toLocaleString('es-CO')}</span>
+                  </div>
+                </div>
+
+                {/* Total & Items summary */}
+                <div className="flex items-center justify-between p-2.5 bg-gray-50 rounded-xl">
+                  <div>
+                    <span className="text-[11px] text-gray-500 block">Total ({itemCount} {itemCount === 1 ? 'producto' : 'productos'})</span>
+                    <span className="text-sm font-bold text-brand-pink-dark">{formatCOP(order.total)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setExpandedId(isExpanded ? null : order.id)}
+                    className="flex items-center gap-1 text-xs font-semibold text-brand-neutral-dark hover:text-brand-pink-dark p-1"
+                  >
+                    <span>{isExpanded ? 'Ocultar items' : 'Ver items'}</span>
+                    {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                </div>
+
+                {/* Expanded items list */}
+                {isExpanded && (
+                  <div className="pt-2 border-t border-gray-100 space-y-2">
+                    <h4 className="text-[11px] font-bold uppercase tracking-wider text-gray-700">Detalle de Productos:</h4>
+                    <div className="space-y-2">
+                      {order.items.map(item => {
+                        const hasStock = item.product.stock >= item.quantity;
+                        return (
+                          <div key={item.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-lg text-xs">
+                            <div className="w-10 h-10 bg-gray-200 rounded-md overflow-hidden relative shrink-0">
+                              {item.imageUrl ? (
+                                <Image src={item.imageUrl} alt={item.name} fill className="object-cover" unoptimized />
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center text-gray-400 text-[10px]">Img</div>
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-semibold text-gray-900 truncate">{item.name}</div>
+                              <div className="text-[11px] text-gray-500">
+                                {item.quantity} x {formatCOP(item.priceSnapshot)}
+                              </div>
+                              {!hasStock && order.status === 'PENDING_WHATSAPP' && (
+                                <span className="text-red-500 flex items-center gap-1 font-semibold text-[10px]">
+                                  <AlertCircle className="w-3 h-3" /> Sin stock ({item.product.stock} disp.)
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-right font-bold text-brand-pink-dark">
+                              {formatCOP(item.priceSnapshot * item.quantity)}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Actions for Pending */}
+                {order.status === 'PENDING_WHATSAPP' && (
+                  <div className="flex items-center gap-2 pt-2 border-t border-gray-100">
+                    <Button
+                      size="sm"
+                      className="flex-1 bg-green-500 hover:bg-green-600 text-white h-9 text-xs font-bold gap-1.5"
+                      onClick={() => handleAction(order.id, 'confirm')}
+                      disabled={loadingAction === order.id}
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> Confirmar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="flex-1 h-9 text-xs font-bold gap-1.5"
+                      onClick={() => handleAction(order.id, 'reject')}
+                      disabled={loadingAction === order.id}
+                    >
+                      <XCircle className="w-4 h-4" /> Rechazar
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Table (visible >= md) */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead className="bg-gray-50 text-gray-600 font-sans">
             <tr>

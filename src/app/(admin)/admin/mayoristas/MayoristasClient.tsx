@@ -1,16 +1,11 @@
 'use client';
 
 import { useState } from 'react';
-import { CheckCircle2, XCircle, RefreshCw, UserCog, Gift } from 'lucide-react';
+import { CheckCircle2, XCircle, Gift, Mail, Phone, Building2, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-type WholesaleUser = any; // simplified for this component
+type WholesaleUser = any;
 
-/**
- * Misma regla que `isWholesaleActive()` en el servidor: mientras no exista un
- * primer pedido, la cuenta se mide desde su aprobación. Sin esto, un mayorista
- * recién aprobado no aparecía en "Activos" sino listado como "Inactivo".
- */
 function isUserActive(user: WholesaleUser, inactivityDays: number): boolean {
   if (!user.approved) return false;
   const baseDate = user.lastOrderAt ?? user.approvedAt ?? user.createdAt;
@@ -78,46 +73,190 @@ export default function MayoristasClient({
   const filteredUsers = getFilteredUsers();
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      <div className="flex overflow-x-auto border-b border-gray-200 bg-gray-50 p-2 gap-2">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Scrollable Tabs */}
+      <div className="flex overflow-x-auto no-scrollbar border-b border-gray-200 bg-gray-50 p-2 sm:p-3 gap-2 flex-nowrap">
         <Button
           variant={tab === 'PENDING' ? 'primary' : 'ghost'}
           onClick={() => setTab('PENDING')}
-          className={tab === 'PENDING' ? 'bg-brand-pink hover:bg-brand-pink-dark' : 'text-gray-600'}
+          className={`shrink-0 text-xs sm:text-sm h-9 px-3 ${tab === 'PENDING' ? 'bg-brand-pink hover:bg-brand-pink-dark text-white' : 'text-gray-600'}`}
         >
           Pendientes ({users.filter(u => !u.approved).length})
         </Button>
         <Button
           variant={tab === 'MAYORISTA' ? 'primary' : 'ghost'}
           onClick={() => setTab('MAYORISTA')}
-          className={tab === 'MAYORISTA' ? 'bg-brand-pink hover:bg-brand-pink-dark' : 'text-gray-600'}
+          className={`shrink-0 text-xs sm:text-sm h-9 px-3 ${tab === 'MAYORISTA' ? 'bg-brand-pink hover:bg-brand-pink-dark text-white' : 'text-gray-600'}`}
         >
           Mayoristas Activos
         </Button>
         <Button
           variant={tab === 'DISTRIBUIDOR' ? 'primary' : 'ghost'}
           onClick={() => setTab('DISTRIBUIDOR')}
-          className={tab === 'DISTRIBUIDOR' ? 'bg-brand-pink hover:bg-brand-pink-dark' : 'text-gray-600'}
+          className={`shrink-0 text-xs sm:text-sm h-9 px-3 ${tab === 'DISTRIBUIDOR' ? 'bg-brand-pink hover:bg-brand-pink-dark text-white' : 'text-gray-600'}`}
         >
           Distribuidores Activos
         </Button>
         <Button
           variant={tab === 'INACTIVE' ? 'primary' : 'ghost'}
           onClick={() => setTab('INACTIVE')}
-          className={tab === 'INACTIVE' ? 'bg-brand-pink hover:bg-brand-pink-dark' : 'text-gray-600'}
+          className={`shrink-0 text-xs sm:text-sm h-9 px-3 ${tab === 'INACTIVE' ? 'bg-brand-pink hover:bg-brand-pink-dark text-white' : 'text-gray-600'}`}
         >
           Inactivos
         </Button>
         <Button
           variant={tab === 'ALL' ? 'primary' : 'ghost'}
           onClick={() => setTab('ALL')}
-          className={tab === 'ALL' ? 'bg-brand-pink hover:bg-brand-pink-dark' : 'text-gray-600'}
+          className={`shrink-0 text-xs sm:text-sm h-9 px-3 ${tab === 'ALL' ? 'bg-brand-pink hover:bg-brand-pink-dark text-white' : 'text-gray-600'}`}
         >
-          Todos
+          Todos ({users.length})
         </Button>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Mobile Card List (visible < md) */}
+      <div className="block md:hidden p-3 space-y-3">
+        {filteredUsers.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 text-sm">
+            No se encontraron usuarios en esta sección.
+          </div>
+        ) : (
+          filteredUsers.map((user) => {
+            const isPending = !user.approved;
+            const isActive = isUserActive(user, inactivityDays);
+
+            return (
+              <div key={user.id} className="bg-white rounded-xl border border-gray-200 p-4 space-y-3 shadow-xs">
+                {/* Header: Name + Badges */}
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 className="font-bold text-gray-900 text-sm leading-snug">
+                      {user.name || 'Sin nombre'}
+                    </h3>
+                    <div className="flex items-center gap-1.5 text-xs text-gray-500 mt-0.5">
+                      <Building2 size={13} className="text-gray-400 shrink-0" />
+                      <span>{user.businessName || 'Sin negocio'}</span>
+                      {user.taxId && <span>• NIT: {user.taxId}</span>}
+                    </div>
+                  </div>
+
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                    user.role === 'DISTRIBUIDOR' ? 'bg-brand-distributor/10 text-brand-distributor-dark' : 'bg-brand-wholesale/10 text-brand-wholesale-dark'
+                  }`}>
+                    {user.role}
+                  </span>
+                </div>
+
+                {/* Contact & Location info */}
+                <div className="space-y-1 text-xs text-gray-600 bg-gray-50 p-2.5 rounded-xl">
+                  <div className="flex items-center gap-1.5">
+                    <Mail size={13} className="text-gray-400 shrink-0" />
+                    <span className="truncate">{user.email}</span>
+                  </div>
+                  {user.phone && (
+                    <div className="flex items-center gap-1.5">
+                      <Phone size={13} className="text-gray-400 shrink-0" />
+                      <span>{user.phone}</span>
+                    </div>
+                  )}
+                  {user.city && (
+                    <div className="flex items-center gap-1.5">
+                      <MapPin size={13} className="text-gray-400 shrink-0" />
+                      <span>{user.city}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Status + Purchase + Welcome details */}
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs pt-1 border-t border-gray-100">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-gray-500">Última compra:</span>
+                    <span className="font-semibold text-gray-800">
+                      {user.lastOrderAt ? new Date(user.lastOrderAt).toLocaleDateString() : 'Sin compras'}
+                    </span>
+                  </div>
+
+                  {isPending ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-orange-100 text-orange-800">
+                      Pendiente
+                    </span>
+                  ) : isActive ? (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-green-700 bg-green-100 px-2 py-0.5 rounded-full">
+                      <CheckCircle2 size={11} /> ACTIVO
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold text-red-700 bg-red-100 px-2 py-0.5 rounded-full">
+                      <XCircle size={11} /> INACTIVO
+                    </span>
+                  )}
+                </div>
+
+                {user.role === 'MAYORISTA' && !isPending && (
+                  <div className="text-[11px]">
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full font-semibold ${
+                      user.welcomeDiscountUsedAt ? 'bg-gray-100 text-gray-500' : 'bg-brand-pink/15 text-brand-pink-dark'
+                    }`}>
+                      <Gift size={11} />
+                      {user.welcomeDiscountUsedAt ? 'Bienvenida usada' : 'Bienvenida disponible'}
+                    </span>
+                  </div>
+                )}
+
+                {/* Actions */}
+                <div className="pt-2 border-t border-gray-100">
+                  {isPending ? (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-green-500 hover:bg-green-600 text-white h-9 text-xs font-bold"
+                        onClick={() => handleAction(user.id, 'approve')}
+                        disabled={loadingAction === user.id}
+                      >
+                        Aprobar
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="flex-1 h-9 text-xs font-bold"
+                        onClick={() => handleAction(user.id, 'reject')}
+                        disabled={loadingAction === user.id}
+                      >
+                        Rechazar
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 flex-1">
+                        <span className="text-xs text-gray-500">Rol:</span>
+                        <select
+                          className="text-xs border border-gray-200 rounded-lg p-1.5 bg-white font-medium flex-1"
+                          value={user.role}
+                          onChange={(e) => handleAction(user.id, 'change_role', e.target.value)}
+                          disabled={loadingAction === user.id}
+                        >
+                          <option value="MAYORISTA">Mayorista</option>
+                          <option value="DISTRIBUIDOR">Distribuidor</option>
+                        </select>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="text-orange-600 border-orange-200 hover:bg-orange-50 h-8 text-xs font-medium"
+                        onClick={() => handleAction(user.id, 'revoke')}
+                        disabled={loadingAction === user.id}
+                      >
+                        Revocar
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Desktop Table View (visible >= md) */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead className="bg-gray-50 text-gray-600 font-medium border-b border-gray-200">
             <tr>

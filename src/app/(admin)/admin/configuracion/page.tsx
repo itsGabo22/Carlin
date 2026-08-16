@@ -382,15 +382,15 @@ export default function AdminConfiguracionPage() {
   if (fetching) return <div className="p-8 text-center text-gray-500">Cargando...</div>;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 pb-20">
-      <div className="flex justify-between items-center">
+    <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6 pb-20">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold font-serif text-gray-900 flex items-center gap-2">
-            <Settings className="text-brand-pink" /> Configuración General
+          <h1 className="text-xl sm:text-2xl font-bold font-serif text-gray-900 flex items-center gap-2">
+            <Settings className="text-brand-pink shrink-0" /> Configuración General
           </h1>
-          <p className="text-gray-500">Ajusta reglas de negocio, montos y banners principales.</p>
+          <p className="text-xs sm:text-sm text-gray-500">Ajusta reglas de negocio, montos y banners principales.</p>
         </div>
-        <Button onClick={handleSaveConfig} disabled={loading} className="bg-brand-pink hover:bg-brand-pink-dark text-white gap-2">
+        <Button onClick={handleSaveConfig} disabled={loading} className="bg-brand-pink hover:bg-brand-pink-dark text-white gap-2 h-10 w-full sm:w-auto">
           <Save size={16} />
           {loading ? 'Guardando...' : 'Guardar Configuración'}
         </Button>
@@ -630,42 +630,47 @@ export default function AdminConfiguracionPage() {
               <p className="text-sm text-gray-500 text-center py-8">No hay slides configurados. Se mostrará el fondo por defecto.</p>
             ) : (
               slides.map((slide, idx) => (
-                <div key={slide.id} className="flex items-center gap-4 p-4 border rounded-lg bg-gray-50">
-                  <div className="flex-shrink-0 w-24 h-16 bg-gray-200 rounded overflow-hidden">
-                    {slide.type === 'IMAGE' ? (
-                      <img src={slide.desktopUrl} alt="Slide preview" className="w-full h-full object-cover" />
+                <div key={slide.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-4 border rounded-xl bg-gray-50">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex-shrink-0 w-20 sm:w-24 h-14 sm:h-16 bg-gray-200 rounded-lg overflow-hidden border border-gray-200">
+                      {slide.type === 'IMAGE' ? (
+                        <img src={slide.desktopUrl} alt="Slide preview" className="w-full h-full object-cover" />
+                      ) : (
+                        <video src={slide.desktopUrl} className="w-full h-full object-cover" muted />
+                      )}
+                    </div>
+                    
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-sm flex items-center gap-1.5 text-gray-900 truncate">
+                        {slide.type === 'IMAGE' ? <ImageIcon size={14} className="text-blue-500 shrink-0" /> : <Video size={14} className="text-brand-distributor-dark shrink-0" />}
+                        <span className="truncate">{slide.title || 'Sin Título'}</span>
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">{slide.subtitle || 'Sin Subtítulo'}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-0 border-gray-200">
+                    {slide.active ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-green-100 text-green-800">Activo</span>
                     ) : (
-                      <video src={slide.desktopUrl} className="w-full h-full object-cover" muted />
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-gray-100 text-gray-800">Inactivo</span>
                     )}
-                  </div>
-                  
-                  <div className="flex-grow">
-                    <p className="font-medium text-sm flex items-center gap-2">
-                      {slide.type === 'IMAGE' ? <ImageIcon size={14} className="text-blue-500" /> : <Video size={14} className="text-brand-distributor-dark" />}
-                      {slide.title || 'Sin Título'}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">{slide.subtitle || 'Sin Subtítulo'}</p>
-                  </div>
 
-                  {slide.active ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Activo</span>
-                  ) : (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactivo</span>
-                  )}
-
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleToggleSlideActive(slide)}
-                      title={slide.active ? 'Ocultar slide' : 'Mostrar slide'}
-                    >
-                      {slide.active ? <Eye size={16} className="text-green-600" /> : <EyeOff size={16} className="text-gray-400" />}
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleReorder(idx, 'up')} disabled={idx === 0}><ArrowUp size={16} /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleReorder(idx, 'down')} disabled={idx === slides.length - 1}><ArrowDown size={16} /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => openEditSlideModal(slide)}><Edit size={16} className="text-blue-600" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteSlide(slide.id)}><Trash2 size={16} className="text-red-600" /></Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleToggleSlideActive(slide)}
+                        title={slide.active ? 'Ocultar slide' : 'Mostrar slide'}
+                      >
+                        {slide.active ? <Eye size={16} className="text-green-600" /> : <EyeOff size={16} className="text-gray-400" />}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleReorder(idx, 'up')} disabled={idx === 0}><ArrowUp size={16} /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleReorder(idx, 'down')} disabled={idx === slides.length - 1}><ArrowDown size={16} /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditSlideModal(slide)}><Edit size={16} className="text-blue-600" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteSlide(slide.id)}><Trash2 size={16} className="text-red-600" /></Button>
+                    </div>
                   </div>
                 </div>
               ))
@@ -691,30 +696,33 @@ export default function AdminConfiguracionPage() {
               <p className="text-gray-500 text-sm py-4">No hay mensajes configurados.</p>
             ) : (
               marquees.map((mq, idx) => (
-                <div key={mq.id} className="flex items-center justify-between p-3 bg-gray-50 rounded border">
-                  <div className="flex-1 truncate pr-4 text-sm font-medium">
+                <div key={mq.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  <div className="flex-1 truncate text-sm font-medium text-gray-900">
                     {mq.message}
                   </div>
                   
-                  {mq.active ? (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Activo</span>
-                  ) : (
-                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Inactivo</span>
-                  )}
+                  <div className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-0 border-gray-200">
+                    {mq.active ? (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-green-100 text-green-800">Activo</span>
+                    ) : (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-bold bg-gray-100 text-gray-800">Inactivo</span>
+                    )}
 
-                  <div className="flex items-center gap-2 ml-4">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleToggleMarqueeActive(mq)}
-                      title={mq.active ? 'Ocultar mensaje' : 'Mostrar mensaje'}
-                    >
-                      {mq.active ? <Eye size={16} className="text-green-600" /> : <EyeOff size={16} className="text-gray-400" />}
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleReorderMarquee(idx, 'up')} disabled={idx === 0}><ArrowUp size={16} /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleReorderMarquee(idx, 'down')} disabled={idx === marquees.length - 1}><ArrowDown size={16} /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => openEditMarqueeModal(mq)}><Edit size={16} className="text-blue-600" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteMarquee(mq.id)}><Trash2 size={16} className="text-red-600" /></Button>
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8"
+                        onClick={() => handleToggleMarqueeActive(mq)}
+                        title={mq.active ? 'Ocultar mensaje' : 'Mostrar mensaje'}
+                      >
+                        {mq.active ? <Eye size={16} className="text-green-600" /> : <EyeOff size={16} className="text-gray-400" />}
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleReorderMarquee(idx, 'up')} disabled={idx === 0}><ArrowUp size={16} /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleReorderMarquee(idx, 'down')} disabled={idx === marquees.length - 1}><ArrowDown size={16} /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditMarqueeModal(mq)}><Edit size={16} className="text-blue-600" /></Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteMarquee(mq.id)}><Trash2 size={16} className="text-red-600" /></Button>
+                    </div>
                   </div>
                 </div>
               ))
