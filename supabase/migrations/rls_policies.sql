@@ -78,28 +78,50 @@ CREATE POLICY "Wholesale user can read own record"
   FOR SELECT
   USING (auth.uid()::text = "authId");
 
--- Order: un mayorista puede leer sus propias órdenes
+-- Order: un mayorista puede leer SÓLO sus propias órdenes.
+--
+-- ⚠ FUGA DE PII CORREGIDA (2026-08-21) ⚠
+-- La versión anterior terminaba en `OR "wholesaleUserId" IS NULL`. La intención
+-- era permitir consultar pedidos de mostrador, pero TODO pedido retail tiene ese
+-- campo en NULL por definición, así que la condición era verdadera para ellos y
+-- la tabla entera quedaba legible con la anon key pública: nombre y teléfono de
+-- clientes reales salían con un simple GET sin autenticar a /rest/v1/Order.
+-- Verificado en vivo y corregido. Ningún código lee Order/OrderItem por
+-- supabase-js: todo pasa por Prisma (conexión directa, que no aplica RLS), así
+-- que estrechar esto no rompe ninguna funcionalidad.
+--
+-- Reglas al escribir políticas aquí:
+--   · Nunca añadir `OR <col> IS NULL` sobre la columna que define la propiedad
+--     de la fila: convierte "sin dueño" en "de todos".
+--   · Acotar con TO authenticated y exigir auth.uid() IS NOT NULL, para que un
+--     auth.uid() nulo (anon) no pueda cuadrar con nada.
+DROP POLICY IF EXISTS "Wholesale user can read own orders" ON "public"."Order";
 CREATE POLICY "Wholesale user can read own orders"
   ON "public"."Order"
   FOR SELECT
+  TO authenticated
   USING (
-    "wholesaleUserId" IN (
+    auth.uid() IS NOT NULL
+    AND "wholesaleUserId" IN (
       SELECT id FROM "public"."WholesaleUser"
       WHERE "authId" = auth.uid()::text
     )
-    OR "wholesaleUserId" IS NULL
   );
 
--- OrderItem: accesible si la orden padre es del usuario
+-- OrderItem: accesible sólo si la orden padre es del usuario.
+-- Mismo arreglo: el LEFT JOIN + `OR o."wholesaleUserId" IS NULL` filtraba los
+-- items de todos los pedidos retail. Ahora es INNER JOIN y sin cláusula NULL.
+DROP POLICY IF EXISTS "Wholesale user can read own order items" ON "public"."OrderItem";
 CREATE POLICY "Wholesale user can read own order items"
   ON "public"."OrderItem"
   FOR SELECT
+  TO authenticated
   USING (
-    "orderId" IN (
+    auth.uid() IS NOT NULL
+    AND "orderId" IN (
       SELECT o.id FROM "public"."Order" o
-      LEFT JOIN "public"."WholesaleUser" wu ON wu.id = o."wholesaleUserId"
+      JOIN "public"."WholesaleUser" wu ON wu.id = o."wholesaleUserId"
       WHERE wu."authId" = auth.uid()::text
-         OR o."wholesaleUserId" IS NULL
     )
   );
 
@@ -141,3 +163,36 @@ CREATE POLICY "Public can read active instagram posts"
 -- en ninguna tabla. Todo write va por Prisma (service_role) desde
 -- las API routes de Next.js. Esto es intencional y seguro:
 -- el service_role bypasa RLS por definición en Supabase.
+
+-- ═══════════════════════════════════════════
+-- TABLAS QUE SE HABÍAN ACTIVADO SÓLO EN VIVO
+-- (documentadas aquí el 2026-08-21 al auditar pg_policies; el estado real de
+--  Postgres ya las tenía así, esto sólo pone el fichero al día para que el
+--  repo sea la fuente de verdad y una restauración no las deje sin RLS)
+-- ═══════════════════════════════════════════
+
+ALTER TABLE "public"."ProductVariant"  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."DiscountProduct" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."MarqueeMessage"  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."LoginAttempt"    ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "product_variant_public" ON "public"."ProductVariant";
+CREATE POLICY "product_variant_public"
+  ON "public"."ProductVariant"
+  FOR SELECT
+  USING (active = true);
+
+DROP POLICY IF EXISTS "discount_product_public" ON "public"."DiscountProduct";
+CREATE POLICY "discount_product_public"
+  ON "public"."DiscountProduct"
+  FOR SELECT
+  USING (true);
+
+DROP POLICY IF EXISTS "marquee_public" ON "public"."MarqueeMessage";
+CREATE POLICY "marquee_public"
+  ON "public"."MarqueeMessage"
+  FOR SELECT
+  USING (active = true);
+
+-- LoginAttempt: RLS activo y CERO políticas a propósito → deny-all para anon.
+-- Sólo se escribe/lee desde el servidor vía Prisma. Igual que ImageBandeja.
