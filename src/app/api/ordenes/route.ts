@@ -4,16 +4,27 @@ import { prisma } from '@/lib/prisma';
 import { getSessionResult } from '@/lib/auth/carlin-session';
 import { getSiteConfig } from '@/lib/site-config';
 import { getWelcomeDiscount } from '@/lib/discounts/welcome';
+import { validateCoupon } from '@/lib/discounts/coupon';
+import { resolveOrderLines, subtotalOf, OrderLineError } from '@/lib/pricing/order-lines';
 import { formatCOP, computeWelcomeDiscountAmount } from '@/lib/utils/carlin-pricing';
 
+/**
+ * Del cliente sólo se aceptan QUÉ se pide y a nombre de quién.
+ *
+ * `price`, `subtotal`, `total` y `couponDiscountAmount` siguen admitiéndose
+ * porque el carrito los envía, pero son puramente informativos: el importe se
+ * recalcula entero en el servidor (ver `resolveOrderLines` y `validateCoupon`).
+ * Antes se guardaban tal cual y un pedido de un producto de 45.000 podía
+ * crearse con total 1 enviando `price: 1`.
+ */
 const orderSchema = z.object({
   items: z.array(z.object({
-    productId: z.string(),
+    productId: z.string().min(1),
     variantId: z.string().nullable().optional(),
     colorName: z.string().nullable().optional(),
     colorHex: z.string().nullable().optional(),
-    name: z.string(),
-    price: z.number(),
+    name: z.string().optional(),
+    price: z.number().optional(),
     quantity: z.number().int().positive(),
     imageUrl: z.string().optional(),
   })).min(1),
@@ -22,8 +33,8 @@ const orderSchema = z.object({
   couponLabel: z.string().nullable().optional(),
   couponDiscountAmount: z.number().optional(),
   welcomeDiscountAmount: z.number().optional(),
-  total: z.number().positive(),
-  priceLevel: z.enum(['retail', 'wholesale', 'distributor']),
+  total: z.number().optional(),
+  priceLevel: z.enum(['retail', 'wholesale', 'distributor']).optional(),
   customerName: z.string().min(2),
   customerPhone: z.string().min(7),
 });
@@ -33,7 +44,6 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const validated = orderSchema.parse(body);
 
-    // Get session to securely determine if this is a wholesale/distributor user
     const safeConfig = await getSiteConfig();
 
     const sessionResult = await getSessionResult(safeConfig);
@@ -44,19 +54,42 @@ export async function POST(request: NextRequest) {
     // 'retail' aunque el usuario sea mayorista.
     const priceLevel = sessionResult.priceLevel;
 
-    // Determine the Prisma enum value for priceLevel
     const prismaPriceLevel =
       priceLevel === 'distributor' ? 'DISTRIBUTOR' :
       priceLevel === 'wholesale' ? 'WHOLESALE' : 'RETAIL';
 
-    // ── Descuento de bienvenida ────────────────────────────────────────
-    // Se recalcula aquí desde la sesión y la config: lo que mande el cliente
-    // en `welcomeDiscountAmount` es sólo informativo. Si no califica, no se
-    // aplica por más que el carrito lo pida.
-    const subtotal = validated.subtotal ?? validated.items.reduce((acc, i) => acc + i.price * i.quantity, 0);
-    const couponDiscountAmount = validated.couponDiscountAmount ?? 0;
+    // ── Precios autoritativos ──────────────────────────────────────────
+    // Se recargan los productos de la base de datos y se recalcula cada línea
+    // con el precio que corresponde a este nivel. Lo que mandó el carrito en
+    // `price`/`subtotal` no se usa para cobrar.
+    const lines = await resolveOrderLines(validated.items, priceLevel);
+    const subtotal = subtotalOf(lines);
+
+    // ── Cupón ──────────────────────────────────────────────────────────
+    // Se revalida el código contra las líneas ya recalculadas. Si dejó de ser
+    // válido entre el carrito y el envío, se avisa en lugar de cobrar de más.
+    let couponDiscountAmount = 0;
+    let appliedCouponCode: string | null = null;
+    let appliedCouponLabel: string | null = null;
+    if (validated.couponCode?.trim()) {
+      const outcome = await validateCoupon({
+        code: validated.couponCode,
+        lines,
+        priceLevel,
+      });
+      if (!outcome.ok) {
+        return NextResponse.json({ error: outcome.error }, { status: 400 });
+      }
+      couponDiscountAmount = outcome.coupon.discountAmount;
+      appliedCouponCode = outcome.coupon.couponCode;
+      appliedCouponLabel = outcome.coupon.label;
+    }
+
     const totalAfterCoupon = Math.max(0, subtotal - couponDiscountAmount);
 
+    // ── Descuento de bienvenida ────────────────────────────────────────
+    // Se recalcula desde la sesión y la config: lo que mande el cliente en
+    // `welcomeDiscountAmount` es sólo informativo.
     const welcomeDiscount = await getWelcomeDiscount(sessionResult.user, safeConfig);
     const welcomeDiscountAmount = welcomeDiscount
       ? computeWelcomeDiscountAmount(totalAfterCoupon, welcomeDiscount.percentage)
@@ -79,13 +112,13 @@ export async function POST(request: NextRequest) {
           welcomeDiscountPct: welcomeDiscount ? welcomeDiscount.percentage : null,
           welcomeDiscountAmount: welcomeDiscountAmount > 0 ? welcomeDiscountAmount : null,
           items: {
-            create: validated.items.map(i => ({
-              productId: i.productId,
-              variantId: i.variantId || null,
-              name: i.colorName ? `${i.name} (${i.colorName})` : i.name,
-              priceSnapshot: i.price,
-              quantity: i.quantity,
-              imageUrl: i.imageUrl,
+            create: lines.map(l => ({
+              productId: l.productId,
+              variantId: l.variantId,
+              name: l.colorName ? `${l.productName} (${l.colorName})` : l.productName,
+              priceSnapshot: l.unitPrice,
+              quantity: l.quantity,
+              imageUrl: l.imageUrl ?? undefined,
             }))
           }
         }
@@ -120,12 +153,12 @@ export async function POST(request: NextRequest) {
       msg += `¡Hola Carlin! Soy distribuidor y quiero hacer el siguiente pedido:\n\n`;
       msg += `⭐ Pedido DISTRIBUIDOR #${orderNumber}\n`;
     }
-    
-    validated.items.forEach(item => {
-      const colorLabel = item.colorName ? ` (Color: ${item.colorName})` : '';
-      msg += `• ${item.name}${colorLabel} x${item.quantity} = ${formatCOP(item.price * item.quantity)}\n`;
+
+    lines.forEach(l => {
+      const colorLabel = l.colorName ? ` (Color: ${l.colorName})` : '';
+      msg += `• ${l.productName}${colorLabel} x${l.quantity} = ${formatCOP(l.lineTotal)}\n`;
     });
-    
+
     msg += `─────────────────────\n`;
 
     // El subtotal se muestra si hubo cualquier descuento, para que se entienda
@@ -134,8 +167,8 @@ export async function POST(request: NextRequest) {
       msg += `Subtotal: ${formatCOP(subtotal)}\n`;
     }
 
-    if (couponDiscountAmount > 0 && validated.couponCode) {
-      msg += `🏷️ Cupón aplicado (${validated.couponCode}${validated.couponLabel ? ` - ${validated.couponLabel}` : ''}): -${formatCOP(couponDiscountAmount)}\n`;
+    if (couponDiscountAmount > 0 && appliedCouponCode) {
+      msg += `🏷️ Cupón aplicado (${appliedCouponCode}${appliedCouponLabel ? ` - ${appliedCouponLabel}` : ''}): -${formatCOP(couponDiscountAmount)}\n`;
     }
 
     if (welcomeDiscountAmount > 0 && welcomeDiscount) {
@@ -157,13 +190,16 @@ export async function POST(request: NextRequest) {
     const whatsappNumber = process.env.NEXT_PUBLIC_WHATSAPP_NUMBER || '573000000000';
     const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(msg)}`;
 
-    return NextResponse.json({ orderId: order.id, whatsappUrl });
-    
-  } catch (error: any) {
-    console.error('Order creation error:', error);
+    return NextResponse.json({ orderId: order.id, whatsappUrl, total: finalTotal });
+
+  } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: 'Datos inválidos', details: (error as any).errors }, { status: 400 });
+      return NextResponse.json({ error: 'Datos inválidos', details: error.issues }, { status: 400 });
     }
+    if (error instanceof OrderLineError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+    console.error('Order creation error:', error);
     return NextResponse.json({ error: 'Error interno al procesar el pedido' }, { status: 500 });
   }
 }

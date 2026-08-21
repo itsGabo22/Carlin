@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkAdminAuth } from '@/proxy';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
+// Import ESM estático en lugar del `require('resend')` que había dentro de la
+// función. Se comprobó que Turbopack empaqueta la librería en el chunk de la
+// ruta en los dos casos, así que esto NO arregla ningún fallo de carga: es sólo
+// coherencia (el resto del fichero es ESM) y evitar un `require` de CJS en un
+// módulo ESM, que es el tipo de cosa que rompe al cambiar de bundler.
+import { Resend } from 'resend';
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -87,7 +93,6 @@ async function sendEmail(to: string, subject: string, text: string) {
   }
 
   try {
-    const { Resend } = require('resend');
     const resend = new Resend(apiKey);
     await resend.emails.send({
       from: 'Carlin Cosméticos <no-reply@' + (process.env.RESEND_DOMAIN || 'carlincosmeticos.com') + '>',
