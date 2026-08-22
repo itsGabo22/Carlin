@@ -196,3 +196,11 @@ CREATE POLICY "marquee_public"
 
 -- LoginAttempt: RLS activo y CERO políticas a propósito → deny-all para anon.
 -- Sólo se escribe/lee desde el servidor vía Prisma. Igual que ImageBandeja.
+
+-- ── Formulario público de /contacto (añadida 2026-08-21) ──────────
+-- ContactSubmission: RLS activo y CERO políticas a propósito → deny-all para
+-- anon/authenticated. El formulario público escribe vía POST /api/contacto,
+-- que usa Prisma (service_role) desde el servidor, nunca supabase-js desde el
+-- cliente. Mismo patrón que LoginAttempt: nadie necesita leer/escribir esto
+-- con la anon key.
+ALTER TABLE "public"."ContactSubmission" ENABLE ROW LEVEL SECURITY;

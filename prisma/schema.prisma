@@ -318,3 +318,16 @@ model MarqueeMessage {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+/// Mensajes del formulario público de /contacto. Se guarda SIEMPRE, incluso si
+/// el envío del correo de notificación a Carlin falla o Resend no está
+/// configurado (`emailSent = false`) — así ningún mensaje se pierde.
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  message   String
+  emailSent Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
