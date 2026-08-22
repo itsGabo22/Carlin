@@ -57,21 +57,25 @@ export async function getSessionResult(config: SiteConfig): Promise<SessionResul
   const welcomeDiscount = await getWelcomeDiscount(wholesaleUser, config);
   const showWelcomePanel = !wholesaleUser.welcomeSeenAt;
 
-  if (wholesaleUser.role === 'DISTRIBUIDOR') {
-    return {
-      user: wholesaleUser, priceLevel: 'distributor', isActive: true, isPending: false,
-      welcomeDiscount, showWelcomePanel,
-    };
-  }
-
-  if (wholesaleUser.role === 'MAYORISTA') {
-    return {
-      user: wholesaleUser, priceLevel: 'wholesale', isActive: true, isPending: false,
-      welcomeDiscount, showWelcomePanel,
-    };
-  }
-
-  return { ...ANONYMOUS, user: wholesaleUser };
+  // Toda cuenta mayorista aprobada y activa tiene el MISMO nivel base.
+  //
+  // Antes se ramificaba aquí por `wholesaleUser.role`: MAYORISTA → 'wholesale'
+  // y DISTRIBUIDOR → 'distributor'. Ya no: "Distribuidor" dejó de ser un tipo
+  // de cuenta y el precio de distribuidor se gana por tamaño de pedido, no por
+  // registro (ver `resolveWholesaleTier`). El campo `role` se conserva en la
+  // base de datos por historia, pero NO decide ningún precio.
+  //
+  // El escalado a 'distributor' no puede vivir en la sesión porque depende del
+  // carrito, que la sesión no conoce: lo resuelve el servidor al cotizar el
+  // carrito y al crear el pedido.
+  return {
+    user: wholesaleUser,
+    priceLevel: 'wholesale',
+    isActive: true,
+    isPending: false,
+    welcomeDiscount,
+    showWelcomePanel,
+  };
 }
 
 export async function requireWholesaleAuth(): Promise<WholesaleUser> {

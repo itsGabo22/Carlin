@@ -553,22 +553,34 @@ export default function AdminConfiguracionPage() {
             <h2 className="text-lg font-semibold border-b pb-2">Reglas de Mayoristas</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Mínimo Mayorista ($)</label>
+                <label className="text-sm font-medium">Pedido mínimo mayorista ($)</label>
                 <Input 
                   type="number" 
                   required 
                   value={config.wholesaleMinOrder} 
                   onChange={e => setConfig({...config, wholesaleMinOrder: parseFloat(e.target.value)})} 
                 />
+                <p className="text-xs text-gray-500">
+                  Por debajo de este total un mayorista no puede confirmar el pedido.
+                </p>
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Mínimo Distribuidor ($)</label>
+                {/*
+                  Este campo dejó de ser "el mínimo del otro tipo de cuenta":
+                  ahora es el umbral a partir del cual CUALQUIER mayorista pasa
+                  automáticamente a precio de distribuidor.
+                */}
+                <label className="text-sm font-medium">Umbral precio distribuidor ($)</label>
                 <Input 
                   type="number" 
                   required 
                   value={config.distributorMinOrder} 
                   onChange={e => setConfig({...config, distributorMinOrder: parseFloat(e.target.value)})} 
                 />
+                <p className="text-xs text-gray-500">
+                  Desde este total, el pedido se cobra al precio de distribuidor
+                  automáticamente. Aplica a toda cuenta mayorista aprobada.
+                </p>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Días de inactividad</label>

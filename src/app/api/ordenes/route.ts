@@ -6,6 +6,7 @@ import { getSiteConfig } from '@/lib/site-config';
 import { getWelcomeDiscount } from '@/lib/discounts/welcome';
 import { validateCoupon } from '@/lib/discounts/coupon';
 import { resolveOrderLines, subtotalOf, OrderLineError } from '@/lib/pricing/order-lines';
+import { resolveWholesaleTier, minimumNotMetMessage } from '@/lib/pricing/wholesale-tier';
 import { formatCOP, computeWelcomeDiscountAmount } from '@/lib/utils/carlin-pricing';
 
 /**
@@ -49,20 +50,51 @@ export async function POST(request: NextRequest) {
     const sessionResult = await getSessionResult(safeConfig);
     const wholesaleUserId = sessionResult.user?.id;
 
-    // El nivel de precio lo decide la SESIÓN, no el cliente: `validated.priceLevel`
+    // El nivel BASE lo decide la SESIÓN, no el cliente: `validated.priceLevel`
     // llega del carrito y podría venir manipulado o, como pasaba, congelado en
-    // 'retail' aunque el usuario sea mayorista.
-    const priceLevel = sessionResult.priceLevel;
-
-    const prismaPriceLevel =
-      priceLevel === 'distributor' ? 'DISTRIBUTOR' :
-      priceLevel === 'wholesale' ? 'WHOLESALE' : 'RETAIL';
+    // 'retail' aunque el usuario sea mayorista. Sólo puede valer 'retail' o
+    // 'wholesale': el precio de distribuidor ya no lo concede la cuenta.
+    const baseLevel = sessionResult.priceLevel;
 
     // ── Precios autoritativos ──────────────────────────────────────────
     // Se recargan los productos de la base de datos y se recalcula cada línea
     // con el precio que corresponde a este nivel. Lo que mandó el carrito en
     // `price`/`subtotal` no se usa para cobrar.
-    const lines = await resolveOrderLines(validated.items, priceLevel);
+    const baseLines = await resolveOrderLines(validated.items, baseLevel);
+
+    // ── Tramo de precio según el tamaño del pedido ─────────────────────
+    // El subtotal se mide sobre las líneas ya recalculadas desde la base de
+    // datos, así que ni el umbral ni el tramo se pueden forzar desde el
+    // cliente: mandar `total: 1` o `priceLevel: 'distributor'` no cambia nada.
+    const tier = resolveWholesaleTier({
+      baseLevel,
+      baseSubtotal: subtotalOf(baseLines),
+      config: safeConfig,
+    });
+
+    if (!tier.meetsMinimum) {
+      return NextResponse.json(
+        {
+          error: minimumNotMetMessage(tier, formatCOP),
+          minimumRequired: tier.minimumRequired,
+          missing: tier.missing,
+          subtotal: tier.baseSubtotal,
+        },
+        { status: 400 }
+      );
+    }
+
+    const priceLevel = tier.priceLevel;
+
+    const prismaPriceLevel =
+      priceLevel === 'distributor' ? 'DISTRIBUTOR' :
+      priceLevel === 'wholesale' ? 'WHOLESALE' : 'RETAIL';
+
+    // Si el pedido alcanzó el tramo de distribuidor hay que resolver las líneas
+    // otra vez: las de `baseLines` llevan el precio mayorista.
+    const lines = tier.escalated
+      ? await resolveOrderLines(validated.items, priceLevel)
+      : baseLines;
     const subtotal = subtotalOf(lines);
 
     // ── Cupón ──────────────────────────────────────────────────────────
@@ -150,8 +182,11 @@ export async function POST(request: NextRequest) {
       msg += `¡Hola Carlin! Soy mayorista y quiero hacer el siguiente pedido:\n\n`;
       msg += `🏷️ Pedido MAYORISTA #${orderNumber}\n`;
     } else {
-      msg += `¡Hola Carlin! Soy distribuidor y quiero hacer el siguiente pedido:\n\n`;
-      msg += `⭐ Pedido DISTRIBUIDOR #${orderNumber}\n`;
+      // El tramo se ganó por el TAMAÑO del pedido, no por ser "distribuidor":
+      // el mensaje lo dice así para que la tienda entienda de dónde sale.
+      msg += `¡Hola Carlin! Soy mayorista y quiero hacer el siguiente pedido:\n\n`;
+      msg += `⭐ Pedido MAYORISTA #${orderNumber} — PRECIO DISTRIBUIDOR\n`;
+      msg += `(pedido desde ${formatCOP(tier.escalationThreshold)})\n`;
     }
 
     lines.forEach(l => {
@@ -180,7 +215,10 @@ export async function POST(request: NextRequest) {
     } else if (priceLevel === 'wholesale') {
       msg += `💰 Total mayorista: ${formatCOP(finalTotal)}\n\n`;
     } else {
-      msg += `💰 Total distribuidor: ${formatCOP(finalTotal)}\n\n`;
+      msg += `💰 Total con precio distribuidor: ${formatCOP(finalTotal)}\n`;
+      // Deja constancia de por qué el total es menor que el subtotal que el
+      // cliente vio en el catálogo (allí los precios son los de mayorista).
+      msg += `   (a precio mayorista habría sido ${formatCOP(tier.baseSubtotal)})\n\n`;
     }
 
     msg += `📞 Mis datos:\n`;

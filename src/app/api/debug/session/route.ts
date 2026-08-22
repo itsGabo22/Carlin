@@ -19,13 +19,10 @@ export async function GET(req: Request) {
       where: { authId: session.user.id },
     });
     
-    let priceLevel = 'retail';
-    
-    if (user?.role === 'MAYORISTA' && user.approved) {
-      priceLevel = 'wholesale';
-    } else if (user?.role === 'DISTRIBUIDOR' && user.approved) {
-      priceLevel = 'distributor';
-    }
+    // Nivel BASE de la cuenta. Ya no depende de `role`: cualquier cuenta
+    // aprobada es mayorista, y el tramo de distribuidor lo decide el tamaño
+    // del pedido (`resolveWholesaleTier`), que aquí no se conoce.
+    const priceLevel = user?.approved ? 'wholesale' : 'retail';
     
     return NextResponse.json({
       priceLevel,

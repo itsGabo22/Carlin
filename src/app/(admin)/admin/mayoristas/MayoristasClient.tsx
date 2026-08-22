@@ -23,10 +23,13 @@ export default function MayoristasClient({
   inactivityDays: number;
 }) {
   const [users, setUsers] = useState<WholesaleUser[]>(initialUsers);
-  const [tab, setTab] = useState<'PENDING' | 'MAYORISTA' | 'DISTRIBUIDOR' | 'INACTIVE' | 'ALL'>('PENDING');
+  // Ya no hay pestaña de distribuidores: "Distribuidor" dejó de ser un tipo de
+  // cuenta. El precio de distribuidor se gana por tamaño de pedido, así que se
+  // ve en el pedido (/admin/pedidos), no en la ficha de la cuenta.
+  const [tab, setTab] = useState<'PENDING' | 'MAYORISTA' | 'INACTIVE' | 'ALL'>('PENDING');
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
-  const handleAction = async (id: string, action: string, role?: string) => {
+  const handleAction = async (id: string, action: string) => {
     if (!confirm(`¿Estás seguro de realizar esta acción?`)) return;
 
     setLoadingAction(id);
@@ -34,7 +37,7 @@ export default function MayoristasClient({
       const res = await fetch(`/api/admin/mayoristas/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, role })
+        body: JSON.stringify({ action })
       });
 
       if (res.ok) {
@@ -63,8 +66,7 @@ export default function MayoristasClient({
 
       const isActive = isUserActive(u, inactivityDays);
       if (tab === 'INACTIVE') return u.approved && !isActive;
-      if (tab === 'MAYORISTA') return isActive && u.role === 'MAYORISTA';
-      if (tab === 'DISTRIBUIDOR') return isActive && u.role === 'DISTRIBUIDOR';
+      if (tab === 'MAYORISTA') return isActive && u.approved;
 
       return false;
     });
@@ -89,13 +91,6 @@ export default function MayoristasClient({
           className={`shrink-0 text-xs sm:text-sm h-9 px-3 ${tab === 'MAYORISTA' ? 'bg-brand-pink hover:bg-brand-pink-dark text-white' : 'text-gray-600'}`}
         >
           Mayoristas Activos
-        </Button>
-        <Button
-          variant={tab === 'DISTRIBUIDOR' ? 'primary' : 'ghost'}
-          onClick={() => setTab('DISTRIBUIDOR')}
-          className={`shrink-0 text-xs sm:text-sm h-9 px-3 ${tab === 'DISTRIBUIDOR' ? 'bg-brand-pink hover:bg-brand-pink-dark text-white' : 'text-gray-600'}`}
-        >
-          Distribuidores Activos
         </Button>
         <Button
           variant={tab === 'INACTIVE' ? 'primary' : 'ghost'}
@@ -139,10 +134,8 @@ export default function MayoristasClient({
                     </div>
                   </div>
 
-                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                    user.role === 'DISTRIBUIDOR' ? 'bg-brand-distributor/10 text-brand-distributor-dark' : 'bg-brand-wholesale/10 text-brand-wholesale-dark'
-                  }`}>
-                    {user.role}
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-brand-wholesale/10 text-brand-wholesale-dark">
+                    MAYORISTA
                   </span>
                 </div>
 
@@ -224,19 +217,7 @@ export default function MayoristasClient({
                       </Button>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2 flex-1">
-                        <span className="text-xs text-gray-500">Rol:</span>
-                        <select
-                          className="text-xs border border-gray-200 rounded-lg p-1.5 bg-white font-medium flex-1"
-                          value={user.role}
-                          onChange={(e) => handleAction(user.id, 'change_role', e.target.value)}
-                          disabled={loadingAction === user.id}
-                        >
-                          <option value="MAYORISTA">Mayorista</option>
-                          <option value="DISTRIBUIDOR">Distribuidor</option>
-                        </select>
-                      </div>
+                    <div className="flex items-center justify-end gap-2">
                       <Button
                         size="sm"
                         variant="outline"
@@ -287,9 +268,8 @@ export default function MayoristasClient({
                     <div className="text-xs text-gray-400">{user.phone || 'N/A'}</div>
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${user.role === 'DISTRIBUIDOR' ? 'bg-brand-distributor/10 text-brand-distributor-dark' : 'bg-brand-wholesale/10 text-brand-wholesale-dark'
-                      }`}>
-                      {user.role}
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-brand-wholesale/10 text-brand-wholesale-dark">
+                      MAYORISTA
                     </span>
                   </td>
                   <td className="px-4 py-3">
@@ -352,15 +332,6 @@ export default function MayoristasClient({
                         </>
                       ) : (
                         <div className="flex flex-col items-end gap-2">
-                          <select
-                            className="text-xs border border-gray-200 rounded p-1"
-                            value={user.role}
-                            onChange={(e) => handleAction(user.id, 'change_role', e.target.value)}
-                            disabled={loadingAction === user.id}
-                          >
-                            <option value="MAYORISTA">Mayorista</option>
-                            <option value="DISTRIBUIDOR">Distribuidor</option>
-                          </select>
                           <Button
                             size="sm"
                             variant="outline"

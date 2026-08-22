@@ -19,20 +19,29 @@ export interface WelcomeDiscount {
   percentage: number;
 }
 
-/** Sólo mayoristas. Los distribuidores no reciben descuento de bienvenida. */
-const ELIGIBLE_ROLE = 'MAYORISTA';
-
 /**
- * Devuelve el descuento de bienvenida vigente para este usuario, o `null` si
- * no califica. Es la ÚNICA fuente de verdad: la usan por igual el layout (para
- * pintar el carrito y el panel de bienvenida) y `/api/ordenes` (para cobrar).
+ * Elegibilidad: CUALQUIER cuenta mayorista aprobada.
+ *
+ * Antes se exigía `role === 'MAYORISTA'` para excluir a los distribuidores.
+ * Esa exclusión perdió sentido cuando "Distribuidor" dejó de ser un tipo de
+ * cuenta: hoy sólo hay un tier mayorista y el precio de distribuidor se gana
+ * por tamaño de pedido (ver `resolveWholesaleTier`), así que filtrar por
+ * `role` dejaría fuera a cuentas idénticas al resto sólo por el valor legado
+ * que tengan guardado. Al hacer el cambio no había ninguna cuenta real con
+ * `role = DISTRIBUIDOR`, así que esto no altera la elegibilidad de nadie.
+ *
+ * Los candados que de verdad importan siguen intactos: `approved`, el sello
+ * `welcomeDiscountUsedAt` y "cero pedidos previos".
+ *
+ * Devuelve el descuento vigente para este usuario, o `null` si no califica. Es
+ * la ÚNICA fuente de verdad: la usan por igual el layout (para pintar el
+ * carrito y el panel de bienvenida) y `/api/ordenes` (para cobrar).
  */
 export async function getWelcomeDiscount(
-  user: Pick<WholesaleUser, 'id' | 'role' | 'approved' | 'welcomeDiscountUsedAt'> | null,
+  user: Pick<WholesaleUser, 'id' | 'approved' | 'welcomeDiscountUsedAt'> | null,
   config: Pick<SiteConfig, 'welcomeDiscountActive' | 'welcomeDiscountPercentage'>
 ): Promise<WelcomeDiscount | null> {
   if (!user || !user.approved) return null;
-  if (user.role !== ELIGIBLE_ROLE) return null;
   if (user.welcomeDiscountUsedAt) return null;
   if (!config.welcomeDiscountActive) return null;
 

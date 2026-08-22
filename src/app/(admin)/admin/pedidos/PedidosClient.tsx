@@ -67,7 +67,9 @@ export default function PedidosClient({ initialOrders }: { initialOrders: Order[
   const renderBadge = (level: string) => {
     switch (level) {
       case 'WHOLESALE': return <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-brand-pink text-white">Mayorista</span>;
-      case 'DISTRIBUTOR': return <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-brand-distributor text-white">Distribuidor</span>;
+      // Cuenta mayorista cuyo pedido alcanzó el umbral y se cobró al precio
+      // más bajo. No es un tipo de cliente distinto.
+      case 'DISTRIBUTOR': return <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-brand-distributor text-white">Precio distribuidor</span>;
       default: return <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-gray-100 text-gray-800">Público</span>;
     }
   };

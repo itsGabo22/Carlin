@@ -1,4 +1,4 @@
-import { Role, SiteConfig, Prisma } from '@prisma/client';
+import { Role, Prisma } from '@prisma/client';
 type Decimal = Prisma.Decimal;
 
 type PriceValue = Decimal | number | string;
@@ -13,6 +13,16 @@ export function formatCOP(amount: PriceValue): string {
   }).format(numericAmount);
 }
 
+/**
+ * Elige cuál de los tres precios del producto se cobra.
+ *
+ * OJO con el nombre de `userRole`: es un SELECTOR de columna de precio, no el
+ * rol de la cuenta. Todos los que llaman aquí lo derivan de un `PriceLevel`
+ * (ver `ROLE_BY_LEVEL` en `order-lines.ts` y los `ROLE_MAP` del catálogo), y
+ * ese nivel lo decide el servidor a partir de la sesión y del tamaño del
+ * pedido. Pasar `wholesaleUser.role` directamente sería un error: volvería a
+ * atar el precio al tipo de cuenta, que es justo lo que se quitó.
+ */
 export function getEffectivePrice(
   product: { retailPrice: PriceValue; wholesalePrice: PriceValue; distributorPrice: PriceValue },
   userRole?: Role | null
@@ -68,27 +78,14 @@ export function computeWelcomeDiscountAmount(base: number, percentage: number): 
   return Math.round(base * (percentage / 100));
 }
 
-export function checkMinimumOrder(
-  total: Decimal | number,
-  userRole: Role,
-  siteConfig: SiteConfig
-): { meetsMinimum: boolean; required: Decimal | number; missing: number } {
-  const numericTotal = Number(total);
-  let required = 0;
-
-  if (userRole === 'DISTRIBUIDOR') {
-    required = Number(siteConfig.distributorMinOrder);
-  } else if (userRole === 'MAYORISTA') {
-    required = Number(siteConfig.wholesaleMinOrder);
-  } else {
-    return { meetsMinimum: true, required: 0, missing: 0 };
-  }
-
-  const meetsMinimum = numericTotal >= required;
-  const missing = meetsMinimum ? 0 : required - numericTotal;
-
-  return { meetsMinimum, required, missing };
-}
+// `checkMinimumOrder(total, userRole, siteConfig)` vivía aquí: elegía el mínimo
+// según el `role` de la cuenta (DISTRIBUIDOR → distributorMinOrder). Se
+// eliminó por dos razones: (1) no se llamaba desde ningún sitio, así que el
+// mínimo no se estaba comprobando en ninguna parte, y (2) su regla ya no es la
+// del negocio, porque el mínimo es uno solo para todos y los 400.000 ahora
+// SUBEN el precio en lugar de ser el mínimo de otro tipo de cuenta.
+// Lo sustituye `resolveWholesaleTier` en `@/lib/pricing/wholesale-tier`, que sí
+// se usa en /api/ordenes, /api/carrito/cotizar y /api/cupones/validar.
 
 export function getApplicableDiscounts(
   product: { discounts?: any[] },

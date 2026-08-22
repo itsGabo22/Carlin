@@ -205,7 +205,7 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
                     Audiencia:{' '}
                     {d.audience === 'ALL' && <span className="font-semibold text-gray-800">Todos los clientes</span>}
                     {d.audience === 'WHOLESALE' && <span className="font-semibold text-brand-pink-dark">Solo Mayoristas</span>}
-                    {d.audience === 'DISTRIBUTOR' && <span className="font-semibold text-brand-distributor-dark">Solo Distribuidores</span>}
+                    {d.audience === 'DISTRIBUTOR' && <span className="font-semibold text-brand-distributor-dark">Solo pedidos con precio distribuidor</span>}
                   </span>
                 </div>
 
@@ -298,7 +298,7 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
                   <td className="px-4 py-3">
                     {d.audience === 'ALL' && <span className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">Todos</span>}
                     {d.audience === 'WHOLESALE' && <span className="text-xs bg-brand-pink/10 text-brand-pink-dark px-2 py-0.5 rounded-full">Mayoristas</span>}
-                    {d.audience === 'DISTRIBUTOR' && <span className="text-xs bg-brand-distributor/20 text-brand-distributor-dark font-medium px-2 py-0.5 rounded-full">Distribuidores</span>}
+                    {d.audience === 'DISTRIBUTOR' && <span className="text-xs bg-brand-distributor/20 text-brand-distributor-dark font-medium px-2 py-0.5 rounded-full">Precio distribuidor</span>}
                   </td>
                   <td className="px-4 py-3">
                     {d.active ? (
@@ -465,7 +465,9 @@ export function DescuentosClient({ initialDiscounts, products, categories }: {
                   </label>
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="radio" name="audience" value="DISTRIBUTOR" checked={formData.audience === 'DISTRIBUTOR'} onChange={() => setFormData(prev => ({ ...prev, audience: 'DISTRIBUTOR' }))} />
-                    <span className="text-xs sm:text-sm">Solo distribuidores aprobados</span>
+                    <span className="text-xs sm:text-sm">
+                      Solo pedidos que alcanzaron el precio de distribuidor
+                    </span>
                   </label>
                 </div>
               </fieldset>

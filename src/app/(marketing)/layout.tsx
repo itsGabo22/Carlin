@@ -25,7 +25,6 @@ export default async function MarketingLayout({
 
   const sessionResult = await getSessionResult(safeConfig);
 
-  const wholesaleTier = sessionResult.user?.role === 'DISTRIBUIDOR' ? 'DISTRIBUIDOR' : 'MAYORISTA';
   const showWelcomePanel = sessionResult.isActive && sessionResult.showWelcomePanel;
 
   return (
@@ -39,12 +38,8 @@ export default async function MarketingLayout({
       {showWelcomePanel && (
         <WelcomePanel
           name={sessionResult.user?.name ?? null}
-          tier={wholesaleTier}
-          minOrder={Number(
-            wholesaleTier === 'DISTRIBUIDOR'
-              ? safeConfig.distributorMinOrder
-              : safeConfig.wholesaleMinOrder
-          )}
+          minOrder={Number(safeConfig.wholesaleMinOrder)}
+          distributorThreshold={Number(safeConfig.distributorMinOrder)}
           welcomeDiscountPercentage={sessionResult.welcomeDiscount?.percentage ?? null}
           title={safeConfig.welcomeTitle}
           message={safeConfig.welcomeMessage}

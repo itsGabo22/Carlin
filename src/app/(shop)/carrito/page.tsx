@@ -5,10 +5,10 @@ import Image from 'next/image';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Trash2, Plus, Minus, ShoppingBag, Tag, CheckCircle2, Gift } from 'lucide-react';
+import { Trash2, Plus, Minus, ShoppingBag, Tag, CheckCircle2, Gift, TrendingDown, AlertCircle } from 'lucide-react';
 import { useCartStore } from '@/stores/cartStore';
 import { useSessionStore } from '@/stores/sessionStore';
-import { formatCOP, computeWelcomeDiscountAmount } from '@/lib/utils/carlin-pricing';
+import { formatCOP } from '@/lib/utils/carlin-pricing';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
@@ -18,6 +18,43 @@ const orderSchema = z.object({
 });
 
 type OrderFormValues = z.infer<typeof orderSchema>;
+
+/**
+ * Respuesta de `/api/carrito/cotizar`: el tramo, los umbrales y los importes
+ * calculados EN EL SERVIDOR con los precios de la base de datos.
+ *
+ * El carrito guarda el precio congelado al añadir cada producto (siempre el de
+ * mayorista, el del catálogo). Desde que el precio de distribuidor se gana por
+ * tamaño de pedido, ese precio deja de ser el que se cobra en cuanto el carrito
+ * pasa del umbral, así que los importes que se PINTAN salen de aquí y no de
+ * `getSubtotal()`. Reimplementar la regla en el cliente la desincronizaría (y
+ * el cliente no es fuente de verdad para dinero).
+ */
+interface Quote {
+  priceLevel: 'retail' | 'wholesale' | 'distributor';
+  escalated: boolean;
+  subtotal: number;
+  baseSubtotal: number;
+  meetsMinimum: boolean;
+  minimumRequired: number;
+  missing: number;
+  escalationThreshold: number;
+  missingForEscalation: number;
+  minimumMessage: string | null;
+  couponDiscountAmount: number;
+  couponError: string | null;
+  welcomeDiscountPercentage: number | null;
+  welcomeDiscountAmount: number;
+  total: number;
+  lines: {
+    productId: string;
+    variantId: string | null;
+    name: string;
+    unitPrice: number;
+    quantity: number;
+    lineTotal: number;
+  }[];
+}
 
 export default function CarritoPage() {
   const {
@@ -35,6 +72,8 @@ export default function CarritoPage() {
 
   const welcomeDiscountPercentage = useSessionStore((s) => s.welcomeDiscountPercentage);
 
+  const [quote, setQuote] = React.useState<Quote | null>(null);
+  const [isQuoting, setIsQuoting] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
   const [couponInput, setCouponInput] = React.useState('');
@@ -55,17 +94,91 @@ export default function CarritoPage() {
     setIsHydrated(true);
   }, []);
 
+  // Firma del carrito: sólo QUÉ se pide. Así la cotización se repite cuando
+  // cambian los productos o las cantidades, pero no en cada render.
+  const cartSignature = React.useMemo(
+    () =>
+      JSON.stringify(
+        items.map((i) => [i.productId, i.variantId ?? null, i.quantity]),
+      ) + `|${appliedCoupon?.couponCode ?? ''}`,
+    [items, appliedCoupon?.couponCode]
+  );
+
+  React.useEffect(() => {
+    if (!isHydrated) return;
+    if (items.length === 0) {
+      setQuote(null);
+      return;
+    }
+
+    let cancelled = false;
+    setIsQuoting(true);
+
+    fetch('/api/carrito/cotizar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items: items.map((i) => ({
+          productId: i.productId,
+          variantId: i.variantId || null,
+          quantity: i.quantity,
+        })),
+        couponCode: appliedCoupon?.couponCode ?? null,
+      }),
+    })
+      .then((r) => r.json().then((d) => ({ ok: r.ok, d })))
+      .then(({ ok, d }) => {
+        if (cancelled) return;
+        // Si la cotización falla se deja `quote` en null: la vista cae a los
+        // importes locales del carrito y el envío lo sigue validando el
+        // servidor, así que nunca se cobra por lo que se pintó aquí.
+        setQuote(ok ? (d as Quote) : null);
+      })
+      .catch(() => {
+        if (!cancelled) setQuote(null);
+      })
+      .finally(() => {
+        if (!cancelled) setIsQuoting(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [cartSignature, isHydrated, items, appliedCoupon?.couponCode]);
+
   if (!isHydrated) return null;
 
-  const subtotal = getSubtotal();
-  const discountAmount = getDiscountAmount();
-  // `getTotal()` sólo conoce el cupón; el descuento de bienvenida se calcula
-  // aquí porque depende de la sesión, no del carrito persistido en localStorage.
-  const totalAfterCoupon = getTotal();
-  const welcomeDiscountAmount = welcomeDiscountPercentage
-    ? computeWelcomeDiscountAmount(totalAfterCoupon, welcomeDiscountPercentage)
-    : 0;
-  const total = Math.max(0, totalAfterCoupon - welcomeDiscountAmount);
+  // Importes LOCALES: sólo se usan como respaldo mientras la cotización viaja
+  // (o si falla). Los precios del carrito están congelados al añadir, así que
+  // no conocen el escalado a precio distribuidor.
+  const localSubtotal = getSubtotal();
+  const localDiscountAmount = getDiscountAmount();
+
+  // Lo que se pinta sale de la cotización del servidor cuando la hay.
+  const subtotal = quote ? quote.subtotal : localSubtotal;
+  const discountAmount = quote ? quote.couponDiscountAmount : localDiscountAmount;
+  const welcomeDiscountAmount = quote ? quote.welcomeDiscountAmount : 0;
+  const total = quote ? quote.total : getTotal();
+  const effectivePriceLevel = quote ? quote.priceLevel : priceLevel;
+  const welcomePct = quote ? quote.welcomeDiscountPercentage : welcomeDiscountPercentage;
+  const blockedByMinimum = !!quote && !quote.meetsMinimum;
+
+  const PRICE_LEVEL_LABEL: Record<string, string> = {
+    retail: 'Detal',
+    wholesale: 'Mayorista',
+    distributor: 'Distribuidor',
+  };
+
+  /**
+   * Precio unitario a mostrar en cada línea. Sale de la cotización del
+   * servidor, porque `item.price` quedó congelado al añadir el producto y no
+   * refleja el escalado a precio distribuidor. Si no hay cotización todavía,
+   * se muestra el congelado.
+   */
+  const unitPriceOf = (item: { productId: string; variantId?: string | null; price: number }) =>
+    quote?.lines.find(
+      (l) => l.productId === item.productId && l.variantId === (item.variantId ?? null)
+    )?.unitPrice ?? item.price;
 
   const handleApplyCoupon = async () => {
     if (!couponInput.trim()) return;
@@ -111,6 +224,8 @@ export default function CarritoPage() {
 
   const onSubmit = async (data: OrderFormValues) => {
     if (items.length === 0) return;
+    // El servidor lo rechazaría igual; esto evita el viaje inútil.
+    if (quote && !quote.meetsMinimum) return;
     setIsSubmitting(true);
     setError(null);
 
@@ -208,7 +323,7 @@ export default function CarritoPage() {
                       </div>
                     )}
                     <div className="font-sans text-brand-pink-dark font-semibold mt-1">
-                      {formatCOP(item.price)}
+                      {formatCOP(unitPriceOf(item))}
                     </div>
                     
                     <div className="flex items-center gap-4 mt-3">
@@ -242,7 +357,7 @@ export default function CarritoPage() {
                       <Trash2 className="w-5 h-5" />
                     </button>
                     <div className="font-sans font-bold text-brand-text text-right mt-auto">
-                      {formatCOP(item.price * item.quantity)}
+                      {formatCOP(unitPriceOf(item) * item.quantity)}
                     </div>
                   </div>
                 </div>
@@ -256,8 +371,42 @@ export default function CarritoPage() {
               
               <div className="flex justify-between py-3 border-b border-gray-100 font-sans text-gray-600">
                 <span>Nivel de precio</span>
-                <span className="font-semibold text-brand-pink-dark capitalize">{priceLevel}</span>
+                <span
+                  className={`font-semibold ${
+                    effectivePriceLevel === 'distributor'
+                      ? 'text-brand-distributor-dark'
+                      : 'text-brand-pink-dark'
+                  }`}
+                >
+                  {PRICE_LEVEL_LABEL[effectivePriceLevel] ?? effectivePriceLevel}
+                </span>
               </div>
+
+              {/* Ya se ganó el precio de distribuidor por tamaño de pedido. */}
+              {quote?.escalated && (
+                <div className="mt-3 flex items-start gap-2 rounded-xl border border-brand-distributor/40 bg-brand-distributor/10 px-3 py-2.5">
+                  <TrendingDown className="mt-0.5 h-4 w-4 shrink-0 text-brand-distributor-dark" />
+                  <p className="text-[11px] leading-snug font-sans text-brand-distributor-dark">
+                    <strong className="font-bold">¡Precio de distribuidor aplicado!</strong> Tu
+                    pedido alcanzó {formatCOP(quote.escalationThreshold)}, así que cada producto
+                    baja a su precio de distribuidor. A precio mayorista este pedido habría
+                    costado {formatCOP(quote.baseSubtotal)}.
+                  </p>
+                </div>
+              )}
+
+              {/* Le falta poco: se le dice cuánto para el siguiente tramo. */}
+              {quote && quote.meetsMinimum && !quote.escalated && quote.missingForEscalation > 0 && (
+                <div className="mt-3 flex items-start gap-2 rounded-xl border border-brand-pink-light/40 bg-brand-cream px-3 py-2.5">
+                  <TrendingDown className="mt-0.5 h-4 w-4 shrink-0 text-brand-pink-dark" />
+                  <p className="text-[11px] leading-snug font-sans text-brand-pink-dark">
+                    Te faltan{' '}
+                    <strong className="font-bold">{formatCOP(quote.missingForEscalation)}</strong>{' '}
+                    para llegar a {formatCOP(quote.escalationThreshold)} y que todo tu pedido pase
+                    automáticamente a <strong className="font-bold">precio de distribuidor</strong>.
+                  </p>
+                </div>
+              )}
               
               <div className="space-y-2 py-3 border-b border-gray-100 font-sans text-sm text-gray-600">
                 <div className="flex justify-between">
@@ -279,7 +428,7 @@ export default function CarritoPage() {
                   <div className="flex justify-between text-brand-pink-dark font-semibold items-center gap-2">
                     <span className="flex items-center gap-1 min-w-0">
                       <Gift className="w-3.5 h-3.5 shrink-0" />
-                      <span className="truncate">Bienvenida ({welcomeDiscountPercentage}%)</span>
+                      <span className="truncate">Bienvenida ({welcomePct}%)</span>
                     </span>
                     <span className="shrink-0">-{formatCOP(welcomeDiscountAmount)}</span>
                   </div>
@@ -372,6 +521,34 @@ export default function CarritoPage() {
                   Solo usamos estos datos para identificar tu pedido.
                 </p>
 
+                {/*
+                  No llega al mínimo. El servidor bloquea el pedido de todas
+                  formas (/api/ordenes devuelve 400); esto sólo evita que el
+                  cliente lo descubra al final y le dice cuánto le falta.
+                */}
+                {blockedByMinimum && quote && (
+                  <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+                    <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                    <div className="font-sans text-xs leading-snug text-amber-900">
+                      <p className="font-bold">
+                        Te faltan {formatCOP(quote.missing)} para el pedido mínimo
+                      </p>
+                      <p className="mt-1">
+                        El pedido mínimo para mayoristas es{' '}
+                        {formatCOP(quote.minimumRequired)} y tu carrito suma{' '}
+                        {formatCOP(quote.baseSubtotal)}. Agrega{' '}
+                        {formatCOP(quote.missing)} más para poder confirmarlo.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {quote?.couponError && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs font-sans">
+                    {quote.couponError}
+                  </div>
+                )}
+
                 {error && (
                   <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm font-sans">
                     {error}
@@ -380,10 +557,14 @@ export default function CarritoPage() {
 
                 <Button 
                   type="submit" 
-                  disabled={isSubmitting}
-                  className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full font-bold shadow-md shadow-green-500/20 py-6"
+                  disabled={isSubmitting || isQuoting || blockedByMinimum}
+                  className="w-full bg-[#25D366] hover:bg-[#128C7E] text-white rounded-full font-bold shadow-md shadow-green-500/20 py-6 disabled:opacity-60"
                 >
-                  {isSubmitting ? 'Generando...' : 'Generar pedido y contactar por WhatsApp'}
+                  {isSubmitting
+                    ? 'Generando...'
+                    : blockedByMinimum && quote
+                      ? `Faltan ${formatCOP(quote.missing)} para el mínimo`
+                      : 'Generar pedido y contactar por WhatsApp'}
                 </Button>
               </form>
             </div>

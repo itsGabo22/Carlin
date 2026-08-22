@@ -11,8 +11,19 @@ const formSchema = z.object({
   city: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
-  role: z.enum(['MAYORISTA', 'DISTRIBUIDOR']),
 });
+
+/**
+ * Todo el que se registra queda como MAYORISTA. No hay tipo de cuenta que
+ * elegir: "Distribuidor" dejó de ser un track de registro y el precio de
+ * distribuidor se gana por tamaño de pedido (ver `resolveWholesaleTier`).
+ *
+ * Además, el `role` ya NO se lee del cuerpo de la petición. Antes sí, y quien
+ * se registraba podía elegir 'DISTRIBUIDOR' y quedarse con el precio más bajo
+ * en cuanto un admin aprobara la cuenta. Hoy `role` no decide precios, pero
+ * dejarlo fijo aquí evita que vuelva a ser un campo que el cliente controla.
+ */
+const REGISTRATION_ROLE = 'MAYORISTA' as const;
 
 export async function POST(req: Request) {
   try {
@@ -40,7 +51,7 @@ export async function POST(req: Request) {
       email_confirm: true,
       user_metadata: {
         name: data.name,
-        role: data.role,
+        role: REGISTRATION_ROLE,
       },
     });
 
@@ -70,7 +81,7 @@ export async function POST(req: Request) {
           taxId: data.taxId,
           phone: data.phone,
           city: data.city,
-          role: data.role,
+          role: REGISTRATION_ROLE,
           approved: false, // Must be approved by admin
         }
       });

@@ -17,7 +17,6 @@ const formSchema = z.object({
   email: z.string().email('Email inválido'),
   password: z.string().min(8, 'Mínimo 8 caracteres'),
   confirmPassword: z.string(),
-  role: z.enum(['MAYORISTA', 'DISTRIBUIDOR']),
 }).refine(data => data.password === data.confirmPassword, {
   message: "Las contraseñas no coinciden",
   path: ["confirmPassword"],
@@ -30,11 +29,8 @@ export default function RegistroMayoristaPage() {
   const [success, setSuccess] = useState(false);
   const [serverError, setServerError] = useState('');
 
-  const { register, handleSubmit, formState: { errors }, watch } = useForm<FormValues>({
+  const { register, handleSubmit, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: {
-      role: 'MAYORISTA'
-    }
   });
 
   const onSubmit = async (data: FormValues) => {
@@ -142,23 +138,34 @@ export default function RegistroMayoristaPage() {
             </div>
           </div>
 
+          {/*
+            Aquí había que elegir entre "Mayorista" y "Distribuidor". Ya no:
+            hay una sola cuenta mayorista y el precio de distribuidor se gana
+            por tamaño de pedido, así que en lugar de una decisión que el
+            cliente no puede tomar bien, se explica cómo funcionan los tramos.
+          */}
           <div className="pt-4 border-t border-gray-100">
-            <label className="block text-sm font-medium text-gray-700 mb-3">Tipo de cuenta *</label>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <label className="flex flex-col border rounded-xl p-4 cursor-pointer hover:border-brand-pink-light transition-colors has-[:checked]:border-brand-pink has-[:checked]:bg-brand-pink-light/5">
-                <div className="flex items-center gap-2 mb-1">
-                  <input type="radio" value="MAYORISTA" {...register('role')} className="text-brand-pink focus:ring-brand-pink accent-brand-pink" />
-                  <span className="font-sans font-bold text-gray-900">Mayorista</span>
-                </div>
-                <span className="text-xs text-gray-500 pl-6">Compras desde $200.000</span>
-              </label>
-              <label className="flex flex-col border rounded-xl p-4 cursor-pointer hover:border-brand-pink-light transition-colors has-[:checked]:border-brand-distributor has-[:checked]:bg-brand-distributor/5">
-                <div className="flex items-center gap-2 mb-1">
-                  <input type="radio" value="DISTRIBUIDOR" {...register('role')} className="text-brand-distributor focus:ring-brand-distributor accent-brand-distributor" />
-                  <span className="font-sans font-bold text-gray-900">Distribuidor</span>
-                </div>
-                <span className="text-xs text-gray-500 pl-6">Compras desde $400.000</span>
-              </label>
+            <div className="rounded-xl bg-brand-cream border border-brand-pink-light/40 p-4">
+              <p className="text-sm font-sans font-bold text-brand-pink-dark mb-2">
+                Cómo funcionan los precios mayoristas
+              </p>
+              <ul className="space-y-1.5 text-xs text-gray-600 font-sans">
+                <li className="flex gap-2">
+                  <span className="text-brand-pink-dark font-bold shrink-0">·</span>
+                  <span>
+                    Desde <strong className="text-brand-text">$200.000</strong> por pedido accedes
+                    a los precios de mayorista.
+                  </span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="text-brand-pink-dark font-bold shrink-0">·</span>
+                  <span>
+                    Y si un pedido llega a <strong className="text-brand-text">$400.000</strong>,
+                    recibes automáticamente el <strong className="text-brand-text">precio de
+                    distribuidor</strong>, aún más bajo. No hay que solicitarlo: se aplica solo.
+                  </span>
+                </li>
+              </ul>
             </div>
           </div>
 

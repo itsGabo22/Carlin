@@ -2,14 +2,16 @@
 
 import * as React from 'react';
 import Link from 'next/link';
-import { X, Gift, Sparkles, MessageCircle, ShoppingBag, BadgeCheck } from 'lucide-react';
+import { X, Gift, Sparkles, MessageCircle, ShoppingBag, BadgeCheck, TrendingDown } from 'lucide-react';
 import { formatCOP } from '@/lib/utils/carlin-pricing';
 
 interface WelcomePanelProps {
   /** Nombre a saludar (nombre de pila si viene completo). */
   name: string | null;
-  tier: 'MAYORISTA' | 'DISTRIBUIDOR';
+  /** Mínimo para desbloquear el precio mayorista (`wholesaleMinOrder`). */
   minOrder: number;
+  /** Desde este total el pedido pasa a precio distribuidor automáticamente. */
+  distributorThreshold: number;
   /** % de bienvenida real leído de la config; null si esta cuenta no lo tiene. */
   welcomeDiscountPercentage: number | null;
   /** Título editable desde /admin. Admite el token {nombre}. */
@@ -24,19 +26,18 @@ interface WelcomePanelProps {
   imageUrl?: string | null;
 }
 
+/**
+ * Antes había un `TIER_COPY` con dos entradas (Mayorista / Distribuidor) y el
+ * panel se pintaba según el `role` de la cuenta. Ya no hay dos tipos de
+ * cuenta: toda cuenta aprobada es mayorista y el precio de distribuidor se
+ * gana por tamaño de pedido, así que el panel explica los DOS TRAMOS en lugar
+ * de anunciar un tier.
+ */
 const TIER_COPY = {
-  MAYORISTA: {
-    label: 'Mayorista',
-    // Rosa Bloomshell. `ring` va sobre el degradado; `onWhite`, sobre el cuerpo.
-    ring: 'text-brand-pink-dark bg-white/85',
-    onWhite: 'text-brand-pink-dark bg-brand-cream',
-  },
-  DISTRIBUIDOR: {
-    label: 'Distribuidor',
-    // Lavanda de distribuidor, ya usada en el registro y el admin
-    ring: 'text-brand-distributor-dark bg-white/85',
-    onWhite: 'text-brand-distributor-dark bg-brand-distributor/10',
-  },
+  label: 'Mayorista',
+  // Rosa Bloomshell. `ring` va sobre el degradado; `onWhite`, sobre el cuerpo.
+  ring: 'text-brand-pink-dark bg-white/85',
+  onWhite: 'text-brand-pink-dark bg-brand-cream',
 } as const;
 
 /** Sustituye {nombre} por el nombre de pila; si no hay, limpia el hueco. */
@@ -51,8 +52,8 @@ function renderTitle(template: string, firstName: string | null): string {
 
 export function WelcomePanel({
   name,
-  tier,
   minOrder,
+  distributorThreshold,
   welcomeDiscountPercentage,
   title,
   message,
@@ -91,7 +92,7 @@ export function WelcomePanel({
   if (!visible) return null;
 
   const firstName = name?.trim().split(/\s+/)[0] ?? null;
-  const copy = TIER_COPY[tier];
+  const copy = TIER_COPY;
   const hasDiscount = !!welcomeDiscountPercentage && welcomeDiscountPercentage > 0;
 
   const headingText = title?.trim()
@@ -218,6 +219,18 @@ export function WelcomePanel({
             <p className="mt-1 text-xs leading-snug text-brand-text">
               Ya estás viendo los precios {copy.label.toLowerCase()} en todo el catálogo.
             </p>
+
+            <div className="mt-3 flex items-start gap-2 border-t border-brand-cream pt-3">
+              <TrendingDown className="mt-0.5 h-4 w-4 shrink-0 text-brand-distributor-dark" />
+              <p className="text-xs leading-snug text-brand-text">
+                Y cuando un pedido llega a{' '}
+                <strong className="font-bold text-brand-neutral-dark">
+                  {formatCOP(distributorThreshold)}
+                </strong>
+                , se le aplica el <strong className="font-bold text-brand-neutral-dark">precio
+                de distribuidor</strong> automáticamente. No hay que pedirlo.
+              </p>
+            </div>
           </div>
 
           <div>

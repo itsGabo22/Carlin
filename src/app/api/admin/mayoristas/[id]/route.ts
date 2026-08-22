@@ -16,7 +16,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
     const { id } = await params;
     const body = await req.json();
-    const { action, role } = body;
+    const { action } = body;
 
     const user = await prisma.wholesaleUser.findUnique({ where: { id } });
     if (!user) {
@@ -65,13 +65,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       return NextResponse.json(updatedUser);
     }
 
-    if (action === 'change_role' && role) {
-      const updatedUser = await prisma.wholesaleUser.update({
-        where: { id },
-        data: { role }
-      });
-      return NextResponse.json(updatedUser);
-    }
+    // Había una acción 'change_role' que escribía `WholesaleUser.role`. Se
+    // retiró junto con su selector en el admin: "Distribuidor" ya no es un tipo
+    // de cuenta y `role` no decide ningún precio, así que era un control que
+    // parecía cambiar la tarifa del cliente sin cambiar nada en realidad. El
+    // campo sigue en la base de datos, con su valor histórico intacto.
 
     return NextResponse.json({ error: 'Acción no válida' }, { status: 400 });
   } catch (error) {

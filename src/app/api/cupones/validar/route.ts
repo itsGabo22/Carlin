@@ -3,7 +3,8 @@ import { z } from 'zod';
 import { getSessionResult } from '@/lib/auth/carlin-session';
 import { getSiteConfig } from '@/lib/site-config';
 import { validateCoupon } from '@/lib/discounts/coupon';
-import { resolveOrderLines, OrderLineError } from '@/lib/pricing/order-lines';
+import { resolveOrderLines, subtotalOf, OrderLineError } from '@/lib/pricing/order-lines';
+import { resolveWholesaleTier } from '@/lib/pricing/wholesale-tier';
 
 /**
  * Previsualiza un cupón para el carrito actual.
@@ -43,11 +44,26 @@ export async function POST(req: NextRequest) {
     const config = await getSiteConfig();
     const session = await getSessionResult(config);
 
-    const lines = await resolveOrderLines(parsed.data.items, session.priceLevel);
+    // El nivel efectivo puede escalar a distribuidor por tamaño de pedido, así
+    // que el cupón se previsualiza sobre el MISMO tramo con el que se cobrará:
+    // si no, un cupón de audiencia DISTRIBUTOR se rechazaría en la vista previa
+    // y luego sí aplicaría, y el descuento se calcularía sobre precios que no
+    // son los del pedido.
+    const baseLines = await resolveOrderLines(parsed.data.items, session.priceLevel);
+    const tier = resolveWholesaleTier({
+      baseLevel: session.priceLevel,
+      baseSubtotal: subtotalOf(baseLines),
+      config,
+    });
+
+    const lines = tier.escalated
+      ? await resolveOrderLines(parsed.data.items, tier.priceLevel)
+      : baseLines;
+
     const outcome = await validateCoupon({
       code: parsed.data.code,
       lines,
-      priceLevel: session.priceLevel,
+      priceLevel: tier.priceLevel,
     });
 
     if (!outcome.ok) {
