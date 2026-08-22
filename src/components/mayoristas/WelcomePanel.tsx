@@ -69,10 +69,12 @@ export function WelcomePanel({
   }, []);
 
   // Bloquea el scroll del fondo mientras el panel está abierto y permite cerrar con Esc.
+  // El scroll real ocurre en <html> (document.scrollingElement), no en <body> —
+  // mismo bug confirmado en vivo en MobileNav.tsx.
   React.useEffect(() => {
     if (!visible) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    const previousOverflow = document.documentElement.style.overflow;
+    document.documentElement.style.overflow = 'hidden';
     closeRef.current?.focus();
 
     const onKeyDown = (e: KeyboardEvent) => {
@@ -81,7 +83,7 @@ export function WelcomePanel({
     window.addEventListener('keydown', onKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.documentElement.style.overflow = previousOverflow;
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [visible, dismiss]);

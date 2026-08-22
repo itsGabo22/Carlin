@@ -56,15 +56,18 @@ export function MobileNav({
     return () => window.removeEventListener('keydown', handleKey);
   }, [isOpen, onClose]);
 
-  // Lock scroll when open
+  // Lock scroll when open.
+  // El scroll real de la página ocurre en <html> (document.scrollingElement),
+  // no en <body> — confirmado en vivo: bloquear sólo body.style.overflow no
+  // impedía el scroll de fondo con el drawer abierto.
   React.useEffect(() => {
     if (isOpen) {
-      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = '';
+      document.documentElement.style.overflow = '';
     };
   }, [isOpen]);
 

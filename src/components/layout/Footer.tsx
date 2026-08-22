@@ -194,7 +194,7 @@ export function Footer() {
         {/* ── Bottom bar ──────────────────────────────────── */}
         <div className="mt-8 border-t border-white/20 pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 font-sans text-xs text-white/60">
           <p>
-            © 2025 Carlin Cosméticos. Todos los derechos reservados.
+            © {new Date().getFullYear()} Carlin Cosméticos. Todos los derechos reservados.
           </p>
           <p>
             Hecho con 💄 en Colombia
